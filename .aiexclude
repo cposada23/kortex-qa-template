@@ -1,0 +1,26 @@
+# .aiexclude — files AI coding assistants must NOT read.
+#
+# Convention respected by Gemini Code Assist. Same shape as
+# .gitignore. Other agents (Copilot, Claude, Codex) honor the
+# equivalent rule via AGENTS.md and .github/copilot-instructions.md.
+#
+# Goal: keep real credentials, API tokens, and customer data out of
+# AI model context windows / training pipelines. Even when these
+# files are read locally by a script (e.g., Playwright reading
+# `.env` via `process.env`), the AI assistant must NOT open them
+# directly to "see what's there."
+
+# Credential files
+*.env
+*.env.local
+*.env.*
+.secrets
+client-secrets/
+
+# Cached agent state (may include conversation transcripts with
+# sensitive content)
+.cache/
+
+# Snapshot ZIPs (contain everything including credentials per the
+# personal-recovery policy)
+versions/

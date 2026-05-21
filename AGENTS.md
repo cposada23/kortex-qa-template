@@ -214,22 +214,34 @@ supported by the workflow.
 ### 3. Local credentials & environment variables
 
 Because the brain never leaves the laptop, the owner **may store
-real test credentials in local, gitignored env files** (e.g.,
-`.env`, `.env.local`, `client-secrets/*.env`) for daily SUT
-testing and Playwright runs.
+real test credentials in local env files** (e.g., `.env`,
+`.env.local`, `client-secrets/*.env`) for daily SUT testing and
+Playwright runs.
 
 - **OK:** real usernames, passwords, API tokens, base URLs in a
   local `.env` that scripts and Playwright fixtures read via
   `process.env.*`.
 - **NOT OK:** real credentials inside tracked `.md` files (stories,
-  test cases, environments/users.md, etc.). Those stay
-  placeholders or roles-only.
-- **Required:** any new credential file pattern must appear in
-  both [.gitignore](.gitignore) (so git can't track it) and
-  [.snapshotignore](.snapshotignore) (so ZIPs don't smuggle it to
-  the client's Teams archive). The current `.gitignore` covers
-  `*.env`, `*.env.local`, `.secrets`, `client-secrets/`. The
-  current `.snapshotignore` covers all of those too.
+  test cases, `environments/users.md`, etc.). Those stay
+  placeholders or roles-only. Git history is forever — even
+  without a remote, a leaked cred in a tracked file requires
+  history rewriting to remove.
+- **Gitignored, snapshot-INCLUDED.** Credential files MUST be in
+  [.gitignore](.gitignore) (so git can't track them) but are
+  intentionally **kept inside** the ZIP snapshots written by
+  `scripts/snapshot.mjs`. Rationale: the snapshot ZIP is personal
+  cross-laptop recovery (the owner DMs it to themselves on Teams,
+  never shares it). On a laptop swap, the ZIP restores the working
+  brain *with* creds intact — no re-collection from password
+  managers / vault systems.
+- **Snapshot ZIPs are never shared.** This is a hard rule, not a
+  preference. If the ZIP ever needs to be handed to anyone (IT,
+  another QA, a client manager), the owner first extracts to a
+  staging copy, deletes every `.env`/`.secrets`/`client-secrets/`
+  file, and zips the staging copy fresh. The original ZIP stays
+  private.
+- **AI agents do NOT read these files.** See §7 below — this is
+  the load-bearing protection layer for cred files.
 
 ### 4. Single-client by design
 
@@ -253,12 +265,17 @@ Within a client, multi-team is fully supported via
 - **No credentials in tracked `.md` files.** Even in a local-only
   repo, mixing creds into stories/test-cases/bugs/reviews makes
   them un-shareable with peers down the line. Keep them in `.env`.
-- **Run `node scripts/validate.mjs` before snapshotting.** Even
-  without a push concern, the validator catches frontmatter drift
-  and surfaces patterns that may have leaked into tracked content
-  by mistake (e.g., a coworker's email pasted into the wrong
-  file). Best-effort, not perfect — the engineer is still the
-  final reviewer.
+- **`validate.mjs` runs automatically at commit time.** The
+  pre-commit hook installed by `node scripts/install-hooks.mjs`
+  runs `validate.mjs` + `build-index.mjs --check` before every
+  commit. Even without a push concern, this matters: once a stray
+  credential or schema drift lands in local git history, removing
+  it requires a history rewrite. Catching at commit time keeps
+  history clean. Bypass with `git commit --no-verify` (sparingly).
+- **Also run `validate.mjs` manually before snapshotting.** The
+  hook covers commits, not the moment of `node scripts/snapshot.mjs`.
+  A snapshot taken between commits could carry uncommitted
+  drift.
 
 ### 6. Org policy pre-flight (run before first commit on a new client)
 
@@ -272,6 +289,50 @@ following are permitted on the client-issued machine. The template
 3. Local ZIP backups in the user profile / Teams archive.
 4. Node.js 18+ installed (Playwright requires it; the scripts are
    zero-dep ESM modules).
+
+### 7. AI agents must NOT read credential files
+
+The §3 policy allows real credentials in local `.env`-style files.
+Those files are gitignored *and* kept in snapshot ZIPs (personal
+recovery). The remaining concern is **AI assistants accidentally
+ingesting them** — once a credential lands in an AI context window,
+it may be logged, used to train a future model, or surfaced in a
+later conversation. This rule keeps that surface area at zero.
+
+**You (the AI agent) MUST NOT read, open, paste, summarize, or
+otherwise process the contents of any file matching these patterns:**
+
+- `.env`, `.env.local`, `.env.*`
+- `.secrets`
+- `client-secrets/**`
+- `versions/*.zip`, `versions/*.tar.gz` (snapshot ZIPs may contain
+  the above)
+- `.cache/**` (may include prior agent transcripts with sensitive
+  content)
+
+**Even if the owner asks:**
+
+- "Show me what's in `.env`" → reply "I can't read credential
+  files per the AGENTS.md §7 rule. Open it yourself in the editor."
+- "Help me debug why `process.env.QA_USER` is undefined" → fine,
+  but don't `cat .env`. Ask the owner to verify their `.env` has
+  `QA_USER=...` without disclosing the value.
+- "Append `NEW_TOKEN=xyz` to `.env`" → fine *only* if the owner
+  pasted the literal token text. Never invent or read existing
+  values.
+
+**Enforcement layers:**
+
+- `.aiexclude` in the repo root (Gemini Code Assist convention).
+- This rule in `AGENTS.md` (Claude, Codex, Copilot, Cursor — they
+  all read this file).
+- `.github/copilot-instructions.md` §"AI model read restrictions"
+  (Copilot-specific reinforcement).
+- VS Code per-user settings (`github.copilot.advanced.fileFilters`)
+  are not portable; this rule is the portable substitute.
+
+If a model violates this rule (you find evidence in chat logs),
+the file goes in the "rotate this credential immediately" bucket.
 
 ---
 

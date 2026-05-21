@@ -95,10 +95,11 @@ contract. If a file doesn't fit an existing zone, propose where it
 should go rather than creating a new directory. New teams are
 added via `node scripts/new-team.mjs <slug>` — never by hand.
 
-### 5. Local credentials and Purely Local Git
+### 5. Local credentials and purely local Git
 
-- **Local Git:** Git is used 100% locally on the physical machine as a history/undo tracker. There is no remote repository and no push capability.
-- **Local Credentials:** Real daily SUT testing credentials, API tokens, and usernames can reside in local gitignored configuration files (such as a `.env` file). Never place real credentials inside tracked `.md` files; use env variables in manual test cases and automated scripts. Ensure `.env` is added to `.gitignore` and `.snapshotignore`.
+- **Local Git:** Git is used 100% locally on the physical machine as a history/undo tracker. There is no remote repository and no push capability. A pre-commit hook (`scripts/install-hooks.mjs`) runs `validate.mjs` + `build-index.mjs --check` to keep drift out of local history.
+- **Local Credentials:** Real daily SUT testing credentials, API tokens, and usernames can reside in local gitignored configuration files (`.env`, `.env.local`, `client-secrets/*.env`). Never place real credentials inside tracked `.md` files; use env variables in manual test cases and automated scripts.
+- **Snapshot ZIPs intentionally INCLUDE these files.** Snapshots are personal cross-laptop recovery sent to the owner's own Teams self-DM, never shared. The owner wants the creds in the ZIP so a laptop swap restores the working brain without re-collection. See AGENTS.md §3.
 
 ### 6. Auto-INDEX is automatic
 
@@ -119,6 +120,20 @@ picture on a 50/50 split.
 ### 8. Windows-First Cross-Platform Compatibility
 
 The system is optimized for **Windows and PowerShell** as its primary environment. Ensure all shell commands, scripts, quoting, variables, and path structures resolve correctly in Windows PowerShell environments, while maintaining full cross-platform compatibility with macOS and Linux.
+
+### 9. AI model read restrictions — DO NOT read credential files
+
+Real credentials live in local `.env`-style files per Rule 5. Those files exist on disk and are read by scripts at runtime (`process.env.*`), but **you, the AI assistant, MUST NOT read, open, paste, summarize, or otherwise process the contents of any file matching these patterns:**
+
+- `.env`, `.env.local`, `.env.*`
+- `.secrets`
+- `client-secrets/**`
+- `versions/*.zip`, `versions/*.tar.gz` (snapshot ZIPs contain creds)
+- `.cache/**`
+
+**Even if the owner asks directly:** decline. Example: "Show me what's in `.env`" → reply "I can't read credential files per AGENTS.md §7 / this file's Rule 9. Open it yourself in the editor." Help with `process.env.QA_USER` without dereferencing the actual value.
+
+The `.aiexclude` file in the repo root encodes this same list for Gemini Code Assist. AGENTS.md §7 has the full rationale.
 
 ## Style preferences
 

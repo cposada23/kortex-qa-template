@@ -129,6 +129,17 @@ async function main() {
     // .gitignore missing — also fine
   }
 
+  // 6. Install pre-commit hook (no-op if .git/ not yet initialized;
+  //    user gets a clear message to re-run after `git init`).
+  process.stdout.write(`\n→ Installing pre-commit hook\n`);
+  const hookResult = spawnSync('node', ['scripts/install-hooks.mjs'], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+  });
+  if (hookResult.status !== 0 && hookResult.status !== null) {
+    process.stderr.write(`warning: install-hooks.mjs exited ${hookResult.status}. Continuing.\n`);
+  }
+
   process.stdout.write('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   process.stdout.write(`  Initialized for client: ${slug}\n`);
   if (firstTeam) process.stdout.write(`  First team: ${firstTeam} (primary active)\n`);
@@ -137,8 +148,10 @@ async function main() {
   process.stdout.write(`  1. Open the workspace:\n`);
   process.stdout.write(`       code ${slug}-qa.code-workspace\n`);
   process.stdout.write(`  2. Edit the workspace file to point at your SUT and automation repos.\n`);
-  process.stdout.write(`  3. Initialize git inside the clone (if not already):\n`);
-  process.stdout.write(`       git init && git add . && git commit -m "init: kortex-qa for ${slug} v$(cat VERSION)"\n`);
+  process.stdout.write(`  3. Initialize git for this engagement (if you wiped the template's .git):\n`);
+  process.stdout.write(`       git init\n`);
+  process.stdout.write(`       node scripts/install-hooks.mjs   # pre-commit hook (idempotent)\n`);
+  process.stdout.write(`       git add . && git commit -m "init: kortex-qa for ${slug} v$(cat VERSION)"\n`);
   if (firstTeam) {
     process.stdout.write(`  4. Fill in team details:\n`);
     process.stdout.write(`       teams/${firstTeam}/members.md\n`);

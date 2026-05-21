@@ -269,6 +269,29 @@ Everything else — stories, test cases, bugs, reviews, ceremonies,
 environments, team — stays with the client clone. When the
 engagement ends, archive a final ZIP and delete the clone.
 
+### Credentials and snapshots — read this once
+
+Two policies that sit next to each other:
+
+- **`.env` files (and `.secrets`, `client-secrets/`) ARE
+  intentionally included in the snapshot ZIP** written by
+  `scripts/snapshot.mjs`. The snapshot is a personal cross-laptop
+  recovery archive (the owner DMs it to themselves on Teams, never
+  shares it). On a laptop swap, the ZIP restores the brain *with*
+  credentials intact — no re-collection from password managers.
+- **The snapshot ZIP is never shared with anyone.** Hard rule. If
+  it needs to be handed to anyone (IT, another QA, a client
+  manager), extract to a staging copy first, delete every
+  `.env`/`.secrets`/`client-secrets/` file, and re-zip the
+  staging copy. The original ZIP stays private.
+- **AI agents do NOT read credential files** — see AGENTS.md §7.
+  The `.aiexclude` file enforces this for Gemini Code Assist; the
+  AGENTS.md / `.github/copilot-instructions.md` rules cover the
+  rest. Real cred files exist on disk and scripts read them via
+  `process.env`, but no AI assistant opens them.
+- **`.env` is `.gitignored`.** So nothing lands in git history,
+  even local-only.
+
 ---
 
 ## Multi-tool workspace
@@ -306,6 +329,28 @@ automation-flow, version-snapshot promoted from stub to full),
 extended Copilot prompt library (5 new prompts:
 test-case-reviewer, automation-from-test-case,
 sprint-planning-intake, retro-intake, question-generator).
+
+**v1.2.1 / v1.2.2** (2026-05-21) — sync passes: day-in-the-life
+narrative updated with the 5 new prompts;
+`.github/copilot-instructions.md` rewritten to reflect
+team-centric architecture (was the last v1.0 artifact untouched
+by the v1.1 restructure).
+
+**v1.3.0** (2026-05-21) — Windows-First / PowerShell-primary
+platform policy made explicit (cross-platform parity preserved);
+local-only Git formalized; `.env` files permitted for daily SUT
+testing; `zoneName` ReferenceError in `build-index.mjs` fixed
+(latent bug surfaced by external audit).
+
+**v1.4.0** (2026-05-21) — pre-commit hook (`scripts/install-hooks.mjs`
+installs a Git pre-commit that runs `validate.mjs` +
+`build-index.mjs --check`) so schema / INDEX drift can't land in
+local history even without a remote. Snapshot policy refined:
+`.env` files **stay in** the snapshot ZIP for personal cross-laptop
+recovery — the ZIP is personal and never shared. AI read
+restrictions formalized: `.aiexclude` file + AGENTS.md §7 + Rule 9
+in `copilot-instructions.md` to keep credential files out of AI
+context windows.
 
 Future versions (real-usage-driven): a `clients/` zone gated by
 `multi-client: true` for parallel freelance engagements, plus

@@ -60,3 +60,31 @@ DECISIONS:
 - Skipped: timezone fix in daysSince, pre-commit hook (owner declined), CHANGELOG/LICENSE/CI/knowledge-seeds (owner declined v1.2.2).
 BLOCKERS: none.
 READINESS: green to start using. The template is complete enough for first real client. Latent concerns (timezone jitter, no automated PII gate) are explicitly Watch, not blocker. Owner-driven NEXT items if they surface in real use: clients/ zone (multi-tenancy), seed examples in knowledge/{patterns,playwright,istqb}, optional CI.
+
+## 2026-05-21 15:10 — v1.4.0 pre-commit hook + invert snapshot policy + AI read restrictions
+
+STATE: Owner corrected two stances from v1.3.0 review:
+1. **Pre-commit hook IS useful** even without a remote — "no hay remote, pero si hay commits" — a credential or schema drift in local history requires history rewrite to remove. The previous "no remote = no leak risk = no hook needed" reasoning ignored that local history is itself the artifact to keep clean.
+2. **`.env` files SHOULD be in the snapshot ZIP** — the ZIP is personal cross-laptop recovery (owner DMs it to themselves on Teams, never shared). Including creds means a laptop swap restores the brain *with* creds intact, no re-collection from password managers.
+Also surfaced a NEW concern: protect creds against AI model ingestion. If Copilot/Claude/Gemini read `.env` while helping, content can end up in logs / training pipelines / leaked context across sessions.
+
+DID:
+- VERSION 1.3.0 → 1.4.0 (minor: new script + new feature + policy refinement).
+- NEW: `scripts/install-hooks.mjs` (zero-dep Node script, ~90 lines). Writes `.git/hooks/pre-commit` shell shim that runs `validate.mjs` + `build-index.mjs --check`. Cross-platform `#!/bin/sh` (Git for Windows runs via MINGW sh). Idempotent — detects own signature to refresh; refuses to clobber a non-Kortex hook. Smoke-verified end-to-end: clean commit passes, broken frontmatter blocked with exit 1, re-install refreshes, user-authored hook left alone.
+- INVERTED `.snapshotignore`: removed `*.env`, `*.env.local`, `.secrets`, `client-secrets/`. ZIP now includes them by design. Comment block at top of file explains why (personal recovery only, never shared).
+- NEW: `.aiexclude` at repo root with credential file patterns. Convention respected by Gemini Code Assist; other agents enforce via AGENTS.md / copilot-instructions.md rules below.
+- AGENTS.md: §3 rewritten — `.env` permitted, gitignored, but snapshot-INCLUDED; ZIP never shared (hard rule); cross-references new §7. §5 "Run validate.mjs" updated to mention the hook covers it at commit time + manual run still required pre-snapshot. NEW §7 "AI agents must NOT read credential files" — file pattern list, refusal scripts for common owner asks ("Show me .env" → decline), enforcement layers (.aiexclude + AGENTS.md + copilot-instructions.md + per-user VS Code settings).
+- `.github/copilot-instructions.md`: Rule 5 updated to flip the snapshot policy + mention the pre-commit hook. NEW Rule 9 "AI model read restrictions" mirrors AGENTS.md §7.
+- `init.mjs`: now calls `node scripts/install-hooks.mjs` automatically after team scaffolding (no-op if `.git/` doesn't exist yet, with a clear message). Next-steps text updated to put `install-hooks.mjs` next to `git init`.
+- `scripts/README.md`: install-hooks.mjs added to the table, validate.mjs / build-index.mjs entries cross-reference the hook.
+- README.md: new sub-section "Credentials and snapshots — read this once" under §Compliance. Versioning section extended with v1.2.1/v1.2.2/v1.3.0/v1.4.0 entries.
+
+DECISIONS:
+- Hook shell: `#!/bin/sh` works on Linux/macOS native + Windows via Git Bash. PowerShell-direct hook would force users to install PowerShell-as-hook-runner, friction vs Git Bash that's already installed with Git for Windows.
+- Bypass: `git commit --no-verify` left intentionally available. Rare-but-legitimate cases (mid-recovery, intentional partial commit) need an escape hatch. Documented as "use sparingly" in the hook + AGENTS.md.
+- AI exclusion: triple-layer (file convention + AGENTS.md + copilot-instructions.md). VS Code per-user setting `github.copilot.advanced.fileFilters` mentioned but NOT enforced — not portable across clones. The portable substitute is the rule layer.
+- Hook installs validate.mjs WITHOUT --strict-pii. PII heuristics produce false positives (e.g., credit-card-shaped digit density). Blocking commit on warnings would cost owner more friction than it'd save. Schema errors still hard-block.
+
+BLOCKERS: none.
+
+READINESS: still green. v1.4.0 closes two structural gaps (history hygiene + AI cred protection) that v1.3.0 punted on. Watch items unchanged from v1.3.0.

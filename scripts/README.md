@@ -10,20 +10,21 @@ node scripts/<name>.mjs [args]
 This guarantees portability across macOS / Linux / Windows
 (Node is required anyway since Playwright depends on it).
 
-## Available scripts (v1.1 — team-aware)
+## Available scripts (v1.4 — team-aware + pre-commit hooks)
 
 | Script | Purpose |
 |---|---|
-| [init.mjs](init.mjs) | Post-clone setup; `--first-team <slug>` to scaffold + activate one team in the same run |
+| [init.mjs](init.mjs) | Post-clone setup; `--first-team <slug>` to scaffold + activate one team in the same run. Also installs the pre-commit hook. |
+| [install-hooks.mjs](install-hooks.mjs) | Install / refresh the Git pre-commit hook (runs `validate.mjs` + `build-index.mjs --check`). Idempotent; refuses to clobber a non-Kortex hook. |
 | [new-team.mjs](new-team.mjs) | Scaffold a new team folder from `teams/_template-team/` |
 | [switch-team.mjs](switch-team.mjs) | Edit `teams/active-team.txt` (set primary, add secondary, remove, list) |
 | [new-story.mjs](new-story.mjs) | Scaffold a story (team-scoped; `--team <slug>` overrides primary) |
 | [new-test-case.mjs](new-test-case.mjs) | Scaffold a library test case (team-scoped) |
 | [new-bug.mjs](new-bug.mjs) | Scaffold a bug (team-scoped) |
 | [session-start.mjs](session-start.mjs) | AI-free morning summary (default: all active teams; `--team <slug>` / `--all`) |
-| [build-index.mjs](build-index.mjs) | Regenerate INDEX.md files across all team sub-zones + global knowledge/ |
+| [build-index.mjs](build-index.mjs) | Regenerate INDEX.md files across all team sub-zones + global knowledge/. `--check` exits 1 on drift (used by pre-commit hook). |
 | [snapshot.mjs](snapshot.mjs) | ZIP the brain to versions/ for backup |
-| [validate.mjs](validate.mjs) | Frontmatter + PII integrity check |
+| [validate.mjs](validate.mjs) | Frontmatter + PII integrity check. Run before every commit (also enforced by the pre-commit hook installed by `install-hooks.mjs`). |
 
 ## Auto-INDEX guarantee
 

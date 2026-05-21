@@ -1,20 +1,16 @@
 # Paths excluded from ZIP snapshots created by scripts/snapshot.mjs.
 # Same shape as .gitignore (one path/glob per line; # comments OK).
-# Snapshots are for backup/disaster-recovery — these directories
-# would bloat the ZIP or shouldn't leave the machine.
+#
+# Snapshots are PERSONAL recovery archives — the owner sends them
+# to their own Teams self-DM and uses them to restore on a new
+# laptop. They are NOT shared with anyone, so credentials are
+# allowed (and desired) inside the ZIP. See AGENTS.md
+# §"Local credentials" for the policy.
 
 versions/
 .git/
 .cache/
 node_modules/
-
-# Credentials — NEVER snapshot (even though snapshots are local-only,
-# they often end up in client-managed backup locations like Teams
-# archives, so credentials must stay out)
-client-secrets/
-*.env
-*.env.local
-.secrets
 
 # OS junk
 .DS_Store
