@@ -48,7 +48,7 @@ Never write any of these in matched files:
 
 ## What to write instead
 
-For `stories/**/questions.md`:
+For `teams/**/stories/**/questions.md`:
 
 > 1. The AC says "filter by recent activity" — what defines
 >    "recent"? Last 24 hours? Last login session? Configurable?
@@ -60,7 +60,7 @@ NOT:
 > that I think we should clarify:
 > 1. ...
 
-For `bugs/**/*.md`:
+For `teams/**/bugs/**/*.md`:
 
 > **Summary:** Search bar swallows trailing whitespace, treating
 > "query " as "no results."

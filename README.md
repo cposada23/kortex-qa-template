@@ -5,12 +5,13 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.5.0 — team-centric architecture, full playbook set,
-extended Copilot prompt library, pre-commit hook + AI cred read
-restrictions + path-drift sweep + Copilot prompt schema sync
-(`mode:` → `agent:`). Built and packaged 2026-05-20 → 2026-05-21
-inside the upstream Kortex repo `mykortex`, extracted to its own
-repo for cloning.
+**Status:** v1.5.1 — team-centric architecture, full playbook set
+(13 playbooks), extended Copilot prompt library (12 prompts),
+pre-commit hook + AI cred read restrictions + path-drift sweep +
+Copilot prompt schema sync (`mode:` → `agent:`) + client-bootstrap
+playbook (clone-to-first-story + 4 import scenarios). Built and
+packaged 2026-05-20 → 2026-05-21 inside the upstream Kortex repo
+`mykortex`, extracted to its own repo for cloning.
 
 ---
 
@@ -354,6 +355,12 @@ restrictions formalized: `.aiexclude` file + AGENTS.md §7 + Rule 9
 in `copilot-instructions.md` to keep credential files out of AI
 context windows.
 
+**v1.5.1** (2026-05-21) — `client-bootstrap.md` playbook
+(clone-to-first-story + 4 import scenarios for previous-brain
+migration) + final prose-level drift fix in
+`.github/instructions/*.md` (Codex micro-pass: `applyTo:` globs
+were correct but examples below still showed v1.0 paths).
+
 **v1.5.0** (2026-05-21) — Codex audit pass: Copilot prompt schema
 synced from `mode:` to `agent:` (the legacy key triggers a
 deprecation warning in current Copilot Chat); 6 prompts had
@@ -388,11 +395,14 @@ client-identifying content; what you put in each clone is yours
 
 - [AGENTS.md](AGENTS.md) — the canonical agent context (read this
   before doing anything)
+- [playbooks/client-bootstrap.md](playbooks/client-bootstrap.md) —
+  **start here on a new laptop:** clone → init → first team →
+  first story + 4 scenarios for importing from a previous brain
+- [playbooks/day-in-the-life.md](playbooks/day-in-the-life.md) —
+  end-to-end walkthrough of a full QA day with the brain
 - [playbooks/session-start.md](playbooks/session-start.md) — the
   morning ritual
 - [playbooks/story-intake.md](playbooks/story-intake.md) — what to
   do when a new Jira ticket is assigned
-- [playbooks/day-in-the-life.md](playbooks/day-in-the-life.md) —
-  end-to-end walkthrough of a full QA day with the brain
 - [playbooks/client-rotation.md](playbooks/client-rotation.md) —
   the compliance-critical hand-off ritual

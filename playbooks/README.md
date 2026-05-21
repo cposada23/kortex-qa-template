@@ -5,12 +5,27 @@ invokable; these playbooks are detailed reference for cold reading
 (returning after a vacation, onboarding a peer, debugging a
 workflow that isn't working).
 
-## Full playbook set (v1.2)
+## Full playbook set (v1.5)
 
-- **[day-in-the-life.md](day-in-the-life.md)** — **start here.**
-  End-to-end narrative + 15-minute happy path
+### Lifecycle (cradle to grave)
+
+- **[client-bootstrap.md](client-bootstrap.md)** — **start here on
+  a new laptop.** Clone → init → first team → first story →
+  importing from a previous brain (4 scenarios)
+- **[client-rotation.md](client-rotation.md)** —
+  **compliance-critical** off-boarding (one clone = one client;
+  rotation = wipe + new clone)
+
+### Daily loop
+
+- **[day-in-the-life.md](day-in-the-life.md)** — end-to-end
+  narrative + 15-minute happy path + 5 "Days that aren't typical"
+  variations
 - **[session-start.md](session-start.md)** — morning ritual
 - **[session-end.md](session-end.md)** — end-of-day wrap
+
+### Work-specific
+
 - **[story-intake.md](story-intake.md)** — new Jira ticket workflow
 - **[ac-audit.md](ac-audit.md)** — wraparound for `/ac-auditor`
   (when to run, how to triage findings, common AC smells)
@@ -22,16 +37,19 @@ workflow that isn't working).
 - **[automation-flow.md](automation-flow.md)** — when to automate
   vs stay manual, staging the work in Jira, linking the brain to
   the automation repo, anti-patterns cheat sheet
+
+### Multi-team / cross-cutting
+
+- **[team-onboarding.md](team-onboarding.md)** — scaffold + activate
+  a second or third team after the first is working
+- **[team-knowledge-promotion.md](team-knowledge-promotion.md)** —
+  when team-local content graduates to global `knowledge/`
+
+### Infrastructure
+
 - **[version-snapshot.md](version-snapshot.md)** — ZIP cadence,
   VERSION bump rules, storage targets, retention windows, restore
   procedure
-- **[team-onboarding.md](team-onboarding.md)** — scaffold + activate
-  a new team folder
-- **[team-knowledge-promotion.md](team-knowledge-promotion.md)** —
-  when team-local content graduates to global `knowledge/`
-- **[client-rotation.md](client-rotation.md)** —
-  **compliance-critical** off-boarding (one clone = one client;
-  rotation = wipe + new clone)
 
 ## Relationship to `.github/prompts/`
 

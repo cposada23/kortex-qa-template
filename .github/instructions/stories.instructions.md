@@ -8,12 +8,12 @@ applyTo: "teams/**/stories/**/*.md"
 ## Folder shape per story
 
 ```
-stories/<TICKET-KEY>-<slug>/
+teams/<active>/stories/<TICKET-KEY>-<slug>/
 ├── story.md           REQUIRED — captures the Jira ticket
 ├── ac-audit.md        REQUIRED — AC quality audit + Teams-ready questions
 ├── questions.md       OPTIONAL — free-form parked questions
 ├── execution-log.md   REQUIRED — test run records
-├── bugs.md            OPTIONAL — local pointer to bugs/ entries
+├── bugs.md            OPTIONAL — local pointer to teams/<active>/bugs/ entries
 └── test-cases/        OPTIONAL — story-specific test cases
     └── <slug>.md
 ```

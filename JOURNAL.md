@@ -111,3 +111,33 @@ DECISIONS:
 BLOCKERS: none.
 
 READINESS: still green. v1.5.0 closes the drift / behavior gaps Codex found. The template is now self-consistent: schema docs match scripts match prompts match example team. Smoke + dogfood: this commit will be validated by the pre-commit hook itself.
+
+## 2026-05-21 16:25 — v1.5.1 client-bootstrap playbook + final instructions drift
+
+STATE: Owner asked "how do I actually start from zero on the work laptop? clone → first team → first story → how do I import from a previous brain?" Realized: the README "Quick start" has the bullets, but no narrative playbook for the bootstrap + import-from-prior cases. Codex also flagged residual drift in `.github/instructions/*.md` (shorthand `stories/**`, `bugs/**`, `test-cases/library/` references in prose, while the `applyTo:` globs were already correct).
+
+DID:
+- **NEW playbook: `client-bootstrap.md`** (~340 lines). 8 numbered steps from `gh repo clone` to first commit + 4 import scenarios:
+  1. Same client, different laptop → restore from snapshot ZIP (not re-clone).
+  2. New client, coming from a chat-thread brain → sanitize patterns into knowledge/, NOT stories/tcs/bugs.
+  3. New client, coming from another Kortex-QA clone → only knowledge/ travels with sanitization checklist.
+  4. New client, coming from a non-Kortex source (Notion, OneNote) → manual paste into knowledge/.
+  Each step includes Windows PowerShell + Bash variants (the Windows-First policy). "What ready-to-work looks like" closing checklist.
+- **Mirror to client-rotation.md**: bootstrap is the on-boarding ritual; rotation is the off-boarding. Cross-linked both ways.
+- **playbooks/README.md**: reorganized into 5 sections (Lifecycle / Daily loop / Work-specific / Multi-team / Infrastructure). Bootstrap leads the Lifecycle section. Header version 1.2 → 1.5.
+- **README.md "Related reading"**: bootstrap added at the top of the list with bold "start here" annotation.
+- **`.github/instructions/*.md` final drift**: 5 prose references to v1.0 root paths corrected to `teams/<active>/`:
+  - external-comms.instructions.md: 2 example headers (`stories/**/questions.md`, `bugs/**/*.md`) prefixed with `teams/**/`.
+  - stories.instructions.md: folder shape diagram + bugs.md reference.
+  - test-cases.instructions.md: 3 references in promotion-rule section.
+  The `applyTo:` globs at the top of each file were already team-centric (correct), but the prose examples below them weren't — Copilot reads both, so the prose drift was teaching wrong defaults.
+- VERSION 1.5.0 → 1.5.1.
+
+DECISIONS:
+- Patch bump (not minor): the bootstrap playbook is doc, the instruction drift fixes are cosmetic. No behavior change in scripts, no schema change.
+- 4 import scenarios chosen vs trying for a single canonical flow: the scenarios genuinely differ in what's allowed to travel. Forcing them into one flow would hide the single-client design rule. Each scenario explicitly calls out what NOT to bring.
+- Windows PowerShell snippets first in code blocks, with Bash equivalents inline (Windows-First per AGENTS.md §1).
+
+BLOCKERS: none.
+
+READINESS: still green. v1.5.1 closes the bootstrap-narrative gap (owner can now hand the playbook to a future-self on a new laptop) and the residual drift Codex flagged. Watch items unchanged.
