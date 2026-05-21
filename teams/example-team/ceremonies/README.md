@@ -35,10 +35,10 @@ lesson, distill it into `knowledge/patterns/<slug>.md` or
 `knowledge/lessons-learned.md` after the meeting. The retro note
 stays as the source; the `knowledge/` page is the portable
 distillation (which means it must be sanitized of client-specific
-details — see [../playbooks/client-rotation.md](../playbooks/client-rotation.md)).
+details — see [../../../playbooks/client-rotation.md](../../../playbooks/client-rotation.md)).
 
 ## See also
 
 - [../AGENTS.md](../AGENTS.md)
-- [../team/ceremonies.md](../team/ceremonies.md) — cadence and
+- [../ceremonies-info.md](../ceremonies-info.md) — cadence and
   ownership of each ceremony

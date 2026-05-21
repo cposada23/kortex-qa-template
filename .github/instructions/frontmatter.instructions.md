@@ -39,37 +39,38 @@ template (English-only content for cross-client portability).
 ### `type: story`
 
 ```yaml
-ticket: TEAM-1234              # Jira key
-sprint: 2026-S20               # sprint identifier
+ticket: TEAM-1234                       # Jira key, also serves as the story's canonical ID
+sprint: 2026-S20                        # sprint identifier
 priority: low | medium | high | critical
 status: backlog | in-progress | design-done | review-done | execution-done | closed | blocked | cancelled
 ac_audit_status: pending | done
-test_cases_count: 0
-bugs_found: 0
-linked_test_cases: []          # paths to test-case files
+linked_test_cases: [TC-AUTH-001, TC-SEARCH-007]    # canonical IDs (immutable), many-to-many
+linked_bugs: [BUG-001, BUG-007]                    # canonical IDs, many-to-many
+review_status: not-reviewed | requested | in-review | changes-requested | approved
 ```
 
 ### `type: test-case`
 
 ```yaml
-id: TC-AUTH-001                # TC-<AREA>-<NNN>
-area: auth | billing | search | ...
+id: TC-AUTH-001                # TC-<AREA>-<NNN> — IMMUTABLE once assigned
+area: auth | billing | search | ...     # folder name under teams/<team>/test-cases/
 coverage: positive | negative | edge | integration | regression
-status: draft | reviewed | active | deprecated
+status: draft | active | retired         # lifecycle: born draft, ships active, eventually retired
 automation_status: auto-soon | auto-eventually | automated | manual-only | not-feasible
 automation_path: ../../<automation-repo>/tests/...   # descriptive
-linked_stories: [TEAM-1234]
+linked_stories: [TEAM-1234]              # immutable Jira keys, many-to-many
+review_status: not-reviewed | requested | in-review | changes-requested | approved
 ```
 
 ### `type: bug`
 
 ```yaml
-id: BUG-001
+id: BUG-001                              # BUG-<NNN> — IMMUTABLE once assigned
 severity: low | medium | high | critical
 status: open | assigned | fixed | verified | closed | wontfix | duplicate
-jira_key: TEAM-9001            # when filed
-linked_story: TEAM-1234
-linked_test_case: TC-AUTH-001  # optional
+jira_key: TEAM-9001                      # when filed
+linked_stories: []                       # empty if exploratory; many-to-many otherwise
+linked_test_case: TC-AUTH-001            # optional, the TC that uncovered the bug
 environment: local | dev | qa | prod-readonly
 ```
 
@@ -139,8 +140,32 @@ this file).
 - Preserve the type. Changing a file's type requires moving it
   (e.g. a `test-case` doesn't become a `playbook` in place).
 
+## Immutable IDs (v1.6+)
+
+Test cases (`id: TC-<AREA>-<NNN>`), bugs (`id: BUG-<NNN>`), and
+stories (the Jira key, e.g. `TEAM-1234`) all carry IDs that
+**never change once assigned**. Renaming a file does not change
+its ID.
+
+The `linked_test_cases`, `linked_bugs`, `linked_stories`, and
+`linked_story` / `linked_test_case` fields use IDs (not paths) as
+their canonical reference. Story bodies and test case bodies
+use markdown links for human navigation; `validate-links.mjs`
+(run by the pre-commit hook) checks both stay coherent.
+
+If a TC's `id:` must change (extremely rare — only for repair),
+update every `linked_test_cases` array referencing the old ID
+across the team. `validate-links.mjs` will flag every break
+until you fix them.
+
 ## Validation
 
 `node scripts/validate.mjs` walks the tree and reports
-violations. Run before commit; scaffold scripts run it
-automatically after creating files.
+frontmatter violations.
+
+`node scripts/validate-links.mjs` (v1.6+) verifies ID-based and
+markdown-link integrity across `teams/`. Both run automatically
+via the pre-commit hook installed by `scripts/install-hooks.mjs`.
+
+Scaffold scripts run `validate.mjs` automatically after creating
+files. Run both manually before snapshotting.

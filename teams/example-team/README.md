@@ -7,7 +7,7 @@ engagement, edited rarely.
 
 - **[members.md](members.md)** — roster: who, what role, when to
   ping them.
-- **[ceremonies.md](ceremonies.md)** — sprint cadence, daily
+- **[ceremonies-info.md](ceremonies-info.md)** — sprint cadence, daily
   standup time, review/retro schedule.
 - **[workflow.md](workflow.md)** — Jira board flow, definition of
   ready, definition of done, QA subtask conventions.
@@ -37,4 +37,4 @@ explicitly excluded from any future `knowledge/` portability.
 
 ## See also
 
-- [../AGENTS.md](../AGENTS.md)
+- [../../AGENTS.md](../../AGENTS.md)

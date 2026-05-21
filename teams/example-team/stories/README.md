@@ -64,6 +64,6 @@ back to the feature story.
 ## See also
 
 - [../AGENTS.md](../AGENTS.md) — overall agent context
-- [../playbooks/story-intake.md](../playbooks/story-intake.md) —
+- [../../../playbooks/story-intake.md](../../../playbooks/story-intake.md) —
   the intake workflow in detail
 - [INDEX.md](INDEX.md) — list of all stories

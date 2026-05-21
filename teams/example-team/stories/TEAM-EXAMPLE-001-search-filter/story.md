@@ -1,18 +1,19 @@
 ---
-title: "Search filter — restrict results by date range"
+title: Search filter — restrict results by date range
 type: story
 ticket: TEAM-EXAMPLE-001
-sprint: "2026-S20"
+sprint: 2026-S20
 priority: medium
 status: in-progress
 ac_audit_status: done
 test_cases_count: 1
 bugs_found: 1
-linked_test_cases:
-  - test-cases/tc-team-example-001-01-filter-by-date-range.md
+linked_test_cases: [TC-TEAM-EXAMPLE-001-01]
 language: en
 tags: [story, search, filter, date-range, example]
 updated: 2026-05-20
+linked_bugs: [BUG-001]
+review_status: not-reviewed
 ---
 
 # TEAM-EXAMPLE-001 — Search filter: restrict results by date range
@@ -66,3 +67,13 @@ This is an **example story** shipped with the template to
 demonstrate the end-to-end flow. Replace with a real ticket after
 running `node scripts/init.mjs <your-client-slug>`. Do not treat
 the URLs, dates, or AC as real client data.
+
+
+## Test cases
+
+- [TC-TEAM-EXAMPLE-001-01 — Filter reports by date range (happy path)](../../test-cases/search/tc-team-example-001-01-filter-by-date-range.md)
+
+
+## Bugs found
+
+- [BUG-001](../../bugs/BUG-001-empty-state-clear-cta-partial-reset.md)

@@ -45,6 +45,6 @@ brain doesn't validate that the file exists in the other repo.
 ## See also
 
 - [../AGENTS.md](../AGENTS.md)
-- [../playbooks/automation-flow.md](../playbooks/automation-flow.md)
+- [../../../playbooks/automation-flow.md](../../../playbooks/automation-flow.md)
   (stub in v1.0 — fill out as the automation strategy stabilizes)
 - [INDEX.md](INDEX.md)

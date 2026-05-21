@@ -1,16 +1,17 @@
 ---
-title: "TC-TEAM-EXAMPLE-001-01 — Filter reports by date range (happy path)"
+title: TC-TEAM-EXAMPLE-001-01 — Filter reports by date range (happy path)
 type: test-case
 id: TC-TEAM-EXAMPLE-001-01
 area: search
 coverage: positive
 status: reviewed
 automation_status: manual-only
-automation_path: "../../<automation-repo>/tests/search/filter-by-date-range.spec.ts"
+automation_path: ../../<automation-repo>/tests/search/filter-by-date-range.spec.ts
 linked_stories: [TEAM-EXAMPLE-001]
 language: en
 tags: [search, filter, date-range, happy-path, example]
 updated: 2026-05-20
+review_status: not-reviewed
 ---
 
 # TC-TEAM-EXAMPLE-001-01 — Filter reports by date range (happy path)
@@ -27,7 +28,7 @@ list to reports whose `created_at` is within the inclusive range.
   has report-read permissions)
 - **Data:** At least 10 reports in the dataset, spread across the
   last 90 days. Filter `created_at >= "<30 days ago>"` returns
-  at least 5 reports (see [../../../environments/filters.md](../../../environments/filters.md)).
+  at least 5 reports (see [../../environments/filters.md](../../environments/filters.md)).
 - **Other:** the search-results-v2 feature flag is ON for the
   test user (default on QA).
 
@@ -41,7 +42,7 @@ list to reports whose `created_at` is within the inclusive range.
 4. Then the result list reloads and shows only reports whose
    `created_at` falls within `[<30 days ago>, today]` inclusive.
 5. And the visible count matches the expected count (compare
-   against the filter from [filters.md](../../../environments/filters.md)).
+   against the filter from [filters.md](../../environments/filters.md)).
 6. And the result list is sorted by `created_at desc` (newest
    first).
 
@@ -69,5 +70,5 @@ None required — filtering is a read-only operation.
 - This is an **example test case** shipped with the template.
 - For the boundary edge cases (start = end, start > end), see
   TC-TEAM-EXAMPLE-001-02 / 03 (not shipped in v1.0 example).
-- See related bug [BUG-001](../../../bugs/BUG-001-empty-state-clear-cta-partial-reset.md)
+- See related bug [BUG-001](../../bugs/BUG-001-empty-state-clear-cta-partial-reset.md)
   for the empty-state CTA issue surfaced during this run.

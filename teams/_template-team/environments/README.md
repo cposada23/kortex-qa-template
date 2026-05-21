@@ -43,5 +43,5 @@ when you notice — stale env docs are a recurring source of
 ## See also
 
 - [../AGENTS.md](../AGENTS.md)
-- [../team/deploy.md](../team/deploy.md) — deploy cadence and
+- [../deploy.md](../deploy.md) — deploy cadence and
   ownership (the human side)
