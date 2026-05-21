@@ -1,0 +1,35 @@
+{
+  "//": "Kortex-QA multi-root workspace template. After running scripts/init.mjs <client-slug>, this file is renamed to <client-slug>-qa.code-workspace. Fill in the SUT and automation repo paths post-clone.",
+  "folders": [
+    {
+      "name": "Kortex-QA (brain)",
+      "path": "."
+    },
+    {
+      "name": "SUT (set me)",
+      "path": "../<set-me-to-the-system-under-test-repo>"
+    },
+    {
+      "name": "Automation (set me)",
+      "path": "../<set-me-to-the-automation-repo>"
+    }
+  ],
+  "settings": {
+    "files.associations": {
+      "*.prompt.md": "markdown",
+      "*.instructions.md": "markdown"
+    },
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "github.copilot.chat.followUps": "always",
+    "editor.rulers": [80, 100],
+    "markdown.preview.lineHeight": 1.6
+  },
+  "extensions": {
+    "recommendations": [
+      "github.copilot",
+      "github.copilot-chat",
+      "yzhang.markdown-all-in-one",
+      "DavidAnson.vscode-markdownlint"
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+# ZIP snapshots are local-only artifacts
+versions/*.zip
+versions/*.tar.gz
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor metadata
+.idea/
+.vscode/settings.json
+
+# Node (in case future tools add deps)
+node_modules/
+npm-debug.log
+pnpm-debug.log
+
+# Cached state
+.cache/
+
+# Secrets — NEVER commit
+client-secrets/
+*.env
+*.env.local
+.secrets

@@ -1,0 +1,12 @@
+# Paths excluded from ZIP snapshots created by scripts/snapshot.mjs.
+# Same shape as .gitignore (one path/glob per line; # comments OK).
+# Snapshots are for backup/disaster-recovery — these directories
+# would bloat the ZIP or shouldn't leave the machine.
+
+versions/
+.git/
+.cache/
+node_modules/
+client-secrets/
+.DS_Store
+Thumbs.db
