@@ -1,6 +1,6 @@
 ---
 description: Capture a retrospective into a structured ceremony note + surface promotable patterns
-mode: edit
+agent: agent
 ---
 
 # Retro intake

@@ -1,6 +1,6 @@
 ---
 description: Suggest test scenarios from a story (does not author the test cases)
-mode: ask
+agent: ask
 ---
 
 # Story analyzer
@@ -13,11 +13,12 @@ scenarios so the engineer can pick which ones to author with
 ## Input
 
 1. The story (read from
-   `stories/<TICKET-KEY>-<slug>/story.md`).
+   `teams/<active>/stories/<TICKET-KEY>-<slug>/story.md`).
 2. The AC audit if one exists
-   (`stories/<TICKET-KEY>-<slug>/ac-audit.md`).
+   (`teams/<active>/stories/<TICKET-KEY>-<slug>/ac-audit.md`).
 3. Optionally, related test cases already in
-   `test-cases/library/` that might cover parts of this story.
+   `teams/<active>/test-cases/library/` that might cover parts of
+   this story.
 
 ## Process
 
@@ -31,7 +32,8 @@ For the story, brainstorm test scenarios across five categories:
 4. **Integration** — interactions with adjacent features,
    shared state, downstream effects.
 5. **Regression candidates** — areas where past bugs (per
-   `bugs/` or `knowledge/patterns/`) suggest fragility.
+   `teams/<active>/bugs/` or `knowledge/patterns/`) suggest
+   fragility.
 
 For each scenario, output:
 
@@ -40,7 +42,8 @@ For each scenario, output:
   **should-have** (good QA hygiene), **nice-to-have** (extra
   rigor)
 - Whether it likely overlaps with an existing library test case
-  (cross-check `test-cases/library/<area>/` if relevant)
+  (cross-check `teams/<active>/test-cases/library/<area>/` if
+  relevant)
 
 ## Output
 

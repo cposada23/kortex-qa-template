@@ -5,10 +5,12 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.2.0 — team-centric architecture, full playbook set,
-extended Copilot prompt library. Built and packaged 2026-05-20 →
-2026-05-21 inside the upstream Kortex repo `mykortex`, extracted to
-its own repo for cloning.
+**Status:** v1.5.0 — team-centric architecture, full playbook set,
+extended Copilot prompt library, pre-commit hook + AI cred read
+restrictions + path-drift sweep + Copilot prompt schema sync
+(`mode:` → `agent:`). Built and packaged 2026-05-20 → 2026-05-21
+inside the upstream Kortex repo `mykortex`, extracted to its own
+repo for cloning.
 
 ---
 
@@ -351,6 +353,22 @@ recovery — the ZIP is personal and never shared. AI read
 restrictions formalized: `.aiexclude` file + AGENTS.md §7 + Rule 9
 in `copilot-instructions.md` to keep credential files out of AI
 context windows.
+
+**v1.5.0** (2026-05-21) — Codex audit pass: Copilot prompt schema
+synced from `mode:` to `agent:` (the legacy key triggers a
+deprecation warning in current Copilot Chat); 6 prompts had
+pre-team-centric path drift (`stories/INDEX.md`, `bugs/`,
+`test-cases/library/` at repo root) corrected to
+`teams/<active>/...`; `build-index.mjs --check` is now truly
+read-only (computes diff in memory, returns `would-update` /
+`would-create` instead of writing then failing); `validate.mjs`
+exit code reconciled with its own documentation (PII warnings
+exit 0 unless `--strict-pii`, so the pre-commit hook doesn't
+silently block on heuristic false positives);
+`automation_status` vocabulary unified across frontmatter
+instructions, prompts, playbooks, example team, and templates
+(`auto-soon | auto-eventually | automated | manual-only |
+not-feasible`).
 
 Future versions (real-usage-driven): a `clients/` zone gated by
 `multi-client: true` for parallel freelance engagements, plus

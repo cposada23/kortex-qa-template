@@ -1,6 +1,6 @@
 ---
 description: New Jira ticket → scaffold story folder + run initial AC audit in one go
-mode: agent
+agent: agent
 ---
 
 # Story intake
@@ -28,12 +28,15 @@ You'll also need:
 
 ## Process
 
-1. Confirm the inputs above with the engineer.
+1. Confirm the inputs above with the engineer. Identify which team
+   the story belongs to (read `teams/active-team.txt` line 1 for the
+   primary; the engineer can override with `--team <slug>`).
 2. Run `node scripts/new-story.mjs <TICKET-KEY> <slug>` (or, if
    you can't run shell commands, suggest the engineer run it and
-   wait for confirmation). This creates the folder skeleton and
-   updates `stories/INDEX.md`.
-3. Read the resulting `stories/<TICKET-KEY>-<slug>/story.md`
+   wait for confirmation). This creates the folder skeleton under
+   `teams/<active>/stories/<TICKET-KEY>-<slug>/` and updates that
+   team's `teams/<active>/stories/INDEX.md`.
+3. Read the resulting `teams/<active>/stories/<TICKET-KEY>-<slug>/story.md`
    skeleton (created from `templates/story/story.md`).
 4. Fill in `story.md`:
    - `title:` from the ticket
@@ -59,7 +62,7 @@ You'll also need:
 After completing, summarize in chat:
 
 ```markdown
-✅ Story scaffolded: stories/<TICKET-KEY>-<slug>/
+✅ Story scaffolded: teams/<active>/stories/<TICKET-KEY>-<slug>/
 
 Status: in-progress
 AC audit: <done | pending — N questions for dev/PO>

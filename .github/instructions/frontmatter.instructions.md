@@ -56,7 +56,7 @@ id: TC-AUTH-001                # TC-<AREA>-<NNN>
 area: auth | billing | search | ...
 coverage: positive | negative | edge | integration | regression
 status: draft | reviewed | active | deprecated
-automation_status: manual | automated | not-feasible
+automation_status: auto-soon | auto-eventually | automated | manual-only | not-feasible
 automation_path: ../../<automation-repo>/tests/...   # descriptive
 linked_stories: [TEAM-1234]
 ```

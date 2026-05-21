@@ -1,6 +1,6 @@
 ---
 description: Peer-review one or more test cases against a five-dimension rubric and draft paste-ready comments
-mode: edit
+agent: agent
 ---
 
 # Test case reviewer

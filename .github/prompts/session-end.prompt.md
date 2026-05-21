@@ -1,6 +1,6 @@
 ---
 description: End-of-day wrap — append journal entry, update TODOs, surface dirty files
-mode: edit
+agent: agent
 ---
 
 # Session end
@@ -17,8 +17,9 @@ has a clean slate to read.
 3. [../../TODO.md](../../TODO.md) — to update.
 4. Output of `git status --short` (ask the user to paste, or
    suggest they run it) — to surface dirty files.
-5. [../../inbox/INBOX.md](../../inbox/INBOX.md) — to triage if
-   anything was added today.
+5. `teams/<active>/inbox/INBOX.md` for each active team (read
+   `teams/active-team.txt` for the list) — to triage if anything
+   was added today.
 
 ## Process
 

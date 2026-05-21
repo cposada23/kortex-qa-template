@@ -1,6 +1,6 @@
 ---
 description: Capture a sprint planning meeting into a structured ceremony note + scaffold QA action items
-mode: edit
+agent: agent
 ---
 
 # Sprint planning intake

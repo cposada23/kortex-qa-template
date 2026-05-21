@@ -284,7 +284,9 @@ async function main() {
     if (strictPII) {
       process.exit(1);
     }
-    process.exit(2);
+    // Warnings only — exit 0 so the pre-commit hook does not block.
+    // The output is still surfaced to the engineer for review.
+    return;
   }
   process.stdout.write(`✓ ${files.length} file(s) validated, no issues.\n`);
 }

@@ -1,6 +1,6 @@
 ---
 description: Translate a manual test case into a Playwright skeleton (UI or API) with selector TODOs
-mode: ask
+agent: ask
 ---
 
 # Automation from test case

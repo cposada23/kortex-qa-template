@@ -5,7 +5,7 @@ id: {{ID}}
 area: {{AREA}}
 coverage: positive
 status: draft
-automation_status: manual
+automation_status: manual-only
 automation_path: "../../<automation-repo>/tests/{{AREA}}/{{SLUG}}.spec.ts"
 linked_stories: []
 language: en

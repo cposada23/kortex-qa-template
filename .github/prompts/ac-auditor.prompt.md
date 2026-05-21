@@ -1,6 +1,6 @@
 ---
 description: Audit AC quality and draft Teams-ready questions for dev/PO
-mode: ask
+agent: ask
 ---
 
 # AC auditor
@@ -23,8 +23,8 @@ The acceptance criteria of a story. Either:
 
 - Paste from the engineer.
 - Read from
-  `stories/<TICKET-KEY>-<slug>/story.md` → `## Acceptance
-  criteria`.
+  `teams/<active>/stories/<TICKET-KEY>-<slug>/story.md` →
+  `## Acceptance criteria`.
 
 ## Process
 
@@ -55,9 +55,9 @@ Each finding gets:
 ## Output
 
 Write the audit into
-`stories/<TICKET-KEY>-<slug>/ac-audit.md` (overwrite or
-extend — if the file already has content from a prior run, add a
-new dated section rather than replacing).
+`teams/<active>/stories/<TICKET-KEY>-<slug>/ac-audit.md` (overwrite
+or extend — if the file already has content from a prior run, add
+a new dated section rather than replacing).
 
 Structure:
 

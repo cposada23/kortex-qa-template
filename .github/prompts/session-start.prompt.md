@@ -1,6 +1,6 @@
 ---
 description: Morning ritual — surface what's active, blocked, and today's likely focus
-mode: ask
+agent: ask
 ---
 
 # Session start
@@ -16,13 +16,15 @@ Read the following files in this order:
 
 1. [../../TODO.md](../../TODO.md) — active TODOs
 2. [../../JOURNAL.md](../../JOURNAL.md) — most recent 1–3 entries
-3. [../../stories/INDEX.md](../../stories/INDEX.md) — the story
-   roster
-4. Any `stories/*/story.md` with `status: in-progress` or
-   `status: blocked` — read the frontmatter and any "Notes"
+3. [../../teams/active-team.txt](../../teams/active-team.txt) —
+   identify the active team(s) (line 1 = primary)
+4. `teams/<active>/stories/INDEX.md` for each active team — the
+   story roster scoped to that team
+5. Any `teams/<active>/stories/*/story.md` with `status: in-progress`
+   or `status: blocked` — read the frontmatter and any "Notes"
    section
-5. [../../inbox/INBOX.md](../../inbox/INBOX.md) — last few items
-   if any, to surface unprocessed observations
+6. `teams/<active>/inbox/INBOX.md` for each active team — last
+   few items, to surface unprocessed observations
 
 ## Process
 
@@ -120,6 +122,6 @@ _(none)_
 
 ## Suggested first action
 
-Open `stories/TEAM-1234-search-filter-empty-input/ac-audit.md`
+Open `teams/<active>/stories/TEAM-1234-search-filter-empty-input/ac-audit.md`
 and invoke `/ac-auditor` against the AC.
 ```

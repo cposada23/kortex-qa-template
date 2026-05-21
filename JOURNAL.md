@@ -88,3 +88,26 @@ DECISIONS:
 BLOCKERS: none.
 
 READINESS: still green. v1.4.0 closes two structural gaps (history hygiene + AI cred protection) that v1.3.0 punted on. Watch items unchanged from v1.3.0.
+
+## 2026-05-21 15:50 — v1.5.0 Codex audit pass
+
+STATE: Owner ran a Codex audit on top of v1.4.0. Codex scored 8.7/10 and found drift / behavior bugs that Gemini's earlier audit missed. Codex's 6 claims verified individually, 6/6 confirmed real; one Copilot schema deprecation the IDE itself flagged (`mode:` → `agent:` rename).
+
+DID:
+- **Copilot prompt schema sync.** Renamed `mode:` → `agent:` in all 12 `.github/prompts/*.prompt.md` files. Per VS Code official docs (verified via WebFetch), `mode` is no longer documented; the field is `agent` with values `ask | agent | plan | <custom-agent-name>`. Mapped `mode: ask` → `agent: ask`, `mode: edit` → `agent: agent` (writes files), `mode: agent` → `agent: agent`. The IDE warning the owner saw will now disappear.
+- **Path drift sweep in prompts.** 13 references to pre-team-centric paths (`stories/INDEX.md`, `bugs/`, `test-cases/library/`, `inbox/INBOX.md`, `environments/users.md`) across 7 prompts (`session-start`, `session-end`, `story-intake`, `story-analyzer`, `ac-auditor`, `test-case-design`, `bug-report-formatter`, `question-generator`) corrected to `teams/<active>/...`. The v1.2.2 sync covered `copilot-instructions.md` but missed the prompt bodies — this pass closes that gap.
+- **build-index --check is now truly read-only.** Added `checkOnly` parameter to `buildIndexForZone` and `buildTeamsIndex`. In check mode, no `fs.writeFile` is called; instead returns `would-update` / `would-create` status. Main loop renders these with `✓` / `+` markers and exits 1 if any zone reports drift. Smoke-verified in /tmp sandbox: induced drift was reported as `would-update`, exit 1, `git diff` baseline confirmed INDEX.md untouched. Old behavior wrote then failed, leaving unstaged changes in the working tree after a blocked commit — confusing and required `git add -A` again to retry.
+- **validate.mjs PII exit code reconciled.** Old code: `exit(2)` on PII warnings without `--strict-pii`. Combined with `set -e` in the pre-commit hook, any PII-shaped pattern (credit-card-shaped digit density, JWT-shaped tokens) blocked the commit despite the docstring saying warnings don't fail. New code: `return` (exit 0) so the hook does not block on heuristic false positives. Schema errors still hard-block. `--strict-pii` still exits 1 when the engineer opts into stricter mode for a critical commit.
+- **automation_status vocab unified.** Frontmatter instructions said `manual | automated | not-feasible`; playbooks and prompts said `auto-soon | auto-eventually | automated | manual-only`. Canonical vocab now `auto-soon | auto-eventually | automated | manual-only | not-feasible` — superset that captures intent-to-automate states the original 3-value enum missed. Updated: `.github/instructions/frontmatter.instructions.md`, `templates/test-case-library.md`, example-team test case (`tc-team-example-001-01-filter-by-date-range.md` → `manual-only`), `.github/prompts/test-case-design.prompt.md` (initial value guidance updated).
+- **README header version sync.** Was stuck at v1.2.0; now reflects v1.5.0 with the layered summary of what shipped today. Versioning section extended.
+- VERSION 1.4.0 → 1.5.0.
+
+DECISIONS:
+- `mode: edit` → `agent: agent` mapping: the new `agent` field has values `ask | agent | plan | <name>`. The closest match for "write a file" is `agent` (the catchall) since `edit` is no longer a valid value. The semantic ("writes to disk") survives.
+- `manual` → `manual-only` migration on existing files: kept the example-team test case correct under new vocab. No backward compat shim needed — single-user template, no downstream consumers.
+- PII fix direction (exit 0 instead of "don't run hook on PII"): owner's stance is "no creds in tracked .md", so PII heuristic is signal worth surfacing. Just shouldn't block on the noisy false positives (timestamp strings that look credit-card-shaped, hashes that look JWT-shaped). `--strict-pii` is the escape hatch for the engineer who wants the harder gate.
+- Skipped two of Codex's recommendations: type-specific field validation in validate.mjs (priority/coverage/severity/automation_status) — broader refactor than scope of this pass, defer; per-prompt linter for path drift — addressed manually here, future passes will be caught by reading the prompts during edit.
+
+BLOCKERS: none.
+
+READINESS: still green. v1.5.0 closes the drift / behavior gaps Codex found. The template is now self-consistent: schema docs match scripts match prompts match example team. Smoke + dogfood: this commit will be validated by the pre-commit hook itself.

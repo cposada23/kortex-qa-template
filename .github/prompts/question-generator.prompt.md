@@ -1,6 +1,6 @@
 ---
 description: Generate paste-ready dev/PO questions from arbitrary input (design doc, verbal clarification, mockup, code dump) — not just AC
-mode: ask
+agent: ask
 ---
 
 # Question generator
@@ -18,7 +18,7 @@ before drafting.
 - `/ac-auditor` is the right tool when the input is **the
   acceptance criteria of a story**. It produces a full audit
   trail + categorized findings + questions, and lands in
-  `stories/<TICKET>/ac-audit.md`.
+  `teams/<active>/stories/<TICKET>/ac-audit.md`.
 - `/question-generator` is the right tool when the input is
   **anything else**: a Figma description, a design doc, a
   Slack thread, a verbal conversation summary, a code snippet, a

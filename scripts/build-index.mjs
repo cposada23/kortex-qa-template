@@ -97,7 +97,7 @@ async function walkMdFiles(dir, baseDir) {
   return result;
 }
 
-async function buildIndexForZone(zoneRelPath) {
+async function buildIndexForZone(zoneRelPath, { checkOnly = false } = {}) {
   const zoneDir = path.join(REPO_ROOT, zoneRelPath);
   const indexPath = path.join(zoneDir, 'INDEX.md');
   const zoneName = path.basename(zoneRelPath);
@@ -139,27 +139,40 @@ async function buildIndexForZone(zoneRelPath) {
 
   // Read existing INDEX.md, replace block contents
   let existing = '';
+  let indexExisted = true;
   try {
     existing = await fs.readFile(indexPath, 'utf8');
   } catch {
-    // No INDEX.md yet — create a minimal one
+    // No INDEX.md yet — the scaffold (or check mode) needs a baseline
+    indexExisted = false;
     existing = `# ${zoneName}/ — INDEX\n\nAuto-generated. Run \`node scripts/build-index.mjs\` to refresh.\n\n${BLOCK_START}\n${BLOCK_END}\n`;
   }
 
   const startIdx = existing.indexOf(BLOCK_START);
   const endIdx = existing.indexOf(BLOCK_END);
   if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
-    return { zone: zoneName, status: 'malformed-markers' };
+    return { zone: zoneRelPath, status: 'malformed-markers' };
   }
 
   const before = existing.slice(0, startIdx + BLOCK_START.length);
   const after = existing.slice(endIdx);
   const newContent = `${before}\n\n${generated}\n\n${after}`;
 
-  // Idempotent: write only if changed
-  if (newContent === existing) {
+  // Idempotent: needs-write only if changed, OR INDEX.md missing.
+  const needsWrite = !indexExisted || newContent !== existing;
+  if (!needsWrite) {
     return { zone: zoneRelPath, status: 'no-change', count: entries.length };
   }
+
+  // Check-only mode: do not touch the filesystem. Report drift instead.
+  if (checkOnly) {
+    return {
+      zone: zoneRelPath,
+      status: indexExisted ? 'would-update' : 'would-create',
+      count: entries.length,
+    };
+  }
+
   await fs.writeFile(indexPath, newContent);
   return { zone: zoneRelPath, status: 'updated', count: entries.length };
 }
@@ -181,7 +194,7 @@ async function listTeams() {
 }
 
 // Build the teams/INDEX.md from the active-team.txt and the list of all teams.
-async function buildTeamsIndex() {
+async function buildTeamsIndex({ checkOnly = false } = {}) {
   const teamsDir = path.join(REPO_ROOT, 'teams');
   const indexPath = path.join(teamsDir, 'INDEX.md');
   try {
@@ -223,9 +236,11 @@ async function buildTeamsIndex() {
 
   // Read existing, replace block
   let existing = '';
+  let indexExisted = true;
   try {
     existing = await fs.readFile(indexPath, 'utf8');
   } catch {
+    indexExisted = false;
     existing = `# teams/ — INDEX\n\nAuto-generated. Run \`node scripts/build-index.mjs\` to refresh.\n\n${BLOCK_START}\n${BLOCK_END}\n`;
   }
 
@@ -237,8 +252,16 @@ async function buildTeamsIndex() {
   const before = existing.slice(0, startIdx + BLOCK_START.length);
   const after = existing.slice(endIdx);
   const newContent = `${before}\n\n${activeBlock}${allBlock}\n${after}`;
-  if (newContent === existing) {
+  const needsWrite = !indexExisted || newContent !== existing;
+  if (!needsWrite) {
     return { zone: 'teams', status: 'no-change', count: allTeams.length };
+  }
+  if (checkOnly) {
+    return {
+      zone: 'teams',
+      status: indexExisted ? 'would-update' : 'would-create',
+      count: allTeams.length,
+    };
   }
   await fs.writeFile(indexPath, newContent);
   return { zone: 'teams', status: 'updated', count: allTeams.length };
@@ -276,20 +299,21 @@ async function main() {
   const results = [];
   for (const zone of zonesToRun) {
     if (zone === 'teams') {
-      results.push(await buildTeamsIndex());
+      results.push(await buildTeamsIndex({ checkOnly: checkMode }));
     } else {
-      results.push(await buildIndexForZone(zone));
+      results.push(await buildIndexForZone(zone, { checkOnly: checkMode }));
     }
   }
 
   let hadChanges = false;
   for (const r of results) {
-    const tag = r.status === 'updated' ? '✓' :
+    const tag = r.status === 'updated' || r.status === 'would-update' ? '✓' :
+                r.status === 'would-create' ? '+' :
                 r.status === 'no-change' ? '·' :
                 r.status === 'missing-zone' ? '⊘' : '!';
     const detail = r.count != null ? `(${r.count} entries)` : '';
     process.stdout.write(`${tag} ${r.zone} ${detail} — ${r.status}\n`);
-    if (r.status === 'updated') hadChanges = true;
+    if (r.status === 'updated' || r.status === 'would-update' || r.status === 'would-create') hadChanges = true;
     if (r.status === 'malformed-markers') {
       process.stderr.write(`  → fix the markers in ${r.zone}/INDEX.md\n`);
       process.exitCode = 1;
@@ -297,7 +321,7 @@ async function main() {
   }
 
   if (checkMode && hadChanges) {
-    process.stderr.write('\nDrift detected (some INDEX.md files were stale).\n');
+    process.stderr.write('\nDrift detected (some INDEX.md files would be updated).\n');
     process.stderr.write('Run without --check to apply, then commit.\n');
     process.exit(1);
   }

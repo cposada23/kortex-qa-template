@@ -1,6 +1,6 @@
 ---
 description: Format a free-text defect observation into a Jira-ready bug report
-mode: edit
+agent: agent
 ---
 
 # Bug report formatter
@@ -27,11 +27,13 @@ Plus:
 
 ## Process
 
-1. Assign the next free `BUG-<NNN>` by checking existing files in
-   `bugs/`.
-2. Draft a tight summary line (≤ 80 chars), present tense, no
+1. Identify the active team (read `teams/active-team.txt` line 1
+   for primary; engineer can specify a different team).
+2. Assign the next free `BUG-<NNN>` by checking existing files in
+   `teams/<active>/bugs/`.
+3. Draft a tight summary line (≤ 80 chars), present tense, no
    periods.
-3. Convert the engineer's notes into a structured bug report:
+4. Convert the engineer's notes into a structured bug report:
    - Environment
    - Pre-conditions
    - Steps to reproduce (numbered, imperative, minimal)
@@ -40,13 +42,13 @@ Plus:
    - Severity (low | medium | high | critical) — propose, ask
      engineer to confirm
    - Workaround if known
-4. Identify what's *missing* and ask the engineer if it matters:
+5. Identify what's *missing* and ask the engineer if it matters:
    - Screenshot / video?
    - Console logs / network trace?
    - Affected user roles?
    - Browser / OS specifics?
-5. Write the bug file at
-   `bugs/BUG-<NNN>-<slug>.md`.
+6. Write the bug file at
+   `teams/<active>/bugs/BUG-<NNN>-<slug>.md`.
 
 ## Output — file
 

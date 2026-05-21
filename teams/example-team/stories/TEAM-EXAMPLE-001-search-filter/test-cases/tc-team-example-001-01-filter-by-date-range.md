@@ -5,7 +5,7 @@ id: TC-TEAM-EXAMPLE-001-01
 area: search
 coverage: positive
 status: reviewed
-automation_status: manual
+automation_status: manual-only
 automation_path: "../../<automation-repo>/tests/search/filter-by-date-range.spec.ts"
 linked_stories: [TEAM-EXAMPLE-001]
 language: en
