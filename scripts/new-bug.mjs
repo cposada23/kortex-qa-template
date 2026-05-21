@@ -19,8 +19,23 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 function usage() {
-  process.stderr.write('Usage: node scripts/new-bug.mjs <slug>\n');
+  process.stderr.write('Usage: node scripts/new-bug.mjs <slug> [--team <slug>]\n');
   process.stderr.write('Example: node scripts/new-bug.mjs search-empty-on-trailing-whitespace\n');
+}
+
+async function resolveTargetTeam(args) {
+  const flagIdx = args.indexOf('--team');
+  if (flagIdx !== -1) {
+    const slug = args[flagIdx + 1];
+    if (!slug) throw new Error('--team requires a slug argument');
+    return slug;
+  }
+  try {
+    const content = await fs.readFile(path.join(REPO_ROOT, 'teams', 'active-team.txt'), 'utf8');
+    const first = content.split('\n').map((s) => s.trim()).filter(Boolean)[0];
+    if (first) return first;
+  } catch {}
+  throw new Error('no team specified and teams/active-team.txt has no primary. Pass --team <slug> or run `node scripts/switch-team.mjs <slug>` first.');
 }
 
 function todayISO() {
@@ -52,7 +67,12 @@ async function nextBugId(bugsDir) {
 }
 
 async function main() {
-  const [slug] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const flagIdx = args.indexOf('--team');
+  const positionals = args.filter((a, i) =>
+    a !== '--team' && (flagIdx === -1 || i !== flagIdx + 1));
+  const [slug] = positionals;
+
   if (!slug) {
     usage();
     process.exit(1);
@@ -62,7 +82,22 @@ async function main() {
     process.exit(1);
   }
 
-  const bugsDir = path.join(REPO_ROOT, 'bugs');
+  let teamSlug;
+  try {
+    teamSlug = await resolveTargetTeam(args);
+  } catch (err) {
+    process.stderr.write(`error: ${err.message}\n`);
+    process.exit(1);
+  }
+  try {
+    await fs.access(path.join(REPO_ROOT, 'teams', teamSlug));
+  } catch {
+    process.stderr.write(`error: team folder not found: teams/${teamSlug}/\n`);
+    process.exit(1);
+  }
+
+  const bugsDir = path.join(REPO_ROOT, 'teams', teamSlug, 'bugs');
+  await fs.mkdir(bugsDir, { recursive: true });
   const seq = await nextBugId(bugsDir);
   const id = `BUG-${seq}`;
   const filename = `${id}-${slug}.md`;
@@ -70,7 +105,7 @@ async function main() {
 
   try {
     await fs.access(filePath);
-    process.stderr.write(`error: file already exists: bugs/${filename}\n`);
+    process.stderr.write(`error: file already exists: teams/${teamSlug}/bugs/${filename}\n`);
     process.exit(1);
   } catch {
     // Expected
@@ -94,10 +129,10 @@ async function main() {
   content = substitute(content, vars);
   await fs.writeFile(filePath, content);
 
-  process.stdout.write(`✓ Created bugs/${filename}\n`);
+  process.stdout.write(`✓ Created teams/${teamSlug}/bugs/${filename}\n`);
   process.stdout.write(`  ID: ${id}\n`);
 
-  const buildIdx = spawnSync('node', ['scripts/build-index.mjs', 'bugs'], {
+  const buildIdx = spawnSync('node', ['scripts/build-index.mjs', `teams/${teamSlug}/bugs`], {
     cwd: REPO_ROOT,
     stdio: 'inherit',
   });

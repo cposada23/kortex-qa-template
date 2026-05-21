@@ -1,6 +1,6 @@
 ---
 description: Automation meta-knowledge authoring rules
-applyTo: "automation/**/*.md"
+applyTo: "teams/**/automation/**/*.md"
 ---
 
 # Automation — meta-knowledge authoring

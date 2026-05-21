@@ -20,8 +20,23 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 function usage() {
-  process.stderr.write('Usage: node scripts/new-test-case.mjs <area> <slug>\n');
+  process.stderr.write('Usage: node scripts/new-test-case.mjs <area> <slug> [--team <slug>]\n');
   process.stderr.write('Example: node scripts/new-test-case.mjs auth login-locked-account\n');
+}
+
+async function resolveTargetTeam(args) {
+  const flagIdx = args.indexOf('--team');
+  if (flagIdx !== -1) {
+    const slug = args[flagIdx + 1];
+    if (!slug) throw new Error('--team requires a slug argument');
+    return slug;
+  }
+  try {
+    const content = await fs.readFile(path.join(REPO_ROOT, 'teams', 'active-team.txt'), 'utf8');
+    const first = content.split('\n').map((s) => s.trim()).filter(Boolean)[0];
+    if (first) return first;
+  } catch {}
+  throw new Error('no team specified and teams/active-team.txt has no primary. Pass --team <slug> or run `node scripts/switch-team.mjs <slug>` first.');
 }
 
 function todayISO() {
@@ -53,7 +68,12 @@ async function nextId(areaDir, areaUpper) {
 }
 
 async function main() {
-  const [area, slug] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const flagIdx = args.indexOf('--team');
+  const positionals = args.filter((a, i) =>
+    a !== '--team' && (flagIdx === -1 || i !== flagIdx + 1));
+  const [area, slug] = positionals;
+
   if (!area || !slug) {
     usage();
     process.exit(1);
@@ -67,7 +87,21 @@ async function main() {
     process.exit(1);
   }
 
-  const areaDir = path.join(REPO_ROOT, 'test-cases', 'library', area);
+  let teamSlug;
+  try {
+    teamSlug = await resolveTargetTeam(args);
+  } catch (err) {
+    process.stderr.write(`error: ${err.message}\n`);
+    process.exit(1);
+  }
+  try {
+    await fs.access(path.join(REPO_ROOT, 'teams', teamSlug));
+  } catch {
+    process.stderr.write(`error: team folder not found: teams/${teamSlug}/\n`);
+    process.exit(1);
+  }
+
+  const areaDir = path.join(REPO_ROOT, 'teams', teamSlug, 'test-cases', 'library', area);
   await fs.mkdir(areaDir, { recursive: true });
 
   const areaUpper = area.toUpperCase();
@@ -78,7 +112,7 @@ async function main() {
 
   try {
     await fs.access(filePath);
-    process.stderr.write(`error: file already exists: test-cases/library/${area}/${filename}\n`);
+    process.stderr.write(`error: file already exists: teams/${teamSlug}/test-cases/library/${area}/${filename}\n`);
     process.exit(1);
   } catch {
     // Expected
@@ -104,10 +138,10 @@ async function main() {
   content = substitute(content, vars);
   await fs.writeFile(filePath, content);
 
-  process.stdout.write(`✓ Created test-cases/library/${area}/${filename}\n`);
+  process.stdout.write(`✓ Created teams/${teamSlug}/test-cases/library/${area}/${filename}\n`);
   process.stdout.write(`  ID: ${id}\n`);
 
-  const buildIdx = spawnSync('node', ['scripts/build-index.mjs', 'test-cases'], {
+  const buildIdx = spawnSync('node', ['scripts/build-index.mjs', `teams/${teamSlug}/test-cases`], {
     cwd: REPO_ROOT,
     stdio: 'inherit',
   });

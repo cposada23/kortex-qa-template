@@ -1,21 +1,22 @@
 #!/usr/bin/env node
-// session-start.mjs — AI-free morning context dump.
+// session-start.mjs — AI-free morning context dump (team-scoped, v1.1).
 //
-// Reads the brain's current state and prints a one-screen summary
-// to stdout. This is the bash-side counterpart to the Copilot
-// /session-start prompt — useful when Copilot isn't available or
-// for a fast manual check.
+// By default, surfaces stories/bugs/inbox for ALL teams listed in
+// teams/active-team.txt (first line = primary). With --team <slug>
+// scopes to one team; with --all walks every team in the repo
+// regardless of active status.
 //
-// What it surfaces:
-//   - Active stories (status in-progress / blocked / design-done /
-//     review-done / execution-done)
-//   - Last few JOURNAL entries
-//   - Open TODO count
+// What it surfaces (per team):
+//   - Active stories (in-progress / blocked / design-done / etc.)
+//   - Stale stories (in-progress with no JOURNAL mention 3+ days)
 //   - Inbox count
-//   - Stale stories (in-progress with no JOURNAL mention in 3+ days)
+//
+// Cross-team: last JOURNAL entries (global), TODO count (global).
 //
 // Usage:
-//   node scripts/session-start.mjs
+//   node scripts/session-start.mjs                # default: all active teams
+//   node scripts/session-start.mjs --team <slug>  # scope to one team
+//   node scripts/session-start.mjs --all          # every team in repo
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -79,8 +80,9 @@ async function walkMdFiles(dir, baseDir = dir) {
   return result;
 }
 
-async function loadStories() {
-  const storiesDir = path.join(REPO_ROOT, 'stories');
+// Load stories for a single team folder.
+async function loadStoriesForTeam(teamSlug) {
+  const storiesDir = path.join(REPO_ROOT, 'teams', teamSlug, 'stories');
   const stories = [];
   let entries;
   try {
@@ -96,6 +98,7 @@ async function loadStories() {
       const fm = parseFrontmatter(content);
       if (fm) {
         stories.push({
+          team: teamSlug,
           folder: entry.name,
           title: fm.title || entry.name,
           status: fm.status || 'unknown',
@@ -108,6 +111,67 @@ async function loadStories() {
     }
   }
   return stories;
+}
+
+// Resolve which teams to scope to based on CLI args + active-team.txt.
+async function resolveTeams(args) {
+  const allFlag = args.includes('--all');
+  const teamFlagIdx = args.indexOf('--team');
+  const teamFlag = teamFlagIdx !== -1 ? args[teamFlagIdx + 1] : null;
+
+  // List all teams in repo (excluding _template-team)
+  const allTeams = [];
+  try {
+    const entries = await fs.readdir(path.join(REPO_ROOT, 'teams'), { withFileTypes: true });
+    for (const e of entries) {
+      if (e.isDirectory() && !e.name.startsWith('.') && e.name !== '_template-team') {
+        allTeams.push(e.name);
+      }
+    }
+  } catch {}
+
+  if (teamFlag) {
+    if (!allTeams.includes(teamFlag)) {
+      throw new Error(`Team '${teamFlag}' not found. Available: ${allTeams.join(', ') || '(none)'}`);
+    }
+    return [teamFlag];
+  }
+  if (allFlag) {
+    return allTeams;
+  }
+
+  // Default: read active-team.txt
+  let active = [];
+  try {
+    const content = await fs.readFile(path.join(REPO_ROOT, 'teams', 'active-team.txt'), 'utf8');
+    active = content.split('\n').map((s) => s.trim()).filter(Boolean);
+  } catch {}
+
+  // Filter to only existing teams
+  active = active.filter((slug) => allTeams.includes(slug));
+
+  // If no active teams configured, fall back to all (better than empty output)
+  return active.length ? active : allTeams;
+}
+
+// Count inbox items for a team
+async function countTeamInbox(teamSlug) {
+  const inboxDir = path.join(REPO_ROOT, 'teams', teamSlug, 'inbox');
+  let count = 0;
+  try {
+    const entries = await fs.readdir(inboxDir, { withFileTypes: true });
+    count = entries.filter((e) =>
+      e.isFile() && e.name.endsWith('.md') &&
+      !['README.md', 'INBOX.md'].includes(e.name),
+    ).length;
+    // Count dated entries inside INBOX.md
+    try {
+      const inboxContent = await fs.readFile(path.join(inboxDir, 'INBOX.md'), 'utf8');
+      const dates = inboxContent.match(/^## \d{4}-\d{2}-\d{2}/gm) || [];
+      count += dates.length;
+    } catch {}
+  } catch {}
+  return count;
 }
 
 async function readLastJournalEntries(n = 3) {
@@ -134,24 +198,8 @@ async function countTodoItems() {
   }
 }
 
-async function countInboxItems() {
-  const inboxDir = path.join(REPO_ROOT, 'inbox');
-  const files = await walkMdFiles(inboxDir);
-  // Exclude README.md and the catch-all INBOX.md count itself
-  // but count entries inside INBOX.md
-  let count = files.filter(
-    (f) => !['README.md', 'INBOX.md'].includes(path.basename(f)),
-  ).length;
-  // Count dated entries inside INBOX.md
-  try {
-    const inboxContent = await fs.readFile(path.join(inboxDir, 'INBOX.md'), 'utf8');
-    const dates = inboxContent.match(/^## \d{4}-\d{2}-\d{2}/gm) || [];
-    count += dates.length;
-  } catch {
-    // INBOX.md missing — OK
-  }
-  return count;
-}
+// (Inbox count moved to countTeamInbox above — global root inbox/
+// was dropped in v1.1; inbox is now per-team.)
 
 function daysSince(dateStr) {
   if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return Infinity;
@@ -161,54 +209,74 @@ function daysSince(dateStr) {
 }
 
 async function main() {
-  const stories = await loadStories();
-  const journal = await readLastJournalEntries(3);
-  const todo = await countTodoItems();
-  const inboxCount = await countInboxItems();
-
-  const byStatus = {};
-  for (const s of stories) {
-    byStatus[s.status] = byStatus[s.status] || [];
-    byStatus[s.status].push(s);
+  const args = process.argv.slice(2);
+  let teams;
+  try {
+    teams = await resolveTeams(args);
+  } catch (err) {
+    process.stderr.write(`error: ${err.message}\n`);
+    process.exit(1);
   }
 
-  const stale = (byStatus['in-progress'] || []).filter(
-    (s) => daysSince(s.updated) > 3,
-  );
+  if (teams.length === 0) {
+    process.stderr.write('No teams found. Run `node scripts/new-team.mjs <slug>` to create one.\n');
+    process.exit(1);
+  }
+
+  const journal = await readLastJournalEntries(3);
+  const todo = await countTodoItems();
 
   process.stdout.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   process.stdout.write(`  Kortex-QA — Session start (${new Date().toISOString().slice(0, 16).replace('T', ' ')})\n`);
+  process.stdout.write(`  Scope: ${teams.length === 1 ? teams[0] : teams.join(' + ')}\n`);
   process.stdout.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
-  // Active stories
-  for (const status of ['in-progress', 'blocked', 'design-done',
-                        'review-done', 'execution-done']) {
-    const items = byStatus[status] || [];
-    if (!items.length) continue;
-    process.stdout.write(`▸ ${status.toUpperCase()} (${items.length})\n`);
-    for (const s of items) {
-      process.stdout.write(`    ${s.ticket} — ${s.title}\n`);
-      process.stdout.write(`      stories/${s.folder}/  (updated ${s.updated})\n`);
+  for (const team of teams) {
+    const stories = await loadStoriesForTeam(team);
+    const inboxCount = await countTeamInbox(team);
+
+    const byStatus = {};
+    for (const s of stories) {
+      byStatus[s.status] = byStatus[s.status] || [];
+      byStatus[s.status].push(s);
     }
-    process.stdout.write('\n');
+    const stale = (byStatus['in-progress'] || []).filter(
+      (s) => daysSince(s.updated) > 3,
+    );
+
+    process.stdout.write(`━━━ TEAM: ${team} ━━━\n\n`);
+
+    let totalActive = 0;
+    for (const status of ['in-progress', 'blocked', 'design-done',
+                          'review-done', 'execution-done']) {
+      const items = byStatus[status] || [];
+      if (!items.length) continue;
+      totalActive += items.length;
+      process.stdout.write(`▸ ${status.toUpperCase()} (${items.length})\n`);
+      for (const s of items) {
+        process.stdout.write(`    ${s.ticket} — ${s.title}\n`);
+        process.stdout.write(`      teams/${team}/stories/${s.folder}/  (updated ${s.updated})\n`);
+      }
+      process.stdout.write('\n');
+    }
+    if (totalActive === 0) {
+      process.stdout.write('▸ (no stories in active states)\n\n');
+    }
+
+    if (stale.length) {
+      process.stdout.write(`⚠  STALE (in-progress, no update in 3+ days):\n`);
+      for (const s of stale) {
+        process.stdout.write(`    ${s.ticket} — last touched ${s.updated} (${daysSince(s.updated)} days ago)\n`);
+      }
+      process.stdout.write('\n');
+    }
+
+    process.stdout.write(`▸ INBOX (${team}): ${inboxCount} item(s)\n\n`);
   }
 
-  // Stale callout
-  if (stale.length) {
-    process.stdout.write(`⚠  STALE (in-progress, no JOURNAL mention in 3+ days):\n`);
-    for (const s of stale) {
-      process.stdout.write(`    ${s.ticket} — last touched ${s.updated} (${daysSince(s.updated)} days ago)\n`);
-    }
-    process.stdout.write('\n');
-  }
-
-  // TODO
+  // Global summary
+  process.stdout.write('━━━ GLOBAL ━━━\n\n');
   process.stdout.write(`▸ TODO: ${todo.active} open\n\n`);
-
-  // Inbox
-  process.stdout.write(`▸ INBOX: ${inboxCount} item(s)\n\n`);
-
-  // Last journal entry (just the header line)
   if (journal.length) {
     const lastHeader = journal[0].split('\n')[0];
     const lastNextLine = (journal[0].match(/^NEXT: .+$/m) || ['NEXT: (none)'])[0];

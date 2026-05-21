@@ -1,6 +1,6 @@
 ---
 description: Test case shape and quality rules
-applyTo: "stories/**/test-cases/**/*.md, test-cases/**/*.md"
+applyTo: "teams/**/stories/**/test-cases/**/*.md, teams/**/test-cases/**/*.md"
 ---
 
 # Test cases — authoring rules

@@ -78,29 +78,43 @@ Weekly: `node scripts/snapshot.mjs` to ZIP the brain to
 
 ---
 
-## Architecture overview
+## Architecture overview — team-centric (v1.1)
 
-Ten zones. Read [AGENTS.md](AGENTS.md) for the full breakdown.
+Read [AGENTS.md](AGENTS.md) for the full breakdown.
 
-### Active work zones
+### Team-scoped content (`teams/<slug>/`)
+
+Each team you belong to (or rotate through) gets its own folder
+containing **everything team-specific**: stories, test cases,
+bugs, peer reviews, ceremony notes, environments, automation
+patterns, members, workflow, deploy procedures, and a team-scoped
+inbox.
+
+| Sub-zone | Purpose |
+|---|---|
+| `stories/` | One folder per Jira ticket (this team's). |
+| `test-cases/library/` | Reusable test cases for this team's SUT. |
+| `bugs/` | Bug registry for this team. |
+| `reviews/` | Your peer reviews of this team's test cases. |
+| `ceremonies/` | This team's meeting notes. |
+| `environments/` | This team's local / dev / qa setup. |
+| `automation/` | This team's Playwright patterns. |
+| `inbox/` | This team's free-form captures. |
+| `members.md`, `workflow.md`, `deploy.md`, `ceremonies-info.md` | Team-level meta files. |
+
+Plus `teams/active-team.txt` (currently active team slug(s);
+first line = primary) and `teams/_template-team/` (empty scaffold
+copied by `node scripts/new-team.mjs <slug>`).
+
+### Global zones (cross-team)
 
 | Zone | Purpose |
 |---|---|
-| `stories/` | One folder per Jira ticket. The unit of work. |
-| `test-cases/` | Reusable test cases, decoupled from any one story. |
-| `automation/` | Playwright patterns, page objects, fixtures (meta). |
-| `bugs/` | Bug registry. Linked from stories. |
-| `reviews/` | Peer reviews on others' test cases. |
-| `inbox/` | Friction-free dump. Routed end-of-day. |
-
-### Supporting zones
-
-| Zone | Purpose |
-|---|---|
-| `team/` | Members, ceremonies, workflow, deploy procedures. |
-| `environments/` | Local Docker, dev, QA setup; test users; filters. |
-| `ceremonies/` | Sprint planning, dailies, reviews, retros. |
-| `knowledge/` | Distilled lessons. **The only portable zone.** |
+| `knowledge/` | Distilled lessons. **The only portable zone** — must be sanitized before traveling across teams or clients. |
+| `playbooks/` | Long-form workflow docs (session-start/end, story-intake, day-in-the-life, etc.) |
+| `scripts/` | Node.js tooling (zero-deps). |
+| `templates/` | Source files for scaffolds. |
+| `.github/` | Copilot wiring. |
 
 ### Top-level files
 

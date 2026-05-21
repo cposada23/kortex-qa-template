@@ -22,14 +22,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
-const ZONES = [
+// v1.1 — team-centric. Zones live inside teams/<slug>/. The walker
+// discovers every team in teams/ (excluding _template-team and dotfiles)
+// and indexes the team-scoped sub-zones, plus the global knowledge/
+// zone, plus the top-level teams/INDEX.md listing all teams.
+const TEAM_SUB_ZONES = [
   'stories',
   'test-cases',
   'automation',
   'bugs',
   'reviews',
-  'knowledge',
 ];
+const GLOBAL_ZONES = ['knowledge'];
 
 const SKIP_FILENAMES = new Set([
   'INDEX.md', 'README.md', 'AGENTS.md', 'INBOX.md',
@@ -93,15 +97,15 @@ async function walkMdFiles(dir, baseDir) {
   return result;
 }
 
-async function buildIndexForZone(zoneName) {
-  const zoneDir = path.join(REPO_ROOT, zoneName);
+async function buildIndexForZone(zoneRelPath) {
+  const zoneDir = path.join(REPO_ROOT, zoneRelPath);
   const indexPath = path.join(zoneDir, 'INDEX.md');
 
   // Confirm zone exists
   try {
     await fs.access(zoneDir);
   } catch {
-    return { zone: zoneName, status: 'missing-zone' };
+    return { zone: zoneRelPath, status: 'missing-zone' };
   }
 
   // Find all .md files in zone (recursively)
@@ -153,10 +157,90 @@ async function buildIndexForZone(zoneName) {
 
   // Idempotent: write only if changed
   if (newContent === existing) {
-    return { zone: zoneName, status: 'no-change', count: entries.length };
+    return { zone: zoneRelPath, status: 'no-change', count: entries.length };
   }
   await fs.writeFile(indexPath, newContent);
-  return { zone: zoneName, status: 'updated', count: entries.length };
+  return { zone: zoneRelPath, status: 'updated', count: entries.length };
+}
+
+// List every team folder under teams/, excluding _template-team and dotfiles.
+async function listTeams() {
+  const teamsDir = path.join(REPO_ROOT, 'teams');
+  try {
+    const entries = await fs.readdir(teamsDir, { withFileTypes: true });
+    return entries
+      .filter((e) => e.isDirectory())
+      .filter((e) => !e.name.startsWith('.'))
+      .filter((e) => e.name !== '_template-team')
+      .map((e) => e.name)
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+// Build the teams/INDEX.md from the active-team.txt and the list of all teams.
+async function buildTeamsIndex() {
+  const teamsDir = path.join(REPO_ROOT, 'teams');
+  const indexPath = path.join(teamsDir, 'INDEX.md');
+  try {
+    await fs.access(teamsDir);
+  } catch {
+    return { zone: 'teams', status: 'missing-zone' };
+  }
+
+  // Read active-team.txt
+  let activeLines = [];
+  try {
+    const active = await fs.readFile(path.join(teamsDir, 'active-team.txt'), 'utf8');
+    activeLines = active.split('\n').map((s) => s.trim()).filter(Boolean);
+  } catch {}
+
+  const allTeams = await listTeams();
+
+  let activeBlock = '## Active teams\n\n';
+  if (activeLines.length === 0) {
+    activeBlock += '_(no team marked active — run `node scripts/switch-team.mjs <slug>` to set primary)_\n';
+  } else {
+    activeLines.forEach((slug, i) => {
+      const label = i === 0 ? ' _(primary)_' : ' _(also active)_';
+      const exists = allTeams.includes(slug);
+      const note = exists ? '' : ' ⚠ NOT FOUND in teams/';
+      activeBlock += `- **${slug}**${label}${note} — see [${slug}/](${slug}/)\n`;
+    });
+  }
+
+  let allBlock = '\n## All teams in this repo\n\n';
+  if (allTeams.length === 0) {
+    allBlock += '_(no teams yet — run `node scripts/new-team.mjs <slug>` to create one)_\n';
+  } else {
+    for (const slug of allTeams) {
+      allBlock += `- **[${slug}/README.md](${slug}/README.md)** — \`${slug}\`\n`;
+    }
+    allBlock += `- **[_template-team/README.md](_template-team/README.md)** — empty scaffold (do not edit; copied by new-team.mjs)\n`;
+  }
+
+  // Read existing, replace block
+  let existing = '';
+  try {
+    existing = await fs.readFile(indexPath, 'utf8');
+  } catch {
+    existing = `# teams/ — INDEX\n\nAuto-generated. Run \`node scripts/build-index.mjs\` to refresh.\n\n${BLOCK_START}\n${BLOCK_END}\n`;
+  }
+
+  const startIdx = existing.indexOf(BLOCK_START);
+  const endIdx = existing.indexOf(BLOCK_END);
+  if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+    return { zone: 'teams', status: 'malformed-markers' };
+  }
+  const before = existing.slice(0, startIdx + BLOCK_START.length);
+  const after = existing.slice(endIdx);
+  const newContent = `${before}\n\n${activeBlock}${allBlock}\n${after}`;
+  if (newContent === existing) {
+    return { zone: 'teams', status: 'no-change', count: allTeams.length };
+  }
+  await fs.writeFile(indexPath, newContent);
+  return { zone: 'teams', status: 'updated', count: allTeams.length };
 }
 
 async function main() {
@@ -164,11 +248,37 @@ async function main() {
   const checkMode = args.includes('--check');
   const zoneArg = args.find((a) => !a.startsWith('--'));
 
-  const zones = zoneArg ? [zoneArg] : ZONES;
+  const teams = await listTeams();
+  const allZones = [];
+
+  // teams/INDEX.md (top-level listing)
+  allZones.push('teams');
+
+  // Each team's own INDEX.md + its sub-zones
+  for (const slug of teams) {
+    allZones.push(`teams/${slug}`);
+    for (const sub of TEAM_SUB_ZONES) {
+      allZones.push(`teams/${slug}/${sub}`);
+    }
+  }
+
+  // Global zones (currently just knowledge/)
+  for (const z of GLOBAL_ZONES) {
+    allZones.push(z);
+  }
+
+  // If a specific zone was passed (e.g. `teams/example-team/stories`), filter
+  const zonesToRun = zoneArg
+    ? allZones.filter((z) => z === zoneArg || z.startsWith(zoneArg + '/'))
+    : allZones;
 
   const results = [];
-  for (const zone of zones) {
-    results.push(await buildIndexForZone(zone));
+  for (const zone of zonesToRun) {
+    if (zone === 'teams') {
+      results.push(await buildTeamsIndex());
+    } else {
+      results.push(await buildIndexForZone(zone));
+    }
   }
 
   let hadChanges = false;

@@ -1,6 +1,6 @@
 ---
 description: Tone and content rules for files destined for external eyes
-applyTo: "stories/**/questions.md, bugs/**/*.md, reviews/**/*.md"
+applyTo: "teams/**/stories/**/questions.md, teams/**/bugs/**/*.md, teams/**/reviews/**/*.md"
 ---
 
 # External communication — content rules

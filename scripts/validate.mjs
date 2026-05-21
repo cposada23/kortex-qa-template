@@ -124,6 +124,15 @@ async function walkMdFiles(dir, baseDir = dir) {
 // explains the pattern), prefix the line with `<!-- pii-ok -->` or
 // place the file outside the validated scope.
 const PII_PATTERNS = [
+  // High-signal, low-false-positive provider keys go first (cheap to fail-fast)
+  { name: 'aws-access-key', re: /\bAKIA[0-9A-Z]{16}\b/ },
+  { name: 'github-pat', re: /\bgh[pousr]_[A-Za-z0-9]{36,}\b/ },
+  { name: 'stripe-live-key', re: /\b(?:sk|pk|rk)_live_[A-Za-z0-9]{20,}\b/ },
+  { name: 'stripe-test-key', re: /\b(?:sk|pk|rk)_test_[A-Za-z0-9]{20,}\b/ },
+  { name: 'openai-key', re: /\bsk-[A-Za-z0-9]{20,}\b/ },
+  // Connection strings with credentials
+  { name: 'url-with-credentials', re: /\b[a-z][a-z0-9+]*:\/\/[^\s:/@]+:[^\s/@]+@[^\s\/?#]+/i },
+  // Classic PII
   { name: 'credit-card-shaped', re: /\b(?:\d[ -]?){13,19}\b/ },
   { name: 'ssn-shaped (US)', re: /\b\d{3}-\d{2}-\d{4}\b/ },
   // Skip 0.x and 127.x in env files (test fixtures) by not requiring it,
@@ -146,11 +155,30 @@ const PII_PATTERNS = [
 // users.
 const PLACEHOLDER_RE = /<[^>]+>|\{\{[^}]+\}\}|YYYY-MM-DD|qa\+|example\.client\.internal|placeholder/i;
 
+// Per-line suppressions:
+//   <!-- pii-ok -->                  — suppress this single line
+//   <!-- pii:ignore-block -->        — start a block of suppressed lines
+//   <!-- pii:resume -->              — end the block (PII scan resumes)
+//
+// Block suppression is for legitimate dummy-data sections in test
+// cases (curl examples with example tokens, postgres URLs in
+// environments docs, etc.). Use sparingly — the validator is meant
+// to be loud.
 function scanPII(content) {
   const findings = [];
   const lines = content.split('\n');
+  let inIgnoreBlock = false;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (line.includes('<!-- pii:ignore-block -->')) {
+      inIgnoreBlock = true;
+      continue;
+    }
+    if (line.includes('<!-- pii:resume -->')) {
+      inIgnoreBlock = false;
+      continue;
+    }
+    if (inIgnoreBlock) continue;
     if (line.includes('<!-- pii-ok -->') || line.includes('pii-ok:')) continue;
     if (PLACEHOLDER_RE.test(line)) continue;
     for (const { name, re } of PII_PATTERNS) {

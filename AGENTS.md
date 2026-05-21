@@ -51,37 +51,63 @@ The brain is **not**:
 
 ---
 
-## Architecture — ten zones
+## Architecture — team-centric (v1.1)
 
-Six **active work zones** (touched daily) and four **supporting
-zones** (rare edits, surfaced when needed).
+The brain is organized around **teams**. You may belong to one team
+or to multiple teams concurrently (or rotate across teams over
+time). The architecture supports all three.
 
-### Active
+### `teams/<slug>/` — team-scoped content
 
-```
-stories/      WORK ZONE         One folder per Jira ticket.
-test-cases/   LIBRARY ZONE      Reusable test cases.
-automation/   AUTOMATION ZONE   Playwright patterns, page objects.
-bugs/         BUG ZONE          Bug registry, linked from stories.
-reviews/      REVIEW ZONE       Peer reviews of others' test cases.
-inbox/        CAPTURE ZONE      Friction-free dump, routed daily.
-```
-
-### Supporting
+Each team gets one folder containing **everything team-specific**:
 
 ```
-team/         CONTEXT ZONE      Who, process, ceremonies, deploy.
-environments/ INFRA ZONE        How to run the SUT.
-ceremonies/   MEETING ZONE      Sprint planning, dailies, retros.
-knowledge/    SYNTHESIS ZONE    Distilled lessons. Portable.
+teams/<slug>/
+├── AGENTS.md           Team-scoped agent context
+├── README.md, INDEX.md
+├── members.md          Roster
+├── workflow.md         Jira board, DoR, DoD
+├── deploy.md           Deploy procedures
+├── ceremonies-info.md  Sprint cadence
+├── stories/            One folder per Jira ticket
+├── test-cases/library/ Reusable test cases (per area)
+├── bugs/               Bug registry, linked from stories
+├── reviews/            Peer reviews of others' test cases
+├── ceremonies/         Meeting notes (sprint-planning/, daily-standups/, reviews/, retrospectives/)
+├── environments/       Local / dev / qa setup, users, filters
+├── automation/         Playwright meta-knowledge
+└── inbox/              Team-specific captures
 ```
 
-Top-level support files: `AGENTS.md` (this file), `README.md`,
-`INDEX.md`, `TODO.md`, `JOURNAL.md`, `VERSION`.
+Plus two special files at the `teams/` level:
+- **`teams/active-team.txt`** — line(s) listing currently active
+  team slug(s). First line = primary (default target for scaffolds).
+  Read all lines for default `/session-start` scope.
+- **`teams/_template-team/`** — empty scaffold copied by
+  `node scripts/new-team.mjs <slug>` when adding a team.
 
-`.github/` holds the Copilot wiring:
-`.github/copilot-instructions.md`, `.github/instructions/`,
-`.github/prompts/`.
+### Global zones (cross-team)
+
+```
+knowledge/    SYNTHESIS ZONE    Distilled lessons. Portable across teams AND across clients.
+playbooks/    WORKFLOW DOCS     How-to guides for the core daily loop.
+scripts/      TOOLING           Node.js .mjs scripts (zero-dep, Windows-safe).
+templates/    SCAFFOLD SOURCES  Used by new-story.mjs, new-team.mjs, etc.
+.github/      COPILOT WIRING    copilot-instructions.md + instructions/ + prompts/
+```
+
+Top-level meta: `AGENTS.md` (this file), `README.md`, `INDEX.md`,
+`TODO.md`, `JOURNAL.md`, `VERSION`.
+
+### Why team-centric (cf. v1.0 flat-10-zone)
+
+- "What's the ceremony for my current team?" → one-folder jump:
+  `teams/<active>/ceremonies/`.
+- Multi-team support: zero cross-team leakage in stories, ceremonies,
+  envs, bugs. Each team's content is physically isolated.
+- The `knowledge/` zone is the only zone designed to cross teams
+  (and clients) — and it must be sanitized before traveling. See
+  [playbooks/team-knowledge-promotion.md](playbooks/team-knowledge-promotion.md).
 
 ---
 
@@ -103,9 +129,9 @@ Daily rhythm:
 1. **Morning** — invoke `/session-start` in Copilot Chat. Lists
    active stories, blocked items, today's likely focus, recent
    journal entries.
-2. **Working hours** — edit stories, capture in `inbox/`, run
-   scripts, draft test cases. Use the prompts listed below as you
-   work.
+2. **Working hours** — edit stories, capture in the active team's
+   `inbox/`, run scripts, draft test cases. Use the prompts listed
+   below as you work.
 3. **Evening** — invoke `/session-end`. Appends a journal entry,
    updates `TODO.md`, surfaces dirty git files. Owner manually
    commits when satisfied.

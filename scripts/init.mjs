@@ -1,22 +1,27 @@
 #!/usr/bin/env node
-// init.mjs — one-shot post-clone setup.
+// init.mjs — one-shot post-clone setup (v1.1 — team-aware).
 //
 // Steps:
-//   1. Write .client-slug with the slug provided.
-//   2. Rename kortex-qa.code-workspace → <slug>-qa.code-workspace.
+//   1. Write .client-slug with the client slug provided.
+//   2. Rename kortex-qa.code-workspace → <client-slug>-qa.code-workspace.
 //   3. Verify VERSION exists.
-//   4. Print a "next step" summary.
+//   4. If --first-team <slug> is passed, scaffold that team via
+//      new-team.mjs and set it as primary active. Otherwise, leave
+//      teams/example-team/ in place as a learning reference and
+//      ask the user to run new-team.mjs themselves.
+//   5. Print a "next step" summary.
 //
 // Does NOT run `git init` automatically — leaves that to the
-// engineer to confirm. (Git init is destructive if the user has
-// already done `git init` and added files.)
+// engineer to confirm.
 //
 // Usage:
 //   node scripts/init.mjs <client-slug>
-//   node scripts/init.mjs acme-corp
+//   node scripts/init.mjs <client-slug> --first-team <team-slug>
+//   node scripts/init.mjs acme-corp --first-team pod-8
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,8 +29,10 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 function usage() {
-  process.stderr.write('Usage: node scripts/init.mjs <client-slug>\n');
-  process.stderr.write('Example: node scripts/init.mjs acme-corp\n');
+  process.stderr.write('Usage: node scripts/init.mjs <client-slug> [--first-team <team-slug>]\n');
+  process.stderr.write('Examples:\n');
+  process.stderr.write('  node scripts/init.mjs acme-corp\n');
+  process.stderr.write('  node scripts/init.mjs acme-corp --first-team pod-8\n');
 }
 
 async function fileExists(p) {
@@ -38,13 +45,23 @@ async function fileExists(p) {
 }
 
 async function main() {
-  const [slug] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const firstTeamIdx = args.indexOf('--first-team');
+  const positionals = args.filter((a, i) =>
+    a !== '--first-team' && (firstTeamIdx === -1 || i !== firstTeamIdx + 1));
+  const [slug] = positionals;
+  const firstTeam = firstTeamIdx !== -1 ? args[firstTeamIdx + 1] : null;
+
   if (!slug) {
     usage();
     process.exit(1);
   }
   if (!/^[a-z][a-z0-9-]+$/.test(slug)) {
-    process.stderr.write(`error: slug must be kebab-case lowercase (got: ${slug})\n`);
+    process.stderr.write(`error: client slug must be kebab-case lowercase (got: ${slug})\n`);
+    process.exit(1);
+  }
+  if (firstTeam && !/^[a-z][a-z0-9-]+$/.test(firstTeam)) {
+    process.stderr.write(`error: team slug must be kebab-case lowercase (got: ${firstTeam})\n`);
     process.exit(1);
   }
 
@@ -80,13 +97,31 @@ async function main() {
     process.stdout.write(`· VERSION exists (${v})\n`);
   }
 
-  // 4. Gitignore .client-slug if not already
+  // 4. Optionally scaffold the first real team
+  if (firstTeam) {
+    process.stdout.write(`\n→ Scaffolding first team: ${firstTeam}\n`);
+    const r = spawnSync('node', ['scripts/new-team.mjs', firstTeam], {
+      cwd: REPO_ROOT,
+      stdio: 'inherit',
+    });
+    if (r.status !== 0) {
+      process.stderr.write(`warning: new-team.mjs exited ${r.status}. Continuing.\n`);
+    } else {
+      const r2 = spawnSync('node', ['scripts/switch-team.mjs', firstTeam], {
+        cwd: REPO_ROOT,
+        stdio: 'inherit',
+      });
+      if (r2.status !== 0) {
+        process.stderr.write(`warning: switch-team.mjs exited ${r2.status}. Continuing.\n`);
+      }
+    }
+  }
+
+  // 5. Gitignore .client-slug if not already
   const gitignorePath = path.join(REPO_ROOT, '.gitignore');
   try {
     const gi = await fs.readFile(gitignorePath, 'utf8');
     if (!gi.includes('.client-slug')) {
-      // Don't auto-edit .gitignore — let the engineer decide whether
-      // they want .client-slug tracked (some prefer it for clarity).
       process.stdout.write(`· note: .client-slug is NOT in .gitignore by default.\n`);
       process.stdout.write(`  Add it if you don't want it tracked in git.\n`);
     }
@@ -96,21 +131,33 @@ async function main() {
 
   process.stdout.write('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   process.stdout.write(`  Initialized for client: ${slug}\n`);
+  if (firstTeam) process.stdout.write(`  First team: ${firstTeam} (primary active)\n`);
   process.stdout.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
   process.stdout.write('Next steps:\n');
   process.stdout.write(`  1. Open the workspace:\n`);
   process.stdout.write(`       code ${slug}-qa.code-workspace\n`);
   process.stdout.write(`  2. Edit the workspace file to point at your SUT and automation repos.\n`);
-  process.stdout.write(`  3. Initialize git (if not already):\n`);
+  process.stdout.write(`  3. Initialize git inside the clone (if not already):\n`);
   process.stdout.write(`       git init && git add . && git commit -m "init: kortex-qa for ${slug} v$(cat VERSION)"\n`);
-  process.stdout.write(`  4. Fill in:\n`);
-  process.stdout.write(`       team/members.md\n`);
-  process.stdout.write(`       team/ceremonies.md\n`);
-  process.stdout.write(`       team/workflow.md\n`);
-  process.stdout.write(`       team/deploy.md\n`);
-  process.stdout.write(`       environments/*.md\n`);
-  process.stdout.write(`  5. Capture your first Jira ticket:\n`);
-  process.stdout.write(`       node scripts/new-story.mjs <TICKET-KEY> <slug>\n`);
+  if (firstTeam) {
+    process.stdout.write(`  4. Fill in team details:\n`);
+    process.stdout.write(`       teams/${firstTeam}/members.md\n`);
+    process.stdout.write(`       teams/${firstTeam}/workflow.md\n`);
+    process.stdout.write(`       teams/${firstTeam}/deploy.md\n`);
+    process.stdout.write(`       teams/${firstTeam}/ceremonies-info.md\n`);
+    process.stdout.write(`       teams/${firstTeam}/environments/*.md\n`);
+    process.stdout.write(`  5. Capture your first Jira ticket:\n`);
+    process.stdout.write(`       node scripts/new-story.mjs <TICKET-KEY> <slug>\n`);
+  } else {
+    process.stdout.write(`  4. Scaffold your first real team:\n`);
+    process.stdout.write(`       node scripts/new-team.mjs <team-slug>\n`);
+    process.stdout.write(`       node scripts/switch-team.mjs <team-slug>\n`);
+    process.stdout.write(`  5. (Optional) remove the example-team:\n`);
+    process.stdout.write(`       rm -rf teams/example-team\n`);
+    process.stdout.write(`  6. Fill in members / workflow / deploy / environments / etc.\n`);
+    process.stdout.write(`  7. Capture your first Jira ticket:\n`);
+    process.stdout.write(`       node scripts/new-story.mjs <TICKET-KEY> <slug>\n`);
+  }
 }
 
 main().catch((err) => {

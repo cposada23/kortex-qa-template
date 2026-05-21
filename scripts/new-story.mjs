@@ -1,21 +1,27 @@
 #!/usr/bin/env node
-// new-story.mjs — scaffold a new story folder under stories/.
+// new-story.mjs — scaffold a new story folder (team-scoped, v1.1).
 //
 // Creates:
-//   stories/<TICKET-KEY>-<slug>/
+//   teams/<team>/stories/<TICKET-KEY>-<slug>/
 //   ├── story.md
 //   ├── ac-audit.md
 //   ├── execution-log.md
 //   ├── bugs.md
 //   └── test-cases/.gitkeep
 //
+// Team resolution:
+//   - --team <slug> overrides everything
+//   - Otherwise: first line of teams/active-team.txt
+//   - If neither: error
+//
 // Each file is stamped from templates/story/*.md with substitutions
 // applied. After creation, build-index.mjs is invoked to refresh
-// stories/INDEX.md.
+// stories/INDEX.md for the target team.
 //
 // Usage:
-//   node scripts/new-story.mjs <TICKET-KEY> <slug>
+//   node scripts/new-story.mjs <TICKET-KEY> <slug> [--team <slug>]
 //   node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
+//   node scripts/new-story.mjs TEAM-1234 search-filter --team pod-8
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -27,8 +33,25 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 function usage() {
-  process.stderr.write('Usage: node scripts/new-story.mjs <TICKET-KEY> <slug>\n');
+  process.stderr.write('Usage: node scripts/new-story.mjs <TICKET-KEY> <slug> [--team <slug>]\n');
   process.stderr.write('Example: node scripts/new-story.mjs TEAM-1234 search-filter-empty-input\n');
+}
+
+// Resolve the target team from --team flag or active-team.txt primary line.
+async function resolveTargetTeam(args) {
+  const flagIdx = args.indexOf('--team');
+  if (flagIdx !== -1) {
+    const slug = args[flagIdx + 1];
+    if (!slug) throw new Error('--team requires a slug argument');
+    return slug;
+  }
+  // Read active-team.txt, take first line
+  try {
+    const content = await fs.readFile(path.join(REPO_ROOT, 'teams', 'active-team.txt'), 'utf8');
+    const first = content.split('\n').map((s) => s.trim()).filter(Boolean)[0];
+    if (first) return first;
+  } catch {}
+  throw new Error('no team specified and teams/active-team.txt has no primary. Pass --team <slug> or run `node scripts/switch-team.mjs <slug>` first.');
 }
 
 function todayISO() {
@@ -43,7 +66,13 @@ function substitute(content, vars) {
 }
 
 async function main() {
-  const [ticketKey, slug] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  // Positional args = everything that's not --team or its value
+  const flagIdx = args.indexOf('--team');
+  const positionals = args.filter((a, i) =>
+    a !== '--team' && (flagIdx === -1 || i !== flagIdx + 1));
+  const [ticketKey, slug] = positionals;
+
   if (!ticketKey || !slug) {
     usage();
     process.exit(1);
@@ -57,13 +86,30 @@ async function main() {
     process.exit(1);
   }
 
+  let teamSlug;
+  try {
+    teamSlug = await resolveTargetTeam(args);
+  } catch (err) {
+    process.stderr.write(`error: ${err.message}\n`);
+    process.exit(1);
+  }
+
   const folderName = `${ticketKey}-${slug}`;
-  const storyDir = path.join(REPO_ROOT, 'stories', folderName);
+  const storyDir = path.join(REPO_ROOT, 'teams', teamSlug, 'stories', folderName);
+
+  // Verify the team folder exists
+  try {
+    await fs.access(path.join(REPO_ROOT, 'teams', teamSlug));
+  } catch {
+    process.stderr.write(`error: team folder not found: teams/${teamSlug}/\n`);
+    process.stderr.write('Run `node scripts/new-team.mjs <slug>` first.\n');
+    process.exit(1);
+  }
 
   // Bail if folder exists
   try {
     await fs.access(storyDir);
-    process.stderr.write(`error: story folder already exists: stories/${folderName}\n`);
+    process.stderr.write(`error: story folder already exists: teams/${teamSlug}/stories/${folderName}\n`);
     process.exit(1);
   } catch {
     // Expected — proceed
@@ -111,15 +157,15 @@ async function main() {
   // Empty .gitkeep in test-cases/ so the folder is tracked
   await fs.writeFile(path.join(storyDir, 'test-cases', '.gitkeep'), '');
 
-  process.stdout.write(`✓ Scaffolded stories/${folderName}/\n`);
+  process.stdout.write(`✓ Scaffolded teams/${teamSlug}/stories/${folderName}/\n`);
   process.stdout.write('  - story.md\n');
   process.stdout.write('  - ac-audit.md\n');
   process.stdout.write('  - execution-log.md\n');
   process.stdout.write('  - bugs.md\n');
   process.stdout.write('  - test-cases/\n');
 
-  // Auto-refresh INDEX
-  const buildIdx = spawnSync('node', ['scripts/build-index.mjs', 'stories'], {
+  // Auto-refresh the team's stories INDEX + team-level INDEX
+  const buildIdx = spawnSync('node', ['scripts/build-index.mjs', `teams/${teamSlug}`], {
     cwd: REPO_ROOT,
     stdio: 'inherit',
   });
@@ -127,7 +173,7 @@ async function main() {
     process.stderr.write('warning: build-index returned non-zero. Run manually if needed.\n');
   }
 
-  process.stdout.write(`\nNext step: open stories/${folderName}/story.md and paste the Jira ticket body.\n`);
+  process.stdout.write(`\nNext step: open teams/${teamSlug}/stories/${folderName}/story.md and paste the Jira ticket body.\n`);
   process.stdout.write('Then run /ac-auditor in Copilot Chat (or /story-intake to do both in one go).\n');
 }
 

@@ -1,6 +1,6 @@
 ---
 description: Story folder structure and authoring rules
-applyTo: "stories/**/*.md"
+applyTo: "teams/**/stories/**/*.md"
 ---
 
 # Stories — authoring rules
