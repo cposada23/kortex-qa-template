@@ -32,6 +32,27 @@ const SKIP_FILENAMES = new Set([
   'JOURNAL.md', 'TODO.md',
 ]);
 
+// Detect CHAT-HANDOFF.md at repo root. Returns { updated, staleDays }
+// or null if missing.
+async function readChatHandoff() {
+  const handoffPath = path.join(REPO_ROOT, 'CHAT-HANDOFF.md');
+  let content;
+  try {
+    content = await fs.readFile(handoffPath, 'utf8');
+  } catch {
+    return null;
+  }
+  const fm = parseFrontmatter(content);
+  const updated = (fm && fm.updated) || 'unknown';
+  let staleDays = 0;
+  if (updated && /^\d{4}-\d{2}-\d{2}$/.test(updated)) {
+    const then = new Date(updated).getTime();
+    const now = Date.now();
+    staleDays = Math.floor((now - then) / (1000 * 60 * 60 * 24));
+  }
+  return { updated, staleDays };
+}
+
 function parseFrontmatter(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---\n/);
   if (!match) return null;
@@ -225,11 +246,20 @@ async function main() {
 
   const journal = await readLastJournalEntries(3);
   const todo = await countTodoItems();
+  const handoff = await readChatHandoff();
 
   process.stdout.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   process.stdout.write(`  Kortex-QA — Session start (${new Date().toISOString().slice(0, 16).replace('T', ' ')})\n`);
   process.stdout.write(`  Scope: ${teams.length === 1 ? teams[0] : teams.join(' + ')}\n`);
   process.stdout.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
+
+  if (handoff) {
+    if (handoff.staleDays > 7) {
+      process.stdout.write(`ℹ CHAT-HANDOFF.md exists but is stale (last updated ${handoff.updated}, ${handoff.staleDays} days ago). Delete or refresh.\n\n`);
+    } else {
+      process.stdout.write(`⚠ CHAT-HANDOFF.md exists (last updated ${handoff.updated}). Consider running /resume-from-handoff first.\n\n`);
+    }
+  }
 
   for (const team of teams) {
     const stories = await loadStoriesForTeam(team);

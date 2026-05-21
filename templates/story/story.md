@@ -6,9 +6,9 @@ sprint: "{{SPRINT}}"
 priority: {{PRIORITY}}
 status: backlog
 ac_audit_status: pending
-test_cases_count: 0
-bugs_found: 0
 linked_test_cases: []
+linked_bugs: []
+review_status: not-reviewed
 language: en
 tags: [story]
 updated: {{UPDATED}}
@@ -42,6 +42,14 @@ AC #2: ...
 - Other tickets:
 - Infra / env:
 - Designs / specs:
+
+## Test cases
+
+_(populated as you author TCs — use `node scripts/new-test-case.mjs <area> <slug> --link-story {{TICKET_KEY}}`)_
+
+## Bugs found
+
+_(populated as bugs are filed — use `node scripts/new-bug.mjs <slug> --link-story {{TICKET_KEY}}`)_
 
 ## Notes
 

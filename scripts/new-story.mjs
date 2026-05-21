@@ -1,13 +1,17 @@
 #!/usr/bin/env node
-// new-story.mjs — scaffold a new story folder (team-scoped, v1.1).
+// new-story.mjs — scaffold a new story folder (team-scoped, v1.6+).
 //
 // Creates:
 //   teams/<team>/stories/<TICKET-KEY>-<slug>/
-//   ├── story.md
+//   ├── story.md          (has linked_test_cases + linked_bugs + review_status)
 //   ├── ac-audit.md
-//   ├── execution-log.md
-//   ├── bugs.md
-//   └── test-cases/.gitkeep
+//   └── execution-log.md
+//
+// CHANGED IN v1.6:
+//   - No more test-cases/ subfolder. TCs live at
+//     teams/<team>/test-cases/<area>/ and link via id (canonical) +
+//     markdown link (navigation).
+//   - No more bugs.md pointer. Story frontmatter has linked_bugs: [].
 //
 // Team resolution:
 //   - --team <slug> overrides everything
@@ -116,7 +120,6 @@ async function main() {
   }
 
   await fs.mkdir(storyDir, { recursive: true });
-  await fs.mkdir(path.join(storyDir, 'test-cases'), { recursive: true });
 
   // Variables for template substitution
   const vars = {
@@ -137,7 +140,6 @@ async function main() {
     { src: 'story.md', dest: 'story.md' },
     { src: 'ac-audit.md', dest: 'ac-audit.md' },
     { src: 'execution-log.md', dest: 'execution-log.md' },
-    { src: 'bugs.md', dest: 'bugs.md' },
   ];
 
   for (const t of templates) {
@@ -154,15 +156,11 @@ async function main() {
     await fs.writeFile(destPath, content);
   }
 
-  // Empty .gitkeep in test-cases/ so the folder is tracked
-  await fs.writeFile(path.join(storyDir, 'test-cases', '.gitkeep'), '');
-
   process.stdout.write(`✓ Scaffolded teams/${teamSlug}/stories/${folderName}/\n`);
-  process.stdout.write('  - story.md\n');
+  process.stdout.write('  - story.md (frontmatter has linked_test_cases + linked_bugs + review_status)\n');
   process.stdout.write('  - ac-audit.md\n');
   process.stdout.write('  - execution-log.md\n');
-  process.stdout.write('  - bugs.md\n');
-  process.stdout.write('  - test-cases/\n');
+  process.stdout.write('  (no test-cases/ subfolder — TCs live at teams/<team>/test-cases/<area>/ in v1.6+)\n');
 
   // Auto-refresh the team's stories INDEX + team-level INDEX
   const buildIdx = spawnSync('node', ['scripts/build-index.mjs', `teams/${teamSlug}`], {
@@ -175,6 +173,10 @@ async function main() {
 
   process.stdout.write(`\nNext step: open teams/${teamSlug}/stories/${folderName}/story.md and paste the Jira ticket body.\n`);
   process.stdout.write('Then run /ac-auditor in Copilot Chat (or /story-intake to do both in one go).\n');
+  process.stdout.write(`\nTo author a test case linked to this story:\n`);
+  process.stdout.write(`  node scripts/new-test-case.mjs <area> <slug> --link-story ${ticketKey}\n`);
+  process.stdout.write(`To file a bug linked to this story:\n`);
+  process.stdout.write(`  node scripts/new-bug.mjs <slug> --link-story ${ticketKey}\n`);
 }
 
 main().catch((err) => {

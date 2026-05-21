@@ -7,7 +7,8 @@ coverage: positive
 status: draft
 automation_status: manual-only
 automation_path: "../../<automation-repo>/tests/{{AREA}}/{{SLUG}}.spec.ts"
-linked_stories: []
+linked_stories: {{LINKED_STORIES}}
+review_status: not-reviewed
 language: en
 tags: [{{AREA}}]
 updated: {{UPDATED}}

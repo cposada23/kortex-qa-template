@@ -34,7 +34,7 @@ wrong, add a new block that supersedes it.
 
 ### Bugs filed
 
-- [BUG-NNN-slug](../../bugs/BUG-NNN-slug.md) — _Jira: TEAM-XXXX_
+- `BUG-NNN` (link to `../../bugs/BUG-NNN-<slug>.md` once a real bug is filed) — _Jira: TEAM-XXXX_
 
 ---
 

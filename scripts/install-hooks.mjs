@@ -51,6 +51,13 @@ echo "  ✓ Frontmatter OK"
 node scripts/build-index.mjs --check
 echo "  ✓ INDEX up-to-date"
 
+# 3. Link integrity check (v1.6+)
+#    Verifies IDs in frontmatter (linked_test_cases, linked_bugs,
+#    linked_stories) all resolve to existing files, and that
+#    markdown body links targeting teams/ files don't 404.
+node scripts/validate-links.mjs
+echo "  ✓ Links OK"
+
 echo "✓ pre-commit OK"
 `;
 

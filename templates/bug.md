@@ -5,7 +5,7 @@ id: {{ID}}
 severity: medium
 status: open
 jira_key: ""
-linked_story: ""
+linked_stories: {{LINKED_STORIES}}
 linked_test_case: ""
 environment: qa
 language: en

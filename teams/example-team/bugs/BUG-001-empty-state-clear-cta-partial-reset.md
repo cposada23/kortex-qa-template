@@ -5,8 +5,8 @@ id: BUG-001
 severity: medium
 status: open
 jira_key: "TEAM-EXAMPLE-9001"
-linked_story: "TEAM-EXAMPLE-001"
-linked_test_case: "TC-TEAM-EXAMPLE-001-01"
+linked_stories: [TEAM-EXAMPLE-001]
+linked_test_case: TC-TEAM-EXAMPLE-001-01
 environment: qa
 language: en
 tags: [bug, search, filter, ux, example]
