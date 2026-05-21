@@ -102,6 +102,7 @@ async function main() {
   const files = await walkMd(TEAMS_DIR);
   const parsed = [];
   const idToPath = new Map();
+  const duplicateIds = new Map(); // id → [paths]
 
   for (const file of files) {
     const content = await fs.readFile(file, 'utf8');
@@ -109,7 +110,13 @@ async function main() {
     const id = extractId(file, fm);
     if (id) {
       if (idToPath.has(id)) {
-        // duplicate id across files — flag later
+        // Track duplicates: keep the first path in idToPath; record all
+        // colliding files in duplicateIds for the error report.
+        const firstPath = idToPath.get(id);
+        if (!duplicateIds.has(id)) {
+          duplicateIds.set(id, [firstPath]);
+        }
+        duplicateIds.get(id).push(file);
       } else {
         idToPath.set(id, file);
       }
@@ -119,6 +126,14 @@ async function main() {
 
   const errors = [];
   const warnings = [];
+
+  // Promote duplicate-ID findings to errors. IDs are the load-bearing
+  // identifier for linked_test_cases / linked_bugs / linked_stories —
+  // a duplicate makes the reference ambiguous.
+  for (const [id, paths] of duplicateIds) {
+    const relPaths = paths.map((p) => path.relative(REPO_ROOT, p));
+    errors.push(`duplicate id "${id}" across ${paths.length} files: ${relPaths.join(', ')}`);
+  }
 
   for (const { file, fm, content } of parsed) {
     const rel = path.relative(REPO_ROOT, file);

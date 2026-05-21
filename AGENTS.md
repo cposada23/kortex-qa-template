@@ -70,7 +70,7 @@ teams/<slug>/
 ├── deploy.md           Deploy procedures
 ├── ceremonies-info.md  Sprint cadence
 ├── stories/            One folder per Jira ticket
-├── test-cases/library/ Reusable test cases (per area)
+├── test-cases/<area>/  All test cases for the team (single home)
 ├── bugs/               Bug registry, linked from stories
 ├── reviews/            Peer reviews of others' test cases
 ├── ceremonies/         Meeting notes (sprint-planning/, daily-standups/, reviews/, retrospectives/)

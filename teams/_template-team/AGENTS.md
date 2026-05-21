@@ -30,7 +30,7 @@ teams' or the global default. Examples:_
 ## Where things live (this team)
 
 - **Stories:** [stories/](stories/) — one folder per Jira ticket.
-- **Reusable test cases:** [test-cases/library/<area>/](test-cases/library/)
+- **All test cases (single home):** [test-cases/<area>/](test-cases/)
 - **Bugs:** [bugs/](bugs/) — local bug records, linked from stories.
 - **Peer reviews:** [reviews/](reviews/) — your reviews of others' test cases.
 - **Ceremony notes:** [ceremonies/](ceremonies/) — sprint planning, dailies, reviews, retros.

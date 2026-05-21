@@ -187,7 +187,7 @@ kortex-qa-client-a/
 │   │   ├── deploy.md             (placeholder)
 │   │   ├── ceremonies-info.md    (placeholder)
 │   │   ├── stories/              (empty, ready for first story)
-│   │   ├── test-cases/library/   (empty)
+│   │   ├── test-cases/           (empty, populated by area subfolder as you author TCs)
 │   │   ├── bugs/                 (empty)
 │   │   ├── reviews/              (empty)
 │   │   ├── ceremonies/           (empty)
@@ -321,9 +321,11 @@ If you want it under a non-primary team, pass `--team`:
 node scripts/new-story.mjs TEAM-1234 search-filter-empty-input --team team-b
 ```
 
-The scaffold includes `story.md`, `ac-audit.md`, `execution-log.md`,
-`bugs.md`, and a `test-cases/` folder. Open `story.md` and paste
-the Jira ticket body into the right sections (title, AC, summary,
+The scaffold includes `story.md`, `ac-audit.md`, and
+`execution-log.md` only (no `test-cases/` subfolder, no `bugs.md`
+pointer — v1.6+ uses `linked_test_cases:` and `linked_bugs:`
+frontmatter on the story instead). Open `story.md` and paste the
+Jira ticket body into the right sections (title, AC, summary,
 dependencies).
 
 Then run `/ac-auditor` in Copilot Chat to audit the AC.
@@ -488,8 +490,8 @@ If you need a one-time bulk import of historical TCs that are
 genuinely reusable across clients (e.g., a personal library of
 auth-flow tests you've built over years), do it as a
 `knowledge/playwright/<pattern>.md` page, not as an army of
-`test-cases/library/` entries. The library is per-team per-client
-by design.
+per-team `test-cases/<area>/` entries. The team's test-case set is
+per-client by design.
 
 ---
 

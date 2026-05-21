@@ -114,7 +114,7 @@ used from day one:
 | Zone | Recommended for | Can delete if unused |
 |---|---|---|
 | `stories/` | Every team | No — core unit of work |
-| `test-cases/library/` | Every team | No — the reusable layer |
+| `test-cases/<area>/` | Every team | No — single home for all TCs |
 | `bugs/` | Every team | No — bug pointers needed |
 | `reviews/` | Teams that do peer review | Yes |
 | `ceremonies/` | Teams that capture decisions in git | Yes |
@@ -178,7 +178,7 @@ for the promotion rule.
 | Type of content | Lives in |
 |---|---|
 | A specific Jira story you're working | `teams/<slug>/stories/<TICKET>/` |
-| Test cases for that story | `teams/<slug>/stories/<TICKET>/test-cases/` (story-local) or `teams/<slug>/test-cases/library/<area>/` (reusable in this team) |
+| Test cases for that story | `teams/<slug>/test-cases/<area>/<tc-slug>.md` (single home; story refs via `linked_test_cases:` frontmatter) |
 | Bug found during execution | `teams/<slug>/bugs/<BUG-NNN>.md` |
 | Daily standup note | `teams/<slug>/ceremonies/daily-standups/<YYYY-MM-DD>.md` |
 | Retro for the team | `teams/<slug>/ceremonies/retrospectives/<YYYY-MM-DD>.md` |

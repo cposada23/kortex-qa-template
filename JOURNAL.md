@@ -185,3 +185,22 @@ DECISIONS:
 BLOCKERS: none.
 
 READINESS: green. v1.6.0 published. Owner can now import a prior brain via `scripts/import-prior-brain.mjs <source>`, work with the single-home TC model, and use `/chat-handoff` + `/resume-from-handoff` to transfer context between chat sessions. Pre-commit hook enforces ID integrity. v1.5 → v1.6 migration is one-shot + idempotent for anyone on a v1.5 clone.
+
+## 2026-05-21 18:30 — v1.6.1 critical fixes from external review
+
+STATE: Owner ran an external review pass on v1.6.0 and surfaced 4 real issues that contradict v1.6's central promises. Fixed in patch release.
+
+DID:
+1. **validate-links.mjs now ERRORS on duplicate IDs.** The script had a `// flag later` placeholder where duplicate-ID handling should have lived. Without this, two files with `id: TC-AUTH-001` would pass validation but make `linked_test_cases: [TC-AUTH-001]` ambiguous. Fix: track collisions in a `duplicateIds` Map, emit `errors.push("duplicate id ... across N files: ...")` for each. Smoke-verified: induced 2 duplicates in /tmp sandbox, validator returned exit 1 with both findings.
+2. **example-team's library/auth/tc-auth-001-login-happy-path.md migrated up to test-cases/auth/.** The migration script handled story-local TCs (Wave 1) but missed the library/ subfolder. The leftover TC at `TC-AUTH-001` would collide the moment a user ran `new-test-case.mjs auth login-something` (script scans new path, sees nothing, assigns TC-AUTH-001 → duplicate). Fix: `git mv` the file up one level, drop empty `library/auth/` and `library/` folders, fix relative paths inside the TC body (3 instances of `../../../environments/...` → `../../environments/...`).
+3. **Stale references swept across docs.** Owner's review found `test-cases/library/`, `stories/<TICKET>/test-cases/`, and `bugs.md` sidecar references in 11+ files. Updated: README.md, AGENTS.md, playbooks/day-in-the-life.md, playbooks/client-bootstrap.md (multiple locations), teams/README.md (multiple), teams/_template-team/AGENTS.md, teams/example-team/AGENTS.md, teams/_template-team/workflow.md, teams/example-team/workflow.md, teams/_template-team/stories/README.md, teams/example-team/stories/README.md, teams/_template-team/automation/README.md, teams/example-team/automation/README.md, .github/instructions/frontmatter.instructions.md, .github/prompts/story-analyzer.prompt.md, .github/prompts/test-case-reviewer.prompt.md. Historical JOURNAL/Versioning section entries kept as-is (they're history, not active doc).
+4. **new-story.mjs regex widened.** Old: `/^[A-Z][A-Z0-9]*-\d+$/` rejected `TEAM-EXAMPLE-001` (the example-team's own ticket key). New: `/^[A-Z][A-Z0-9]+(?:-[A-Z][A-Z0-9]+)*-\d+$/` accepts multi-segment Jira keys (TEAM-1234, TEAM-EXAMPLE-001, ACME-PROJ-9001). Aligned with validate-links.mjs's regex (already widened in Wave 1).
+
+DECISIONS:
+- All 4 issues confirmed real before fixing — not blindly applying review feedback.
+- Patch bump (1.6.0 → 1.6.1), not minor. No new features; closes regressions introduced by incomplete v1.6.0 migration.
+- "Promote duplicate-ID warnings to errors" rather than "ignore silently" or "warn loudly": IDs are load-bearing for linked_* references; ambiguity is worse than noise.
+
+BLOCKERS: none.
+
+READINESS: green. v1.6.1 closes the gaps. Smoke-tested end-to-end: new-story now accepts multi-segment ticket keys; validate-links blocks duplicates; example-team has zero library/ residue; docs no longer teach the old model.

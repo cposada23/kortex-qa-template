@@ -17,7 +17,7 @@ scenarios so the engineer can pick which ones to author with
 2. The AC audit if one exists
    (`teams/<active>/stories/<TICKET-KEY>-<slug>/ac-audit.md`).
 3. Optionally, related test cases already in
-   `teams/<active>/test-cases/library/` that might cover parts of
+   `teams/<active>/test-cases/` that might cover parts of
    this story.
 
 ## Process
@@ -41,9 +41,8 @@ For each scenario, output:
 - A severity hint: **must-have** (covers an AC line),
   **should-have** (good QA hygiene), **nice-to-have** (extra
   rigor)
-- Whether it likely overlaps with an existing library test case
-  (cross-check `teams/<active>/test-cases/library/<area>/` if
-  relevant)
+- Whether it likely overlaps with an existing test case
+  (cross-check `teams/<active>/test-cases/<area>/` if relevant)
 
 ## Output
 

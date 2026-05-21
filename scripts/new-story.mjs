@@ -81,8 +81,12 @@ async function main() {
     usage();
     process.exit(1);
   }
-  if (!/^[A-Z][A-Z0-9]*-\d+$/.test(ticketKey)) {
-    process.stderr.write(`error: TICKET-KEY must match <UPPER>-<NUMBER> (got: ${ticketKey})\n`);
+  // Accept single-segment (TEAM-1234) and multi-segment (TEAM-EXAMPLE-001,
+  // ACME-PROJ-9001) Jira keys. v1.6 widened the regex to match what the
+  // example-team uses + what real Jira projects with multi-word codes
+  // sometimes produce.
+  if (!/^[A-Z][A-Z0-9]+(?:-[A-Z][A-Z0-9]+)*-\d+$/.test(ticketKey)) {
+    process.stderr.write(`error: TICKET-KEY must match <UPPER>(-<UPPER>)*-<NUMBER> (got: ${ticketKey})\n`);
     process.exit(1);
   }
   if (!/^[a-z][a-z0-9-]+$/.test(slug)) {

@@ -24,7 +24,7 @@ One of:
 
 - A path or paths to test case files under
   `teams/<slug>/stories/<TICKET-KEY>-<slug>/test-cases/` or
-  `teams/<slug>/test-cases/library/`.
+  `teams/<slug>/test-cases/`.
 - A `<TICKET-KEY>` — review every test case file under that
   story's folder.
 - A `<team-slug>` — review every test case in the team's library

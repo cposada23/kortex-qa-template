@@ -36,8 +36,8 @@ distill the **insight** (not the code) into
 
 ## Linking story / test case ↔ automation
 
-In a story's local `test-cases/` or in `test-cases/library/...`,
-set `automation_status: automated` and
+In a test case at `teams/<active>/test-cases/<area>/<slug>.md`
+(single home), set `automation_status: automated` and
 `automation_path: ../../<automation-repo>/tests/<area>/<file>.spec.ts`
 in the test case's frontmatter. The path is **descriptive** — the
 brain doesn't validate that the file exists in the other repo.

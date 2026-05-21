@@ -32,7 +32,7 @@ What lives where:
 | Concept | Primary system of record | Lives in Kortex-QA |
 |---|---|---|
 | Story / ticket status | Jira (or Linear, Azure DevOps) | A folder per story with notes, AC audit, execution log, local bug pointers — but Jira owns the open/in-progress/done state |
-| Test cases (formal) | TestRail / Xray / Zephyr if your team uses one | The local `test-cases/library/` is for **reusable cases you maintain across stories**, especially the ones you write, audit, automate, or revise often |
+| Test cases (formal) | TestRail / Xray / Zephyr if your team uses one | The local `test-cases/<area>/` is the **single home** for every test case — drafts and active regression cases live side by side, distinguished by `status:`. v1.6 dropped the dual story-local / library split. |
 | Bug status / triage | Jira | Each bug has a local `.md` with rich repro context. Jira owns lifecycle; the local file is the engineer's working scratch + Jira-paste source |
 | Ceremonies (decisions) | Your team's wiki / Confluence | The local capture is for **your own recall** + future-team-onboarding — not a shared meeting minutes system |
 | Automation code | The automation repo | The brain only documents *meta* about it (patterns, decisions) |

@@ -15,18 +15,25 @@ churn).
 
 ```
 <TICKET-KEY>-<slug>/
-├── story.md          REQUIRED  Captures the ticket itself.
+├── story.md          REQUIRED  Captures the ticket itself. Frontmatter holds
+│                              `linked_test_cases:` + `linked_bugs:` arrays
+│                              of canonical IDs.
 ├── ac-audit.md       REQUIRED  AC quality audit + questions for dev/PO.
 ├── questions.md      OPTIONAL  Free-form questions parked while awaiting answers.
-├── execution-log.md  REQUIRED  Test runs: when, where, what passed/failed.
-├── bugs.md           OPTIONAL  Local pointer file linking to bugs/ entries.
-└── test-cases/       OPTIONAL  Story-specific test cases.
-    └── <slug>.md
+└── execution-log.md  REQUIRED  Test runs: when, where, what passed/failed.
 ```
 
-If a test case from this story is reusable across stories,
-promote it to `test-cases/library/<area>/<slug>.md` and link to it
-from the story's local test-cases folder.
+Test cases live in a **single home** at
+`teams/<active>/test-cases/<area>/<slug>.md` (v1.6+ — no story-local
+subfolder, no `library/` split). Stories reference them via
+`linked_test_cases: [TC-AREA-NNN, ...]` in frontmatter plus a
+`## Test cases` body section with markdown links. Use
+`node scripts/new-test-case.mjs <area> <slug> --link-story <TICKET>`
+to author a TC and auto-update both sides.
+
+Bugs work the same way: live at `teams/<active>/bugs/BUG-NNN-*.md`,
+referenced via `linked_bugs:` frontmatter + `## Bugs found` body
+section.
 
 ## Scaffolding
 

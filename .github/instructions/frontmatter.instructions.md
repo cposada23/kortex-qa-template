@@ -106,7 +106,7 @@ status: active | stub | deprecated
 
 A catch-all type for files that don't fit a more specific
 type — environment docs, team docs, story sidecar files
-(`ac-audit.md`, `execution-log.md`, `bugs.md`).
+(`ac-audit.md`, `execution-log.md`).
 
 ```yaml
 status: active | pending | done | archived

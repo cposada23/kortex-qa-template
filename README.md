@@ -5,14 +5,15 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.6.0 — team-centric architecture, single-home test
-cases with immutable IDs, link integrity validator, chat handoff
-workflow, prior-brain import skill, full playbook set (14
-playbooks), Copilot prompt library (14 prompts), pre-commit hook
-running 3 checks (frontmatter + INDEX drift + link integrity), AI
-cred read restrictions, client-bootstrap with 4 import scenarios.
-Built and packaged 2026-05-20 → 2026-05-21 inside the upstream
-Kortex repo `mykortex`, extracted to its own repo for cloning.
+**Status:** v1.6.1 — team-centric architecture, single-home test
+cases with immutable IDs (validator now errors on duplicates),
+link integrity validator, chat handoff workflow, prior-brain
+import skill, full playbook set (14 playbooks), Copilot prompt
+library (14 prompts), pre-commit hook running 3 checks
+(frontmatter + INDEX drift + link integrity), AI cred read
+restrictions, client-bootstrap with 4 import scenarios. Built
+and packaged 2026-05-20 → 2026-05-21 inside the upstream Kortex
+repo `mykortex`, extracted to its own repo for cloning.
 
 ---
 
@@ -112,7 +113,7 @@ inbox.
 | Sub-zone | Purpose |
 |---|---|
 | `stories/` | One folder per Jira ticket (this team's). |
-| `test-cases/library/` | Reusable test cases for this team's SUT. |
+| `test-cases/<area>/` | All test cases for this team's SUT (single home, organized by area). |
 | `bugs/` | Bug registry for this team. |
 | `reviews/` | Your peer reviews of this team's test cases. |
 | `ceremonies/` | This team's meeting notes (daily, planning, review, retro). |
@@ -392,6 +393,18 @@ prose). v1.5 → v1.6 migration is one-shot via
 by 3 external LLMs; owner overrode the "defer import skill"
 recommendation because there's a real prior brain to bring over
 today.
+
+**v1.6.1** (2026-05-21) — critical fixes from external review.
+`validate-links.mjs` now ERRORS on duplicate IDs (previously
+silently allowed two files with `id: TC-AUTH-001`, breaking
+`linked_test_cases:` semantics). example-team's leftover library
+TC migrated up to single-home (closes a TC-AUTH-001 collision
+that would surface on the first `new-test-case.mjs auth ...`
+invocation). 11+ doc files swept for stale `test-cases/library/`,
+`stories/<TICKET>/test-cases/`, and `bugs.md` references.
+`new-story.mjs` regex widened to accept multi-segment Jira keys
+(`TEAM-EXAMPLE-001`, `ACME-PROJ-9001`) matching what
+`validate-links.mjs` already did in v1.6.0.
 
 **v1.5.0** (2026-05-21) — Codex audit pass: Copilot prompt schema
 synced from `mode:` to `agent:` (the legacy key triggers a

@@ -59,7 +59,7 @@ A story is "done" when:
 When a story has the three QA subtasks:
 
 1. **Test case design** — owner of the subtask designs in their
-   own brain (`stories/<TICKET>/test-cases/`). Final cases are
+   own brain (`teams/<active>/test-cases/<area>/` — single home, linked back to the story via `linked_test_cases:` frontmatter). Final cases are
    reflected in the team's test management plugin (Xray/Zephyr/
    TestRail/...) as the system of record.
 2. **Test case review** — assigned to a different QA. Their work
