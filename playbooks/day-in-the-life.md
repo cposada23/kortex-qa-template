@@ -72,8 +72,11 @@ nothing else, do these.
 9:10   Pick ONE story for the first pomodoro. Open its folder.
 9:15   Start work — depending on what the story needs:
            AC unclear        → /ac-auditor    (audit + Teams-ready questions)
+           Non-AC ambiguity  → /question-generator  (design doc, Slack thread, verbal recap)
            Scenarios needed  → /story-analyzer (suggested test cases)
            Design test cases → /test-case-design  (one per scenario)
+           Review peer TCs   → /test-case-reviewer (rubric pass + paste-ready comments)
+           Manual → Playwright → /automation-from-test-case (skeleton with selector TODOs)
            Execution time    → manually update execution-log.md as you go
            Bug found         → /bug-report-formatter (Jira-ready paste)
 
@@ -553,6 +556,132 @@ promotes it to its real home.
 
 ---
 
+## Days that aren't typical
+
+The full-day narrative above is a **design + execution** day —
+the most common shape, but not the only one. Five variations show
+up regularly. Each one has its own prompt + playbook combo.
+
+### Peer review day
+
+The team's workflow assigned you the "test-case-review" subtask of
+a story owned by another QA. Instead of designing, you're auditing
+their work.
+
+Flow:
+
+1. Open the test cases under
+   `teams/<active>/stories/<TICKET-KEY>-<slug>/test-cases/`.
+2. Invoke `/test-case-reviewer` — it loads the TCs, runs the
+   five-dimension rubric (coverage / clarity / redundancy /
+   automation feasibility / schema compliance), writes findings to
+   `teams/<active>/reviews/<TICKET-KEY>.md`, and drafts the
+   "Comments to deliver" section in your voice.
+3. Set the review's `review_outcome:` to `approved` /
+   `changes-requested` / `rejected`.
+4. Copy "Comments to deliver" into the Jira ticket as a comment
+   (or send to the author in Teams).
+
+Calibration tip: after 5–10 reviews, the rubric's hot spots start
+to repeat. Promote those into a `knowledge/patterns/peer-review-*`
+page. Detail: [test-case-peer-review.md](test-case-peer-review.md).
+
+### Automation day
+
+You promised the dev team Playwright coverage for 3 TCs by sprint
+end. Today's the day. The TCs are `automation_status: auto-soon`
+in their frontmatter.
+
+Flow:
+
+1. For each TC, invoke `/automation-from-test-case` with the TC
+   path. Output: a `.spec.ts` skeleton matching this team's
+   automation patterns (page object or API client fixture, per
+   `teams/<active>/automation/playbooks/`).
+2. Copy the skeleton into the automation repo at the path the
+   prompt suggested.
+3. Resolve the `TODO: selector` comments — that's the part only a
+   human with SUT access can do.
+4. Run the test locally. Iterate until green.
+5. Update the TC's frontmatter: `automation_status: automated`,
+   `automation_path: tests/.../<file>.spec.ts`. Add a
+   `## Automation` H2 to the TC noting the commit SHA where it
+   landed.
+
+Cadence question (same sprint? next sprint? batched AUTO-NN
+stories?): [automation-flow.md](automation-flow.md).
+
+### Sprint planning day
+
+The team's running sprint planning. You're capturing your slice of
+the meeting for future reference (and to feed `/session-start`
+tomorrow).
+
+Flow:
+
+1. During the meeting, jot rough notes — tickets committed,
+   estimates, who owns what, any concerns raised.
+2. After the meeting, paste the notes into Copilot Chat and
+   invoke `/sprint-planning-intake`. It writes
+   `teams/<active>/ceremonies/sprint-planning/YYYY-MM-DD.md` with
+   the sprint identity, the stories committed, your QA workload,
+   up-front concerns, and standard action items (scaffold story
+   folders, run `/ac-auditor` on each).
+3. Run `node scripts/new-story.mjs <ticket> <slug>` for each
+   assigned design ticket.
+4. (Optional) Invoke `/story-intake` on each to chain the AC
+   audit.
+
+The ceremony note is internal — never pasted into Jira or Teams.
+It's your private record of the meeting.
+
+### Retro day
+
+End of sprint. The team's running a retrospective. Same shape as
+planning intake, with one extra responsibility: recurrence
+detection.
+
+Flow:
+
+1. During the retro, capture went-well / went-poorly / decisions
+   in rough notes.
+2. After, paste into Copilot Chat and invoke `/retro-intake`. It
+   writes
+   `teams/<active>/ceremonies/retrospectives/YYYY-MM-DD.md`
+   matching the team's retro format, separates team action items
+   from personal QA action items, surfaces promotable patterns.
+3. **Check the recurrence flag** — the prompt compares against the
+   previous retro file. If an item is recurring, the prompt warns
+   you. Use the warning to reframe the action item before it lands
+   in next sprint's queue.
+4. Promote any pattern flagged for `knowledge/patterns/` —
+   sanitize + write per
+   [team-knowledge-promotion.md](team-knowledge-promotion.md).
+
+### Design-doc-heavy day (or pre-AC clarification)
+
+The dev team dropped a design doc, a Figma description, or a Slack
+thread that you need to question — but it's not yet acceptance
+criteria. `/ac-auditor` is the wrong tool (it expects AC).
+`/question-generator` is the right one.
+
+Flow:
+
+1. Paste the source (design doc paragraph, Slack thread, your
+   verbal recall of a call) into Copilot Chat.
+2. Invoke `/question-generator`. Specify audience (dev / PO /
+   tech-lead) + channel (Teams / Jira) + tone (peer / up-to-PO /
+   cross-team) if it matters; otherwise the prompt asks once.
+3. Output: paste-ready numbered list in the right tone for the
+   target audience. No file written.
+4. Copy into Teams or Jira and send.
+
+When the AC eventually lands as a story, switch to `/ac-auditor`.
+The question-generator output and the AC audit are two different
+artifacts.
+
+---
+
 ## Why this playbook exists
 
 The previous QA brain (a chat thread re-loaded daily) didn't have
@@ -570,5 +699,11 @@ day gets non-trivial.
 - [session-start.md](session-start.md) — deep dive on the morning ritual
 - [session-end.md](session-end.md) — deep dive on the evening ritual
 - [story-intake.md](story-intake.md) — when a new Jira ticket arrives
+- [ac-audit.md](ac-audit.md) — wraparound for `/ac-auditor`
+- [test-case-design.md](test-case-design.md) — coverage strategy and authoring
+- [test-case-peer-review.md](test-case-peer-review.md) — peer review days
+- [automation-flow.md](automation-flow.md) — automation days + cadence decisions
+- [version-snapshot.md](version-snapshot.md) — ZIP cadence + restore
+- [team-onboarding.md](team-onboarding.md) — scaffold a new team
 - [team-knowledge-promotion.md](team-knowledge-promotion.md) — cross-team lessons
 - [client-rotation.md](client-rotation.md) — engagement off-boarding
