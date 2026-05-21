@@ -4,7 +4,7 @@ type: playbook
 status: active
 language: en
 tags: [playbook, test-design, coverage]
-updated: 2026-05-20
+updated: 2026-05-21
 ---
 
 # Playbook — Test case design
@@ -35,7 +35,7 @@ outputs scenarios grouped by:
 
 Each scenario gets a severity hint (must-have / should-have /
 nice-to-have) and a flag for whether it likely duplicates an
-existing library test case.
+existing test case in the same area.
 
 ### 2. Choose the v1 set
 
@@ -51,33 +51,58 @@ Don't author all suggested scenarios. The triage:
 Aim for **5–12 test cases** for a typical story. More than that
 suggests the story is too big and should be split.
 
-### 3. Decide: story-local or library?
+### 3. Single home — pick the area
 
-For each chosen scenario:
+As of v1.6, **every test case lives in exactly one place**:
+`teams/<team>/test-cases/<area>/`. There is no `library/`
+subfolder and no story-local copy. The TC's `linked_stories:`
+frontmatter array is the canonical many-to-many link to one or
+more stories that exercise it.
 
-- **Story-local** if the test is tightly coupled to this
-  story's specific data or behavior.
-- **Library** (`test-cases/library/<area>/`) if the test verifies
-  a stable SUT invariant and could be reused.
+For each chosen scenario, pick the `<area>` it belongs to (e.g.
+`auth`, `search`, `billing`, `reports`). The area folder is just
+the SUT's functional surface — keep it consistent across stories
+that touch the same surface. When in doubt, look at sibling TCs
+in `teams/<team>/test-cases/` and reuse an existing area name
+before inventing a new one.
 
-When in doubt, start story-local. Promotion to library is easy
-later; demotion is awkward.
+If the same SUT invariant is exercised by a second story later,
+**do not duplicate the TC**. Append the new story's Jira key to
+the existing TC's `linked_stories:` array. One TC, many stories.
 
 ### 4. Author each test case
 
-Invoke `/test-case-design` per scenario. Provide:
+Invoke `/test-case-design` per scenario, or use the CLI:
 
-- The scenario description (often "design H1" from the analyzer
-  output)
-- Story-local vs library destination
-- Any specific data setup the engineer already knows is needed
+```bash
+node scripts/new-test-case.mjs <area> <slug> --link-story <TICKET>
+```
 
-The prompt:
+The `--link-story <TICKET>` flag is the new v1.6 wiring. When
+provided, the script:
 
-- Generates a fully-formed test case file
-- Assigns the next free TC-ID
-- Drafts Gherkin-influenced steps
-- Identifies automation feasibility
+1. Creates the TC at `teams/<team>/test-cases/<area>/tc-<area>-<NNN>-<slug>.md`
+   with `linked_stories: [<TICKET>]` already populated.
+2. Reads the matching `teams/<team>/stories/<TICKET>-*/story.md`,
+   appends the new TC's ID to its `linked_test_cases:`
+   frontmatter array, and adds a markdown link under the
+   story's "## Test cases" body section (creating the section
+   if missing).
+
+Both sides of the link are updated in a single command — no more
+manual cross-referencing.
+
+If you skip `--link-story`, the TC lands as a standalone artifact
+with `linked_stories: []`. Wire it later by editing both
+frontmatter arrays and `node scripts/validate-links.mjs` will
+flag any mismatch.
+
+The prompt and the CLI both:
+
+- Generate a fully-formed test case file
+- Assign the next free TC-ID (`TC-<AREA>-<NNN>`, immutable once set)
+- Draft Gherkin-influenced steps
+- Identify automation feasibility
 
 ### 5. Peer review hand-off (team workflow)
 
@@ -122,20 +147,29 @@ Each story should have at least:
 A story with only happy paths is under-tested. A story with 20
 test cases is over-tested (or too big). Find the sweet spot.
 
-## When to reuse a library test case vs author new
+## When to reuse an existing TC vs author new
+
+Before authoring, scan `teams/<team>/test-cases/<area>/` for a TC
+that already covers the scenario. Single-home means there's only
+one place to look.
 
 Reuse when:
 
-- The library test case verifies the same invariant.
+- The existing TC verifies the same invariant.
 - The AC of the new story implies that invariant must still hold.
-- The library test case isn't `deprecated`.
+- The TC isn't `status: retired`.
+
+To reuse, append the new story's Jira key to the TC's
+`linked_stories:` array and add a markdown link to the new
+story's "## Test cases" body section. Both sides updated, no
+file duplication.
 
 Don't reuse when:
 
-- The library test case is "close but not quite" — that's a
-  signal to author a variant.
-- The library test case is too generic and would pass even if
-  this story's specific behavior is broken.
+- The existing TC is "close but not quite" — that's a signal to
+  author a variant, not to widen the original.
+- The existing TC is too generic and would pass even if this
+  story's specific behavior is broken.
 
 ## Naming conventions
 
@@ -143,9 +177,11 @@ File: `tc-<area>-<NNN>-<descriptive-slug>.md` (e.g.
 `tc-search-005-filter-by-date-range-happy.md`).
 
 ID inside frontmatter: `TC-<AREA>-<NNN>` (uppercase, padded).
+**Immutable once assigned** — renaming the file does not change
+the ID, and the ID is what `linked_test_cases:` references.
 
-Story-local can use `TC-<TICKET-KEY>-<NN>` local sequence (e.g.
-`TC-TEAM-1234-01`).
+The TC's path always lives at `teams/<team>/test-cases/<area>/`.
+No story-local IDs, no library subfolder.
 
 ## Hard rules
 

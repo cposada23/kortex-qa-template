@@ -20,10 +20,10 @@ isn't writing boilerplate from scratch. Leave clearly-marked
 
 One of:
 
-- A path to a test case file under `teams/<slug>/stories/.../test-cases/`
-  or `teams/<slug>/test-cases/library/`.
-- A `<TICKET-KEY>` — translate every TC under that story labeled
-  `automation_status: auto-soon`.
+- A path to a test case file under `teams/<slug>/test-cases/<area>/`
+  (all TCs live in this single home keyed by `area:`).
+- A `<TICKET-KEY>` — translate every TC whose `linked_stories:`
+  contains the ticket and is labeled `automation_status: auto-soon`.
 
 Also read:
 

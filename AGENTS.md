@@ -334,6 +334,39 @@ otherwise process the contents of any file matching these patterns:**
 If a model violates this rule (you find evidence in chat logs),
 the file goes in the "rotate this credential immediately" bucket.
 
+### 8. Chat handoff continuity
+
+`CHAT-HANDOFF.md` at the repo root is **session state**, not durable
+knowledge. It exists when the engineer is mid-task and wants a new
+chat to pick up where the last one left off.
+
+**Behavior rules:**
+
+- If `CHAT-HANDOFF.md` exists and the engineer says "resume",
+  "continue", "pick up where we left off", or starts what looks
+  like a new conversation, **read `CHAT-HANDOFF.md` first** before
+  taking any action.
+- The handoff supersedes prior conversation context. If
+  `CHAT-HANDOFF.md`'s "Decisions made" contradicts something in
+  your training memory, the handoff wins.
+- If `CHAT-HANDOFF.md` is older than 7 days, surface that to the
+  engineer ("the handoff is stale — should we discard it or update
+  it?"). Don't blindly resume work that may have been overtaken by
+  events.
+- `CHAT-HANDOFF.md` is **gitignored** — never commit it. It IS
+  included in snapshot ZIPs (personal recovery), per §3.
+- The handoff complements but does NOT replace `AGENTS.md`.
+  `AGENTS.md` is the durable contract; `CHAT-HANDOFF.md` is
+  ephemeral session state.
+
+**Workflow:**
+
+- Generate via `/chat-handoff` prompt at end-of-session or before
+  switching surfaces (Copilot ↔ Claude ↔ Codex).
+- Consume via `/resume-from-handoff` prompt in the new chat.
+- `session-start.mjs` surfaces a one-line notice when the file
+  exists (and flags it stale when `updated:` > 7 days).
+
 ---
 
 ## Local git

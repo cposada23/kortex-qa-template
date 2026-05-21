@@ -101,7 +101,7 @@ Two ticket shapes work:
 
 ```
 TEAM-1234   Story  — date-range filter on reports
-└── TEAM-1234-1   Sub-task — write Playwright for TC-..-01..03
+└── TEAM-1234-1   Sub-task — write Playwright for TC-SEARCH-001..003
 ```
 
 Best for Cadence A. The sub-task is the deliverable. The QA
@@ -112,7 +112,7 @@ links it to the brain via the TC's frontmatter
 
 ```
 AUTO-87     Story  — automate date-range filter on reports
-            (covers TEAM-1234 TC-..-01..03)
+            (covers TEAM-1234 TC-SEARCH-001..003)
 ```
 
 Best for Cadences B and C. The `AUTO-` story has its own
@@ -133,10 +133,16 @@ link between them is **frontmatter discipline** in the brain plus
 
 ### Frontmatter on the manual TC
 
+The TC lives at `teams/<team>/test-cases/<area>/tc-<area>-<NNN>-<slug>.md`
+(v1.6 single home — no `library/` subfolder, no per-story copy):
+
 ```yaml
 ---
-title: "TC-TEAM-EXAMPLE-001-01 — filter by date range"
+id: TC-SEARCH-001                # immutable
+title: "filter by date range"
 type: test-case
+area: search
+linked_stories: [TEAM-1234]      # canonical many-to-many link
 automation_status: auto-soon | auto-eventually | automated | manual-only
 automation_path: tests/ui/reports/filter-by-date-range.spec.ts   # relative to automation repo root
 automation_story: TEAM-1234-1   # the Jira ticket that owns the automation work
@@ -146,7 +152,7 @@ automation_story: TEAM-1234-1   # the Jira ticket that owns the automation work
 ### Test name in the automation file
 
 ```typescript
-test('TC-TEAM-EXAMPLE-001-01 — filter by date range', async ({ page }) => { ... });
+test('TC-SEARCH-001 — filter by date range', async ({ page }) => { ... });
 ```
 
 Why test names matter: when a CI run fails, the QA can grep the

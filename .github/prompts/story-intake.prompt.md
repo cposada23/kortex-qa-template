@@ -34,8 +34,13 @@ You'll also need:
 2. Run `node scripts/new-story.mjs <TICKET-KEY> <slug>` (or, if
    you can't run shell commands, suggest the engineer run it and
    wait for confirmation). This creates the folder skeleton under
-   `teams/<active>/stories/<TICKET-KEY>-<slug>/` and updates that
-   team's `teams/<active>/stories/INDEX.md`.
+   `teams/<active>/stories/<TICKET-KEY>-<slug>/` (containing
+   exactly `story.md`, `ac-audit.md`, and `execution-log.md` —
+   no `test-cases/` subfolder, no `bugs.md` pointer) and updates
+   that team's `teams/<active>/stories/INDEX.md`. Test cases
+   live at `teams/<active>/test-cases/<area>/` and link back via
+   `linked_test_cases:`; bugs live at `teams/<active>/bugs/` and
+   link back via `linked_bugs:`.
 3. Read the resulting `teams/<active>/stories/<TICKET-KEY>-<slug>/story.md`
    skeleton (created from `templates/story/story.md`).
 4. Fill in `story.md`:
@@ -68,7 +73,8 @@ Status: in-progress
 AC audit: <done | pending — N questions for dev/PO>
 
 Files written:
-- story.md
+- story.md (with `linked_test_cases: []`, `linked_bugs: []`,
+  `review_status: not-reviewed` in frontmatter)
 - ac-audit.md (with N findings, N questions)
 - execution-log.md (empty)
 

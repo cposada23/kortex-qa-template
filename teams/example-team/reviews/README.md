@@ -1,74 +1,45 @@
-# reviews/ — Peer reviews of others' test cases
+# reviews/ — peer reviews of OTHER QAs' work (optional)
 
-When the team workflow assigns the owner to **review someone
-else's test cases** (the "test-case-review" subtask of a Jira
-story), the review goes here — not in the original story's folder.
+When the team workflow assigns you to review someone else's test
+cases or stories, your review notes live HERE — not in the
+original story's folder (which belongs to the design author).
 
-Reason: the original story belongs to whoever owns the design
-work. The review is the engineer's own deliverable.
+## Frontmatter is the source of truth for state
+
+In v1.6, **review state lives in the artifact's own frontmatter**,
+not in this folder:
+
+```yaml
+# in a test case or story
+review_status: not-reviewed | requested | in-review | changes-requested | approved
+```
+
+A file in `reviews/` is **optional supporting evidence** — created
+only when the reviewer has substantive prose to add (rationale for
+the decision, paste-ready comments for Jira, risk notes, etc.).
+
+**Hard rule:** if a review file says one thing and the
+frontmatter says another, **frontmatter wins**. The review file
+is documentation, not state.
+
+## When to create a review file
+
+- You have detailed paste-ready comments for the author (so the
+  comments don't get lost in chat).
+- You're documenting a non-trivial rationale for `approved` or
+  `changes-requested` so a future reader understands why.
+- You want a permanent record of the review for audit / calibration.
+
+When the review is just "LGTM" or "needs work, message sent": skip
+the file. Just set `review_status:` on the artifact.
 
 ## File naming
 
-`<TICKET-KEY>.md` — one file per story reviewed. If the same
-story comes back for a re-review, append to the same file with a
-dated H2 section.
-
-## Anatomy of a review file
-
-```markdown
----
-title: "<TICKET-KEY> — test case review"
-type: review
-status: in-progress | approved | changes-requested | rejected
-reviewing_ticket: <TICKET-KEY>
-reviewed_at: YYYY-MM-DD
-language: en
-tags: [review, ...]
-updated: YYYY-MM-DD
----
-
-# <TICKET-KEY> — test case review
-
-## Scope of review
-
-What was reviewed (paths in the SUT repo or Jira test management
-plugin).
-
-## Findings
-
-### Coverage
-- ...
-
-### Clarity
-- ...
-
-### Redundancy
-- ...
-
-### Automation feasibility
-- ...
-
-## Outcome
-
-Approved / Changes requested / Rejected. One paragraph rationale.
-
-## Comments to deliver
-
-(Phrased as the owner would write them — first person, peer tone.
-This is what gets posted as Jira comments or sent to the author
-in Teams.)
-```
-
-## Hard rule — external communication tone
-
-The **Comments to deliver** section is destined for the original
-author's eyes. It must read like the owner wrote it himself. No
-AI scaffolding leakage. See [../AGENTS.md](../AGENTS.md) §"External
-communication rule".
+`<TICKET-KEY>.md`, e.g. `TEAM-1234.md`. If you re-review the same
+story, append a dated H2 section to the existing file rather than
+creating a new one.
 
 ## See also
 
-- [../AGENTS.md](../AGENTS.md)
-- [../playbooks/test-case-peer-review.md](../playbooks/test-case-peer-review.md)
-  (stub in v1.0)
-- [INDEX.md](INDEX.md)
+- [test-case-peer-review playbook](../../../playbooks/test-case-peer-review.md)
+- [test-case-reviewer prompt](../../../.github/prompts/test-case-reviewer.prompt.md)

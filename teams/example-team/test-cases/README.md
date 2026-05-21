@@ -1,59 +1,67 @@
-# test-cases/ — reusable test case library
+# test-cases/ — single-home test repository
 
-Test cases that are useful **across multiple stories** live here.
-Story-specific test cases stay inside their story's folder.
-
-## When to promote a test case to the library
-
-Promote when:
-
-- The same test (or near-duplicate) is needed for a second story.
-- The test verifies a stable invariant of the SUT, not a specific
-  feature behavior.
-- The test covers a high-value regression check.
-
-Don't promote when:
-
-- The test is tightly coupled to one story's specific data.
-- The test is a one-off exploratory check.
-- The team's test management tool (Xray/Zephyr/TestRail) is the
-  better home for the cross-story version.
+All test cases for this team live here, organized by area. There
+is no story-local sub-folder anymore (that was the v1.5 model —
+v1.6 unified to a single repository to match TestRail / Xray /
+Zephyr / Qase / Azure DevOps conventions).
 
 ## Layout
 
 ```
-library/
-├── <area-1>/
-│   ├── tc-<area>-<NN>-<slug>.md
-│   └── ...
-├── <area-2>/
-│   └── ...
+test-cases/<area>/<slug>.md
 ```
 
-Areas are SUT-relative: `auth/`, `billing/`, `search/`, `cart/`,
-`checkout/`, etc. Pick the smallest unit that makes sense.
+`<area>` is a free-form lowercase kebab-case folder name (`auth`,
+`search`, `billing`, `notifications`, ...). Scripts default the
+area to "misc" if you don't pass one.
 
-## ID convention
+## Naming
 
-`TC-<AREA>-<NNN>` where:
+`tc-<area>-<NNN>-<slug>.md`, e.g. `tc-auth-001-login-happy-path.md`.
 
-- `AREA` is the area uppercase (`AUTH`, `BILLING`, ...).
-- `NNN` is a zero-padded sequential number per area.
+## ID schema
 
-The ID lives in the `id:` frontmatter field. Cross-references from
-stories use the file path, not the ID.
+Every test case has an immutable ID in its frontmatter:
 
-## Scaffolding
-
-```bash
-node scripts/new-test-case.mjs <area> <slug>
+```yaml
+id: TC-AUTH-001
 ```
 
-Or invoke `/test-case-design` in Copilot Chat after running
-`/story-analyzer`.
+The ID is assigned at creation by `node scripts/new-test-case.mjs`
+and **never changes** even if the file is renamed. Cross-references
+in stories use the ID, not the path.
+
+## Linking to stories
+
+A test case knows which stories it covers via `linked_stories:` in
+its frontmatter:
+
+```yaml
+linked_stories: [TEAM-1234, TEAM-1240]
+```
+
+A test case can be linked to multiple stories (many-to-many).
+Conversely, the story's frontmatter has `linked_test_cases:
+[TC-AUTH-001, ...]`. Both sides are kept in sync by `new-test-case.mjs
+--link-story <TICKET>` and validated by `validate-links.mjs` on
+every commit.
+
+## Promotion ritual: GONE
+
+In v1.5 you wrote test cases inside a story folder and "promoted"
+them to a library later. v1.6 drops this: test cases are born here.
+Use `status:` to track lifecycle:
+
+- `status: draft` — being authored, not yet executed.
+- `status: active` — executed and shipping to regression.
+- `status: retired` — obsolete, kept for history but excluded from
+  regression runs.
+
+Regression suite composition = filter by `status: active` + tags +
+areas. There is no separate regression folder.
 
 ## See also
 
-- [../AGENTS.md](../AGENTS.md)
-- [../playbooks/test-case-design.md](../playbooks/test-case-design.md)
-- [INDEX.md](INDEX.md)
+- [Frontmatter schema](../../../.github/instructions/frontmatter.instructions.md)
+- [test-case-design playbook](../../../playbooks/test-case-design.md)
+- [test-case-peer-review playbook](../../../playbooks/test-case-peer-review.md)

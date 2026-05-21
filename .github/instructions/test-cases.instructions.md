@@ -83,22 +83,10 @@ secondary aspects.
 - `<AREA>` is uppercase (`AUTH`, `BILLING`, `SEARCH`, ...).
 - `<NNN>` is zero-padded sequential per area.
 
-For story-local test cases (inside
-`teams/<active>/stories/<TICKET>/test-cases/`), the ID can be
-local — `TC-<TICKET>-<NN>` works too. When promoting to
-`teams/<active>/test-cases/library/<area>/`, re-assign to the
-area's sequence.
-
-## Promotion rule
-
-Promote a story-local test case to
-`teams/<active>/test-cases/library/<area>/` when:
-
-1. It's needed by a second story.
-2. It verifies a stable SUT invariant.
-3. It's a high-value regression check.
-
-Don't promote one-offs.
+Test cases are born at `teams/<active>/test-cases/<area>/` with
+`status: draft` and graduate via the lifecycle
+(`draft → reviewed → active → deprecated`). There is no separate
+"library" location — the canonical home is the single one above.
 
 ## Linking automation
 

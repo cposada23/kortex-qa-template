@@ -12,14 +12,17 @@ teams/<active>/stories/<TICKET-KEY>-<slug>/
 ├── story.md           REQUIRED — captures the Jira ticket
 ├── ac-audit.md        REQUIRED — AC quality audit + Teams-ready questions
 ├── questions.md       OPTIONAL — free-form parked questions
-├── execution-log.md   REQUIRED — test run records
-├── bugs.md            OPTIONAL — local pointer to teams/<active>/bugs/ entries
-└── test-cases/        OPTIONAL — story-specific test cases
-    └── <slug>.md
+└── execution-log.md   REQUIRED — test run records
 ```
 
 `<TICKET-KEY>` is the Jira key verbatim (uppercase, hyphenated
 number). `<slug>` is 2–6 kebab-case words.
+
+TCs live at `teams/<active>/test-cases/<area>/`; the story
+references them via `linked_test_cases:` frontmatter + a
+`## Test cases` body section with markdown links. Bugs are
+referenced similarly via `linked_bugs:` frontmatter + a
+`## Bugs found` body section.
 
 ## `story.md` shape
 

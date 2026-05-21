@@ -39,6 +39,14 @@ has a clean slate to read.
    - "Want to discard?" (rare)
 5. If inbox has items from today, suggest triage routes for each
    (promote to story / promote to knowledge / delete).
+6. Ask the engineer: "Will you resume tomorrow in a **different
+   chat session** (new Copilot/Claude/Codex window)?" If yes,
+   suggest invoking `/chat-handoff` after this prompt completes
+   — it writes `CHAT-HANDOFF.md` at the repo root with the
+   current goal, files in focus, decisions made, and next exact
+   action so the new chat can pick up without replaying history.
+   If they'll resume in this same chat, skip the handoff (the
+   conversation context is enough).
 
 ## Output — JOURNAL entry to append
 
@@ -79,6 +87,10 @@ Inbox: <N> items remain unprocessed.
 
 Suggested commit message:
 > session: YYYY-MM-DD — <one-line summary>
+
+<If the engineer is resuming tomorrow in a different chat:>
+Next: invoke `/chat-handoff` to write CHAT-HANDOFF.md so the
+new chat picks up cleanly.
 ```
 
 ## Hard rules

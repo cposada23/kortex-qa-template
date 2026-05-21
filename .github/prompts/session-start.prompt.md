@@ -14,16 +14,21 @@ context from scratch.
 
 Read the following files in this order:
 
-1. [../../TODO.md](../../TODO.md) — active TODOs
-2. [../../JOURNAL.md](../../JOURNAL.md) — most recent 1–3 entries
-3. [../../teams/active-team.txt](../../teams/active-team.txt) —
+1. `CHAT-HANDOFF.md` at the repo root — if it exists, it is
+   session state from a previous chat. Surface it at the top of
+   the summary (see Output). `scripts/session-start.mjs` does
+   the same — this prompt mirrors that behavior for
+   AI-augmented session starts.
+2. [../../TODO.md](../../TODO.md) — active TODOs
+3. [../../JOURNAL.md](../../JOURNAL.md) — most recent 1–3 entries
+4. [../../teams/active-team.txt](../../teams/active-team.txt) —
    identify the active team(s) (line 1 = primary)
-4. `teams/<active>/stories/INDEX.md` for each active team — the
+5. `teams/<active>/stories/INDEX.md` for each active team — the
    story roster scoped to that team
-5. Any `teams/<active>/stories/*/story.md` with `status: in-progress`
+6. Any `teams/<active>/stories/*/story.md` with `status: in-progress`
    or `status: blocked` — read the frontmatter and any "Notes"
    section
-6. `teams/<active>/inbox/INBOX.md` for each active team — last
+7. `teams/<active>/inbox/INBOX.md` for each active team — last
    few items, to surface unprocessed observations
 
 ## Process
@@ -44,6 +49,17 @@ Read the following files in this order:
 Single response, structured as:
 
 ```markdown
+## Chat handoff (if CHAT-HANDOFF.md exists)
+
+⚠ CHAT-HANDOFF.md exists (last updated YYYY-MM-DD).
+Consider running `/resume-from-handoff` first.
+
+<If the handoff is older than 7 days, instead surface:
+ℹ CHAT-HANDOFF.md exists but is stale (>7 days). Delete or
+refresh.>
+
+<If no CHAT-HANDOFF.md exists, omit this section entirely.>
+
 ## Today's focus
 
 <one-line summary of what the engineer planned to do next, per

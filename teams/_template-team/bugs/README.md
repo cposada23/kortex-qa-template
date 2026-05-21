@@ -1,53 +1,38 @@
-# bugs/ — Bug registry
+# bugs/ — flat bug registry
 
-Every bug found during execution gets a file here. Linked from the
-story that surfaced it (in `stories/<TICKET>/bugs.md` or
-`execution-log.md`).
+All bugs for this team live here as `BUG-<NNN>-<slug>.md` files.
+The folder is flat — bugs are not nested under stories. The
+relationship between a bug and its parent story (if any) lives in
+the bug's frontmatter:
 
-## File naming
-
-`BUG-<NNN>-<slug>.md` — sequential numbering, kebab-case slug.
-
-The `BUG-<NNN>` is the **local** bug ID. The Jira defect (when
-filed) has its own key (e.g. `TEAM-9001`). Both go in frontmatter
-(`id:` for local, `jira_key:` if filed).
-
-## Local vs Jira
-
-For each defect:
-
-- **Jira is the system of record for the team.** The defect status
-  (open / fixed / verified) lives in Jira.
-- **This file is the engineer's working record.** Richer than Jira
-  (exploratory observations, repro variations, related test
-  cases) but never the official source of truth.
-
-When you file a bug in Jira, fill in `jira_key:` in the
-frontmatter. Update `status:` in this file to mirror Jira state at
-key transitions, but don't treat it as a separate lifecycle
-tracker that can diverge.
-
-## Lifecycle
-
-Frontmatter `status:` values:
-
-```
-open → assigned → fixed → verified → closed
+```yaml
+linked_stories: [TEAM-1234]    # empty if exploratory; many-to-many otherwise
+linked_test_case: TC-AUTH-001  # optional, the TC that uncovered it
 ```
 
-Plus `wontfix` (terminal) and `duplicate` (terminal, links to the
-canonical bug).
+The story side mirrors via `linked_bugs: [BUG-001, ...]`.
 
-## Scaffolding
+## Why flat (not nested under stories)
+
+Industry consensus (Jira, Xray, TestRail, Azure DevOps): bugs are
+independent tickets. Nesting them under stories breaks the
+many-to-many model — one bug can affect multiple stories (e.g., a
+regression caused by an auth refactor that affects login,
+password-reset, and profile-edit stories at once).
+
+Exploratory bugs (no parent story) also live here with empty
+`linked_stories: []`. Query them with:
 
 ```bash
-node scripts/new-bug.mjs <slug>
+grep -L "linked_stories: \[[A-Z]" teams/<team>/bugs/*.md
 ```
 
-Or invoke `/bug-report-formatter` in Copilot Chat — outputs both
-the local file content AND a Jira-ready paste block.
+## ID schema
+
+`id: BUG-NNN` — immutable. Assigned at creation by
+`new-bug.mjs`. Renaming the file doesn't change the ID.
 
 ## See also
 
-- [../AGENTS.md](../AGENTS.md)
-- [INDEX.md](INDEX.md)
+- [Frontmatter schema](../../../.github/instructions/frontmatter.instructions.md)
+- [bug-report-formatter prompt](../../../.github/prompts/bug-report-formatter.prompt.md)

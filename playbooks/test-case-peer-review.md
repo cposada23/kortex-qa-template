@@ -9,6 +9,32 @@ updated: 2026-05-21
 
 # Playbook — Test case peer review
 
+## review_status is canonical; review files are optional (v1.6+)
+
+The `review_status:` field in the artifact's own frontmatter
+(the TC and the story it belongs to) is **the source of truth**
+for where a review stands. Values: `not-reviewed`, `requested`,
+`in-review`, `changes-requested`, `approved`.
+
+The `teams/<team>/reviews/<TICKET>.md` folder is now **optional**.
+Create a review file only when you have substantive prose to
+capture — rationale for a change request, paste-ready Jira/Teams
+comments, a side-by-side diff suggestion, or calibration notes
+for future reviewers. For simple state changes ("LGTM" /
+"approved" / "needs work, see Jira comment"), just bump
+`review_status:` on the TC's or story's frontmatter and skip the
+file entirely.
+
+**Hard rule:** if a `reviews/<TICKET>.md` file says one thing and
+the artifact's frontmatter says another, **frontmatter wins**.
+The review file is supplementary prose; the frontmatter field is
+the canonical state the rest of the pipeline (session-start
+report, automation handoff, story closeout) reads.
+
+When you DO write a review file, treat its contents as
+explanatory — never as a substitute for updating
+`review_status:`.
+
 ## Relationship to `/test-case-reviewer`
 
 The `/test-case-reviewer` Copilot prompt in
@@ -127,10 +153,14 @@ before sending.
   This is rare. When it happens, jump to a sync call with the
   author rather than a written review.
 
-The frontmatter field `review_outcome` on the review file (and
-`status` on the linked story) reflects the decision. The story
-moves back into `in-progress` for the author once changes are
-requested.
+The decision is recorded canonically in the artifact's
+frontmatter — `review_status:` on the TC and on the linked
+story. Bump it to `approved` or `changes-requested` and the rest
+of the pipeline picks up the new state. The story moves back
+into `in-progress` for the author once changes are requested. A
+`reviews/<TICKET>.md` file is only needed when the rationale
+warrants prose; for an "approved with no notes" decision, the
+frontmatter bump alone is the full audit trail.
 
 ## Calibration — comparing your eye to other reviewers
 
@@ -157,16 +187,20 @@ starting point; your team's actual bar is what matters.
 | Untestable expected result | "the system is fast" | Pick a measurable threshold or remove the line. |
 | Shared mutable state | TC-A creates a record TC-B then asserts on | Either chain explicitly or independent setup. |
 | AC drift | TC was written against AC v1, AC is now v3 | Add a `## Update YYYY-MM-DD` H2 to the TC and the story. |
-| Library duplication | TC-stories/X duplicates TC-library/Y | Reference the library TC, don't re-write. |
+| Duplicate TC | A second TC in the same `<area>/` re-covers what an existing TC already verifies | Append the new story's Jira key to the existing TC's `linked_stories:` instead of duplicating the file. |
 
 ## Linking the review output to the story
 
 After running `/test-case-reviewer`:
 
-1. The review file is created at
-   `teams/<slug>/reviews/<TICKET-KEY>.md` with findings + comments.
-2. Set the story's frontmatter `review_status: requested` →
-   `done` (or `changes-requested`).
+1. Set the story's (and each touched TC's) frontmatter
+   `review_status:` to `approved` or `changes-requested`. This is
+   the canonical signal — required even if no review file is
+   written.
+2. If the review produced substantive prose (rationale, paste-ready
+   comments, side-by-side suggestions), write it to
+   `teams/<slug>/reviews/<TICKET-KEY>.md`. If the outcome is a
+   clean "LGTM" with no notes, skip the file.
 3. If `changes-requested`, set the story's `status: review-blocked`
    and note the reviewer in `story.md`'s `## Notes`. Move back to
    `in-progress` once the author addresses findings.

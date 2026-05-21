@@ -48,7 +48,17 @@ Plus:
    - Affected user roles?
    - Browser / OS specifics?
 6. Write the bug file at
-   `teams/<active>/bugs/BUG-<NNN>-<slug>.md`.
+   `teams/<active>/bugs/BUG-<NNN>-<slug>.md`. Preferred path:
+   invoke
+   `node scripts/new-bug.mjs <slug> --link-story <TICKET-KEY>`
+   so the script (a) assigns the next free `BUG-<NNN>` ID
+   automatically and (b) auto-updates the parent story's
+   `linked_bugs:` frontmatter array AND its `## Bugs found`
+   body section with a markdown link. The story's
+   `linked_bugs:` array is the canonical many-to-many link —
+   there is no separate `bugs.md` pointer file in the story
+   folder. If you can't run shell commands, write the file
+   yourself and tell the engineer which story to update.
 
 ## Output — file
 
@@ -60,7 +70,7 @@ id: BUG-<NNN>
 severity: <low | medium | high | critical>
 status: open
 jira_key: <set after filing in Jira>
-linked_story: <TICKET-KEY>
+linked_stories: [<TICKET-KEY>]
 linked_test_case: <TC-<AREA>-<NNN> or empty>
 environment: <local | dev | qa | prod-readonly>
 language: en
@@ -162,7 +172,7 @@ id: BUG-001
 severity: medium
 status: open
 jira_key: <set after filing>
-linked_story: TEAM-1234
+linked_stories: [TEAM-1234]
 linked_test_case: TC-SEARCH-005
 environment: qa
 language: en
