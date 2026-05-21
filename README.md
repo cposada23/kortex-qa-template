@@ -5,13 +5,14 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.5.1 — team-centric architecture, full playbook set
+**Status:** v1.5.2 — team-centric architecture, full playbook set
 (13 playbooks), extended Copilot prompt library (12 prompts),
 pre-commit hook + AI cred read restrictions + path-drift sweep +
 Copilot prompt schema sync (`mode:` → `agent:`) + client-bootstrap
-playbook (clone-to-first-story + 4 import scenarios). Built and
-packaged 2026-05-20 → 2026-05-21 inside the upstream Kortex repo
-`mykortex`, extracted to its own repo for cloning.
+playbook with explicit `init-client` → `create-first-team` flow
++ 4 import scenarios. Built and packaged 2026-05-20 → 2026-05-21
+inside the upstream Kortex repo `mykortex`, extracted to its own
+repo for cloning.
 
 ---
 
@@ -360,6 +361,15 @@ context windows.
 migration) + final prose-level drift fix in
 `.github/instructions/*.md` (Codex micro-pass: `applyTo:` globs
 were correct but examples below still showed v1.0 paths).
+
+**v1.5.2** (2026-05-21) — split `init-client` from
+`create-first-team` in the bootstrap playbook. Step 3 now does
+client-level setup only; new Step 4 creates the first team
+explicitly (`new-team.mjs team-a` + `switch-team.mjs team-a`)
+with an ASCII tree showing the resulting filesystem. Added a
+"Mental model — client vs team" section up front. Concrete
+example pair `client-a` + `team-a` runs through the whole
+playbook.
 
 **v1.5.0** (2026-05-21) — Codex audit pass: Copilot prompt schema
 synced from `mode:` to `agent:` (the legacy key triggers a

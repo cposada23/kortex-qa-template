@@ -141,3 +141,25 @@ DECISIONS:
 BLOCKERS: none.
 
 READINESS: still green. v1.5.1 closes the bootstrap-narrative gap (owner can now hand the playbook to a future-self on a new laptop) and the residual drift Codex flagged. Watch items unchanged.
+
+## 2026-05-21 16:50 — v1.5.2 split init-client from create-first-team in bootstrap playbook
+
+STATE: Owner reading v1.5.1's bootstrap playbook: "En los pasos me muestras como crear el client, digamos que el cliente es cliente-a, pero no me muestras como crear un team para ese cliente. Como creo client-a team-a?" Real gap — Step 3 mixed init.mjs (client setup) with new-team.mjs (team setup) and offered both as alternatives via `--first-team`, but never showed the explicit "first init the client, then create your first team" flow as the recommended path. Result: hard to mentally separate client from team.
+
+DID:
+- **NEW: "Mental model — client vs team" section** at the top of the playbook (right after Pre-flight). Defines explicitly: `<client-slug>` = engagement identifier, one per clone; `<team-slug>` = team WITHIN the client, one or many per clone. Names the example pair used throughout: `client-a` (client) + `team-a` (team) — matches the owner's question verbatim.
+- **Step 3 rewritten** as "Initialize the client" — does ONLY client-level setup (rename workspace, write `.client-slug`, install hook, no team scaffolding). Shows expected script output. Notes that `teams/` still contains only example-team + _template-team after this step. The `--first-team` one-shot is kept as a documented variant but no longer the primary path.
+- **NEW Step 4: "Create your first team for this client"** — explicit `new-team.mjs team-a` + `switch-team.mjs team-a` sequence with what each does. ASCII tree showing the resulting filesystem (kortex-qa-client-a/ → teams/team-a/ with all sub-zones). Sub-sections: "What about example-team?" (keep or delete decision) + "Adding more teams later" (multi-team path with `--add` for 50/50 mode + cross-link to team-onboarding.md).
+- Renumbered Steps 5–9 (were 4–8). Step 8 (capture first story) updated with concrete `TEAM-1234 search-filter-empty-input` example and explanation that the story lands under the primary active team unless `--team` overrides.
+- Replaced remaining `<client-slug>` placeholders in Steps 5 and 7 with `client-a` for consistency with the rest of the playbook. Mental model section keeps the placeholder syntax (`<client-slug>`, `<team-slug>`) because that's where the abstraction is taught.
+- "Ready to work" checklist updated: `cat .client-slug` → `client-a`, `cat teams/active-team.txt` → `team-a` on line 1, NEW box for `ls teams/team-a/` showing the scaffolded sub-zones.
+- VERSION 1.5.1 → 1.5.2.
+
+DECISIONS:
+- Concrete example names `client-a` + `team-a` chosen over `acme` + `payments`. Reason: the owner asked literally "Como creo client-a team-a?" so the playbook now answers that pair verbatim. The Mental model section names real-use examples (`acme`, `payments`) for context, but the running example is the owner's pair.
+- Step 3 + Step 4 separated rather than kept as one step with `--first-team`. The separation makes the client vs team distinction load-bearing in the reader's mental model — they walk through both transitions explicitly. The one-shot variant is documented in Step 3 as an option for users who already know the team slug, but it's not the default narrative.
+- ASCII tree in Step 4: chose a tree over a bullet list because the spatial relationship (teams/ → team-a/ → sub-zones) is the load-bearing concept. The tree shows the nesting at a glance.
+
+BLOCKERS: none.
+
+READINESS: green. Owner's question about how the team gets created within the client is now answered visibly in Step 4 with a concrete `new-team.mjs team-a` command and the resulting filesystem tree.

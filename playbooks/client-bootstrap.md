@@ -47,6 +47,24 @@ If you're on Windows, also pin your PowerShell version:
 `$PSVersionTable.PSVersion`. The template's scripts work on
 Windows PowerShell 5.1 (default) and PowerShell 7+.
 
+## Mental model — client vs team
+
+The brain has **two slugs** the owner picks:
+
+- **`<client-slug>`** — identifies the client engagement. Used in
+  the local folder name, the workspace file, snapshot ZIP names,
+  and the `.client-slug` file. **One per clone.**
+- **`<team-slug>`** — identifies a team WITHIN the client. A single
+  client engagement may have one or several teams (you can rotate
+  across squads, or sit on two teams at once). Each team gets a
+  folder under `teams/<team-slug>/`. **One or more per clone.**
+
+This playbook uses **`client-a`** as the client and **`team-a`**
+as the first team's slug to make the distinction concrete. In real
+use, you'd pick names like `acme` (client) and `payments` (team).
+
+---
+
 ## Step 1 — Clone the template
 
 ```powershell
@@ -54,18 +72,18 @@ Windows PowerShell 5.1 (default) and PowerShell 7+.
 cd ~\work    # or wherever your client engagements live
 
 # Option A — via gh CLI
-gh repo clone cposada23/kortex-qa-template kortex-qa-<client-slug>
+gh repo clone cposada23/kortex-qa-template kortex-qa-client-a
 
 # Option B — via git directly
-git clone https://github.com/cposada23/kortex-qa-template.git kortex-qa-<client-slug>
+git clone https://github.com/cposada23/kortex-qa-template.git kortex-qa-client-a
 
-cd kortex-qa-<client-slug>
+cd kortex-qa-client-a
 ```
 
-Replace `<client-slug>` with a short kebab-case identifier for the
-client (e.g., `acme`, `nova-bank`, `globex`). It will appear in
-the workspace filename, snapshot ZIP names, and the
-`.client-slug` file the scripts read.
+Replace `client-a` with your real client slug (e.g., `acme`,
+`nova-bank`, `globex`). The slug should be short, kebab-case, and
+unambiguous. It will appear in the workspace filename, snapshot
+ZIP names, and the `.client-slug` file the scripts read.
 
 ## Step 2 — Reset Git history for this engagement
 
@@ -86,46 +104,138 @@ git init
 The pre-commit hook (which lives under `.git/hooks/`) was wiped
 with `.git`. You'll re-install it in the next step.
 
-## Step 3 — Initialize for the client
+## Step 3 — Initialize the client
 
 ```powershell
-node scripts/init.mjs <client-slug>
+node scripts/init.mjs client-a
 ```
 
-Or, if you already know the first team you'll work on:
+This handles **client-level** setup only — it does NOT create any
+team yet. What it does in one pass:
 
-```powershell
-node scripts/init.mjs <client-slug> --first-team <team-slug>
-```
-
-`init.mjs` does the following in one pass:
-
-1. Renames `kortex-qa.code-workspace` → `<client-slug>-qa.code-workspace`.
-2. Writes `.client-slug` (read by `snapshot.mjs` for ZIP naming).
+1. Renames `kortex-qa.code-workspace` → `client-a-qa.code-workspace`.
+2. Writes `.client-slug` with content `client-a` (read by
+   `snapshot.mjs` for ZIP naming).
 3. Creates `versions/` and a `VERSION` file if missing.
-4. (If `--first-team`) calls `new-team.mjs` and `switch-team.mjs`
-   to scaffold + activate the team in one step.
-5. **Calls `install-hooks.mjs`** — installs the pre-commit hook
+4. **Calls `install-hooks.mjs`** — installs the pre-commit hook
    that runs `validate.mjs` + `build-index.mjs --check` on every
    commit.
 
-If you did NOT pass `--first-team`, run those manually now:
+After Step 3, `teams/` still contains only `example-team/` and
+`_template-team/`. There is no team for `client-a` yet — Step 4
+creates it.
 
-```powershell
-node scripts/new-team.mjs <team-slug>
-node scripts/switch-team.mjs <team-slug>
+You'll see this in the script output:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Initialized for client: client-a
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Next steps:
+  1. Open the workspace: code client-a-qa.code-workspace
+  ...
 ```
 
-The `example-team/` folder ships as a reference. Either delete it
-once you've read it, or leave it — it doesn't interfere with your
-real teams.
+### One-shot variant (combines Step 3 + Step 4)
 
-## Step 4 — First commit
+If you already know your first team's slug, you can do both in
+one command:
+
+```powershell
+node scripts/init.mjs client-a --first-team team-a
+```
+
+That internally calls `new-team.mjs team-a` and then
+`switch-team.mjs team-a` so the team is scaffolded and active by
+the time `init.mjs` finishes. Skip Step 4 if you used this.
+
+## Step 4 — Create your first team for this client
+
+```powershell
+node scripts/new-team.mjs team-a
+node scripts/switch-team.mjs team-a
+```
+
+`new-team.mjs team-a` does:
+
+1. Copies `teams/_template-team/` → `teams/team-a/`.
+2. Pre-fills the template's `members.md`, `workflow.md`,
+   `deploy.md`, `ceremonies-info.md`, and `environments/*.md`
+   with placeholder content you'll fill in later.
+3. Calls `build-index.mjs teams` so `teams/INDEX.md` reflects the
+   new team.
+
+`switch-team.mjs team-a` writes `team-a` to the first line of
+`teams/active-team.txt`, making it the **primary active team**.
+Scripts like `new-story.mjs` default scaffolds to this team, and
+`/session-start` defaults its scope to all active teams (so the
+new team will show up in your morning summary).
+
+After Step 4, the filesystem looks like:
+
+```
+kortex-qa-client-a/
+├── .client-slug                  ← contains "client-a"
+├── client-a-qa.code-workspace    ← renamed by init.mjs
+├── teams/
+│   ├── active-team.txt           ← line 1: "team-a"
+│   ├── team-a/                   ← NEW, your first team
+│   │   ├── AGENTS.md
+│   │   ├── members.md            (placeholder, fill in later)
+│   │   ├── workflow.md           (placeholder)
+│   │   ├── deploy.md             (placeholder)
+│   │   ├── ceremonies-info.md    (placeholder)
+│   │   ├── stories/              (empty, ready for first story)
+│   │   ├── test-cases/library/   (empty)
+│   │   ├── bugs/                 (empty)
+│   │   ├── reviews/              (empty)
+│   │   ├── ceremonies/           (empty)
+│   │   ├── environments/         (placeholders for local/dev/qa)
+│   │   ├── automation/           (empty)
+│   │   └── inbox/INBOX.md
+│   ├── example-team/             ← shipped as reference (see below)
+│   └── _template-team/           ← DO NOT EDIT (scaffold source)
+└── (other repo files)
+```
+
+### What about `example-team/`?
+
+The `example-team/` folder ships with one story end-to-end +
+example test cases + bugs + a retro. It's there as a **reference**
+to read while you set up your real work. Two options after Step 4:
+
+- **Keep it.** It doesn't interfere — `team-a` is your primary,
+  scripts default there. `/session-start` will list both teams
+  but `example-team`'s stories are clearly tagged as examples.
+- **Delete it.** Once you've read it: `Remove-Item -Recurse
+  -Force teams\example-team` (PowerShell) or `rm -rf
+  teams/example-team` (Bash). Then re-run
+  `node scripts/build-index.mjs teams` so `teams/INDEX.md`
+  forgets it.
+
+### Adding more teams later
+
+A single client engagement can have several teams. After `team-a`
+is set up, add `team-b` whenever you need it:
+
+```powershell
+node scripts/new-team.mjs team-b
+node scripts/switch-team.mjs team-b --add    # mark also-active (50/50 mode)
+# OR
+node scripts/switch-team.mjs team-b          # promote team-b to primary, team-a stays secondary
+```
+
+See [team-onboarding.md](team-onboarding.md) for the full
+multi-team flow + when to keep two teams active vs switch primary
+mid-sprint.
+
+## Step 5 — First commit
 
 ```powershell
 git add .
-git commit -m "init: kortex-qa for <client-slug> v$(Get-Content VERSION)"
-# PowerShell — for Bash, swap to: git commit -m "init: kortex-qa for <client-slug> v$(cat VERSION)"
+git commit -m "init: kortex-qa for client-a v$(Get-Content VERSION)"
+# PowerShell — for Bash, swap to: git commit -m "init: kortex-qa for client-a v$(cat VERSION)"
 ```
 
 The pre-commit hook will run. You should see:
@@ -141,7 +251,7 @@ If validation fails, fix the reported issue and re-stage. Don't
 `--no-verify` past the hook on the first commit — that's the
 moment to confirm everything's wired.
 
-## Step 5 — Wire credentials (`.env`)
+## Step 6 — Wire credentials (`.env`)
 
 Real test credentials go in a **gitignored** `.env` file at the
 repo root. The `.gitignore` already covers `*.env`, `*.env.local`,
@@ -168,15 +278,15 @@ fixtures.
 scripts and Playwright to read via `process.env.*`; they stay
 out of AI context windows.
 
-## Step 6 — Open the workspace
+## Step 7 — Open the workspace
 
 ```powershell
-code <client-slug>-qa.code-workspace
+code client-a-qa.code-workspace
 ```
 
 VS Code opens with three folder roots:
 
-1. **Kortex-QA (this brain)** — `kortex-qa-<client-slug>/`
+1. **Kortex-QA (this brain)** — `kortex-qa-client-a/`
 2. **SUT** — the system-under-test repo (set the path after
    opening: right-click the placeholder root → "Edit Workspace
    File" → update the SUT path).
@@ -190,21 +300,31 @@ Confirm Copilot can read this folder:
   `.github/copilot-instructions.md` is being picked up
   (`@workspace` should see it).
 
-## Step 7 — Capture the first Jira story
+## Step 8 — Capture the first Jira story
 
 Two paths — pick whichever fits the moment.
 
 ### Path A — scaffold-first
 
 ```powershell
-node scripts/new-story.mjs <TICKET-KEY> <short-slug>
-# e.g.: node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
+node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
 ```
 
-This creates `teams/<active>/stories/<TICKET-KEY>-<short-slug>/`
-with the full story scaffold (`story.md`, `ac-audit.md`,
-`execution-log.md`, `bugs.md`, `test-cases/` folder). Open
-`story.md` and paste the Jira ticket body into the right sections.
+Replace `TEAM-1234` with your real Jira ticket key and
+`search-filter-empty-input` with a 2–6 kebab-case word slug.
+
+The story lands under the **primary active team** (i.e.,
+`teams/team-a/stories/TEAM-1234-search-filter-empty-input/`).
+If you want it under a non-primary team, pass `--team`:
+
+```powershell
+node scripts/new-story.mjs TEAM-1234 search-filter-empty-input --team team-b
+```
+
+The scaffold includes `story.md`, `ac-audit.md`, `execution-log.md`,
+`bugs.md`, and a `test-cases/` folder. Open `story.md` and paste
+the Jira ticket body into the right sections (title, AC, summary,
+dependencies).
 
 Then run `/ac-auditor` in Copilot Chat to audit the AC.
 
@@ -225,7 +345,7 @@ you have the ticket body handy.
 After either path, run `/session-start` tomorrow morning to see
 the story in your active list.
 
-## Step 8 — Take your first snapshot
+## Step 9 — Take your first snapshot
 
 After the first day of real work:
 
@@ -375,23 +495,28 @@ by design.
 
 ## What "ready to work" looks like
 
-After this playbook, you should be able to:
+After Steps 1–9, you should be able to tick every box below. The
+example assumes `client-a` (client slug) + `team-a` (team slug);
+substitute your real slugs.
 
 - [ ] `node scripts/validate.mjs` → green
 - [ ] `node scripts/build-index.mjs --check` → no drift
 - [ ] `git log --oneline` → at least one commit (the `init`
-      commit), pre-commit hook ran
-- [ ] `<client-slug>-qa.code-workspace` opens with three roots
-      (brain + SUT + automation)
-- [ ] `cat teams/active-team.txt` → at least one team listed
-      (your primary)
-- [ ] `cat .client-slug` → matches your client slug
+      commit), pre-commit hook ran cleanly
+- [ ] `client-a-qa.code-workspace` opens in VS Code with three
+      roots (brain + SUT + automation)
+- [ ] `cat .client-slug` → prints `client-a`
+- [ ] `cat teams/active-team.txt` → line 1 is `team-a` (your
+      primary team)
+- [ ] `ls teams/team-a/` → folder exists with the expected
+      sub-zones (stories, test-cases, bugs, reviews, ceremonies,
+      environments, automation, inbox, plus the meta files)
 - [ ] `.env` exists with at least one cred (gitignored — verify
       with `git status` showing no `.env` modification)
 - [ ] Copilot Chat answers a question about the brain referencing
       AGENTS.md or `.github/copilot-instructions.md`
 - [ ] You can invoke `/session-start` and get a useful response
-      (will be sparse the first morning; that's normal)
+      (sparse the first morning; that's normal)
 
 If any box is unchecked, walk back to the relevant step before
 starting real work.
