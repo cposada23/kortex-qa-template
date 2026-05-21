@@ -35,3 +35,11 @@ DID: 15-minute happy path table extended with 3 new decision branches (Review pe
 DECISIONS: Patch bump rather than amend v1.2.0 — the v1.2.0 commit is already pushed; amend + force-push would violate the no-force-push rule. The new content is real (~100 lines), worth its own commit + tag.
 BLOCKERS: none.
 NEXT: same as v1.2.0 — first client use. The day-in-the-life now reflects the full v1.2 capability set.
+
+## 2026-05-21 14:10 — v1.2.2 sync .github/copilot-instructions.md with team-centric architecture
+
+STATE: Second patch in same day, surfaced by owner pre-merge audit ("¿qué le falta al kortex qa?"). The Copilot entry-point file `copilot-instructions.md` was the last v1.0 artifact untouched by the v1.1 team-centric restructure. It claimed "ten zones", referenced `../stories/README.md` (404 post-restructure), pointed at root-level paths for stories/bugs/reviews/environments (all now under `teams/<slug>/`), and listed only the 7 v1.0 prompts. Since Copilot reads this file FIRST, every drift cascaded into wrong defaults from the first interaction.
+DID: Rewrite `copilot-instructions.md` from the ground up — architecture section reflects team-centric layout, discovery order points at `teams/<active>/{stories,test-cases,bugs,reviews,automation}/README.md` instead of root, hard rule #1 path globs updated to `teams/<slug>/...`, prompt list extended to 12 entries (all v1.2 prompts included), new hard rule #7 "Default-scope to the active team" formalizing the primary-team convention. VERSION 1.2.1 → 1.2.2.
+DECISIONS: Owner explicitly declined the 4 optional trade-offs (LICENSE / CHANGELOG.md / CI workflow / knowledge seed examples) — selective scope. Only the legit drift bug got fixed. No additions.
+BLOCKERS: none.
+NEXT: same as v1.2.0/v1.2.1 — first client use. The Copilot entry point now matches the rest of the template.
