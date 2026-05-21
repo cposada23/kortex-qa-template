@@ -5,9 +5,10 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.0.0 — built 2026-05-20 in safe-change branch
-`safe-change/kortex-qa-template` of the upstream Kortex repo
-`mykortex`.
+**Status:** v1.2.0 — team-centric architecture, full playbook set,
+extended Copilot prompt library. Built and packaged 2026-05-20 →
+2026-05-21 inside the upstream Kortex repo `mykortex`, extracted to
+its own repo for cloning.
 
 ---
 
@@ -16,15 +17,23 @@ it. One brain per client engagement.
 A `git`-tracked folder you clone (or copy) per client engagement.
 Inside, you'll find:
 
-- A **ten-zone QA-shaped architecture** (`stories/`, `test-cases/`,
-  `bugs/`, `automation/`, plus six supporting zones).
-- Pre-wired **Copilot configuration** in `.github/` (instructions
-  + reusable prompts).
-- **Zero-dependency Node.js scripts** for scaffolding, snapshots,
-  and index building.
-- **Playbooks** for the core QA daily loop.
+- A **team-centric QA architecture**: per-team folders carry
+  everything team-specific (stories, test cases, bugs, reviews,
+  ceremonies, environments, automation, members, workflow, deploy,
+  inbox); five global zones (`knowledge/`, `playbooks/`, `scripts/`,
+  `templates/`, `.github/`) sit alongside.
+- Pre-wired **Copilot configuration** in `.github/` — 5 scoped
+  instruction files (`applyTo:` globs) + 12 reusable prompts.
+- **Zero-dependency Node.js scripts** for scaffolding (new story,
+  test case, bug, team), snapshots, validation, and index building.
+- **A complete playbook set** for the core daily loop, peer review,
+  automation flow, snapshot cadence, and client rotation.
 - **Templates** the scaffold scripts use to stamp out new stories,
   test cases, and bugs.
+- **An example team** (`teams/example-team/`) with one story
+  end-to-end, one library test case, one bug, one retro, and two
+  automation playbook patterns — so a new clone has something to
+  read before you start your own work.
 
 You bring: a SUT (system under test) repo, an automation repo,
 your Jira credentials, and your client's environment access.
@@ -61,11 +70,15 @@ node scripts/init.mjs <client-slug>
 # 3. (Optional) Open the multi-root workspace in VS Code.
 code <client-slug>-qa.code-workspace
 
-# 4. Capture your first Jira ticket.
+# 4. (Optional) If you belong to more than one team, register them now.
+node scripts/new-team.mjs <other-team-slug>
+node scripts/switch-team.mjs <primary-team-slug>   # sets the default scaffold target
+
+# 5. Capture your first Jira ticket.
 node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
 # (or invoke /story-intake in Copilot Chat and paste the ticket body)
 
-# 5. Daily — in Copilot Chat:
+# 6. Daily — in Copilot Chat:
 /session-start
 # ... work ...
 /session-end
@@ -74,11 +87,13 @@ node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
 End-of-day: `git add . && git commit -m "session: $(date +%F)"`.
 
 Weekly: `node scripts/snapshot.mjs` to ZIP the brain to
-`versions/` for offline backup.
+`versions/` for offline backup. See
+[playbooks/version-snapshot.md](playbooks/version-snapshot.md) for
+cadence guidance.
 
 ---
 
-## Architecture overview — team-centric (v1.1)
+## Architecture overview — team-centric
 
 Read [AGENTS.md](AGENTS.md) for the full breakdown.
 
@@ -96,7 +111,7 @@ inbox.
 | `test-cases/library/` | Reusable test cases for this team's SUT. |
 | `bugs/` | Bug registry for this team. |
 | `reviews/` | Your peer reviews of this team's test cases. |
-| `ceremonies/` | This team's meeting notes. |
+| `ceremonies/` | This team's meeting notes (daily, planning, review, retro). |
 | `environments/` | This team's local / dev / qa setup. |
 | `automation/` | This team's Playwright patterns. |
 | `inbox/` | This team's free-form captures. |
@@ -106,12 +121,17 @@ Plus `teams/active-team.txt` (currently active team slug(s);
 first line = primary) and `teams/_template-team/` (empty scaffold
 copied by `node scripts/new-team.mjs <slug>`).
 
+The owner can belong to one team or many at once. `session-start`
+defaults to **all** active teams (so you see the full picture on a
+50/50 split); scaffold scripts default to the **first** line (the
+primary) and accept `--team <slug>` to override.
+
 ### Global zones (cross-team)
 
 | Zone | Purpose |
 |---|---|
 | `knowledge/` | Distilled lessons. **The only portable zone** — must be sanitized before traveling across teams or clients. |
-| `playbooks/` | Long-form workflow docs (session-start/end, story-intake, day-in-the-life, etc.) |
+| `playbooks/` | Long-form workflow docs (session-start/end, story-intake, ac-audit, test-case-design, peer-review, automation-flow, version-snapshot, client-rotation, day-in-the-life, team-onboarding, team-knowledge-promotion). |
 | `scripts/` | Node.js tooling (zero-deps). |
 | `templates/` | Source files for scaffolds. |
 | `.github/` | Copilot wiring. |
@@ -150,7 +170,12 @@ Chat with `/<name>`:
 | `/ac-auditor` | AC needs scrutiny. Produces Teams-ready questions. |
 | `/story-analyzer` | Need scenario ideas for a story. |
 | `/test-case-design` | Drafting a test case from a scenario. |
+| `/test-case-reviewer` | Peer review pass on an existing test case (yours or a teammate's). |
+| `/automation-from-test-case` | Translate a manual test case into a Playwright skeleton. |
 | `/bug-report-formatter` | Found a defect, need a Jira-ready report. |
+| `/sprint-planning-intake` | Capture a sprint-planning meeting into `ceremonies/sprint-planning/`. |
+| `/retro-intake` | Capture a retrospective into `ceremonies/retrospectives/`. |
+| `/question-generator` | Standalone "dev/PO question generator" — when AC isn't the source (verbal clarification, design doc, etc.). |
 
 ---
 
@@ -176,13 +201,13 @@ If any are restricted, adapt:
 - **PowerShell Execution Policy blocks scripts (Windows
   corporate):** `snapshot.mjs` may not produce a ZIP. Either zip
   manually via Explorer, install Git Bash to get `zip`, or have IT
-  relax the policy. **Risk accepted for v1.0** — see
-  `scripts/snapshot.mjs` error messages for fallback guidance.
+  relax the policy. See `scripts/snapshot.mjs` error messages for
+  fallback guidance.
 
 This template cannot override organizational policies. It can only
 adapt to them.
 
-## v1.0 acceptance bar — what "ready" means
+## Acceptance bar — what "ready" means
 
 A real QA cloning this template can do the following in their
 first week without maintainer help:
@@ -196,21 +221,29 @@ first week without maintainer help:
    without breaking INDEXes.
 4. **Record execution** — `execution-log.md` updates per run,
    linked bugs cross-reference cleanly.
-5. **Format a bug** — `/bug-report-formatter` outputs a
+5. **Review peer test cases** — `/test-case-reviewer` produces a
+   structured review pass that lands in `teams/<slug>/reviews/`.
+6. **Hand a manual test case to automation** —
+   `/automation-from-test-case` emits a Playwright skeleton that
+   compiles and runs against a known-good selector.
+7. **Format a bug** — `/bug-report-formatter` outputs a
    Jira-ready paste block; no AI scaffolding language leaks.
-6. **End a day** — `/session-end` appends a journal entry and
+8. **End a day** — `/session-end` appends a journal entry and
    suggests a commit message.
-7. **Snapshot for backup** — `node scripts/snapshot.mjs`
-   produces a ZIP in `versions/` (or fails with a clear next
-   step on locked-down Windows).
-8. **Rotate clients** —
-   [playbooks/client-rotation.md](playbooks/client-rotation.md)
-   walks through wiping a client clone safely.
+9. **Capture ceremonies** — `/sprint-planning-intake` and
+   `/retro-intake` produce structured meeting notes in the right
+   folder.
+10. **Snapshot for backup** — `node scripts/snapshot.mjs`
+    produces a ZIP in `versions/` (or fails with a clear next
+    step on locked-down Windows).
+11. **Rotate clients** —
+    [playbooks/client-rotation.md](playbooks/client-rotation.md)
+    walks through wiping a client clone safely.
 
 If any of these breaks on a new client setup, the template
-needs a v1.0.x patch, not a v1.1 deferral.
+needs a patch release, not a deferral to the next minor.
 
-## v1.0 is single-client only
+## Single-client by design
 
 Each Kortex-QA clone serves **one client engagement** at a time.
 There is no `clients/` subfolder. When you rotate to a new
@@ -218,10 +251,9 @@ client, you **wipe and re-clone** per the
 [client-rotation playbook](playbooks/client-rotation.md) — you do
 not run two engagements in the same brain.
 
-Multi-client / freelance scenarios (one brain serving many
-clients in parallel) are explicitly deferred to v1.1. The
-constraint is intentional: client data isolation is easier when
-the filesystem itself enforces "one client per folder."
+This is intentional: client data isolation is easier when
+the filesystem itself enforces "one client per folder." Within a
+client, multi-team is fully supported (see `teams/active-team.txt`).
 
 ---
 
@@ -258,22 +290,26 @@ regardless of which root you're editing.
 ## Versioning
 
 Each template clone tracks its own SemVer in the `VERSION` file.
-v1.0.0 ships:
 
-- 10 zones + READMEs
-- 5 instructions + 7 prompts (Copilot wiring)
-- 5 full playbooks + 4 stubs
-- 8 Node `.mjs` scripts
-- 1 example story end-to-end + 1 library test case + 1 example
-  bug + 1 example retro
+**v1.0.0** (2026-05-20) — flat 10-zone architecture, 5 Copilot
+instructions, 7 prompts, 5 full playbooks + 4 stubs, 6 scripts, an
+example story end-to-end.
 
-v1.1 (planned, post-real-usage):
+**v1.1.0** (2026-05-21) — team-centric restructure (everything
+team-specific moves under `teams/<slug>/`), multi-team support
+(`active-team.txt`, `new-team.mjs`, `switch-team.mjs`),
+day-in-the-life playbook, team-onboarding and
+team-knowledge-promotion playbooks.
 
-- 5 more prompts (test-case-reviewer, automation-from-test-case,
-  sprint-planning-intake, retro-intake, question-generator)
-- 4 more full playbooks
-- A `clients/` zone (gated by `multi-client: true` flag) for
-  freelance engagements
+**v1.2.0** (2026-05-21) — playbook set completed (peer-review,
+automation-flow, version-snapshot promoted from stub to full),
+extended Copilot prompt library (5 new prompts:
+test-case-reviewer, automation-from-test-case,
+sprint-planning-intake, retro-intake, question-generator).
+
+Future versions (real-usage-driven): a `clients/` zone gated by
+`multi-client: true` for parallel freelance engagements, plus
+whatever the first month of real use surfaces.
 
 ---
 
@@ -293,5 +329,7 @@ client-identifying content; what you put in each clone is yours
   morning ritual
 - [playbooks/story-intake.md](playbooks/story-intake.md) — what to
   do when a new Jira ticket is assigned
+- [playbooks/day-in-the-life.md](playbooks/day-in-the-life.md) —
+  end-to-end walkthrough of a full QA day with the brain
 - [playbooks/client-rotation.md](playbooks/client-rotation.md) —
   the compliance-critical hand-off ritual

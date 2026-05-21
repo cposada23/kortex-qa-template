@@ -5,7 +5,7 @@ invokable; these playbooks are detailed reference for cold reading
 (returning after a vacation, onboarding a peer, debugging a
 workflow that isn't working).
 
-## v1.1 — full playbooks
+## Full playbook set (v1.2)
 
 - **[day-in-the-life.md](day-in-the-life.md)** — **start here.**
   End-to-end narrative + 15-minute happy path
@@ -16,6 +16,15 @@ workflow that isn't working).
   (when to run, how to triage findings, common AC smells)
 - **[test-case-design.md](test-case-design.md)** — coverage
   strategy and authoring
+- **[test-case-peer-review.md](test-case-peer-review.md)** —
+  wraparound for `/test-case-reviewer` (when to start a review,
+  how to deliver feedback, calibrating your eye over time)
+- **[automation-flow.md](automation-flow.md)** — when to automate
+  vs stay manual, staging the work in Jira, linking the brain to
+  the automation repo, anti-patterns cheat sheet
+- **[version-snapshot.md](version-snapshot.md)** — ZIP cadence,
+  VERSION bump rules, storage targets, retention windows, restore
+  procedure
 - **[team-onboarding.md](team-onboarding.md)** — scaffold + activate
   a new team folder
 - **[team-knowledge-promotion.md](team-knowledge-promotion.md)** —
@@ -24,17 +33,29 @@ workflow that isn't working).
   **compliance-critical** off-boarding (one clone = one client;
   rotation = wipe + new clone)
 
-## v1.1 — stubs (write as you go)
+## Relationship to `.github/prompts/`
 
-Frontmatter-only files. Fill them in once the workflow stabilizes
-through real usage.
+Each playbook that has a matching prompt names that prompt in the
+"Relationship to /<prompt>" section at the top. The playbook is
+the reference; the prompt is the trigger. Read the playbook
+when you want to understand the workflow; invoke the prompt when
+you want to *do* the workflow.
 
-- **[test-case-peer-review.md](test-case-peer-review.md)** —
-  reviewing someone else's test cases
-- **[automation-flow.md](automation-flow.md)** — staging
-  automation work alongside manual execution
-- **[version-snapshot.md](version-snapshot.md)** — ZIP backup
-  conventions and timing
+| Playbook | Prompt |
+|---|---|
+| ac-audit.md | `/ac-auditor` |
+| story-intake.md | `/story-intake` |
+| test-case-design.md | `/test-case-design` (+ `/story-analyzer` upstream) |
+| test-case-peer-review.md | `/test-case-reviewer` |
+| automation-flow.md | `/automation-from-test-case` |
+| session-start.md | `/session-start` |
+| session-end.md | `/session-end` |
+| (no matching playbook yet) | `/sprint-planning-intake`, `/retro-intake`, `/question-generator`, `/bug-report-formatter` |
+
+The four prompts without a dedicated playbook are intentional —
+each is self-contained enough that the prompt body is the
+documentation. If real usage reveals nuances that don't fit in
+the prompt, promote a playbook later.
 
 ## Promotion to `knowledge/playwright/` or `knowledge/patterns/`
 
