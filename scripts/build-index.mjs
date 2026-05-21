@@ -100,6 +100,7 @@ async function walkMdFiles(dir, baseDir) {
 async function buildIndexForZone(zoneRelPath) {
   const zoneDir = path.join(REPO_ROOT, zoneRelPath);
   const indexPath = path.join(zoneDir, 'INDEX.md');
+  const zoneName = path.basename(zoneRelPath);
 
   // Confirm zone exists
   try {

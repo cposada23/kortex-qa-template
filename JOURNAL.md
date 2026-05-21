@@ -43,3 +43,20 @@ DID: Rewrite `copilot-instructions.md` from the ground up — architecture secti
 DECISIONS: Owner explicitly declined the 4 optional trade-offs (LICENSE / CHANGELOG.md / CI workflow / knowledge seed examples) — selective scope. Only the legit drift bug got fixed. No additions.
 BLOCKERS: none.
 NEXT: same as v1.2.0/v1.2.1 — first client use. The Copilot entry point now matches the rest of the template.
+
+## 2026-05-21 14:45 — v1.3.0 Windows-First + .env policy + zoneName fix
+
+STATE: Owner ran a Gemini audit. Three real issues surfaced (zoneName bug in build-index.mjs, Windows-First not declared, no-push + .env policy not formalized). Gemini drafted edits to 3 files — accepted 2 partially (with corrections), accepted the bug fix as-is. Two of Gemini's claims rejected after critical review: timezone date drift in daysSince (real but immaterial — soft signal, ±1 day jitter on a 3-day threshold = noise; not worth datetime refactor); git hooks (owner declined — no remote to leak to).
+DID:
+- VERSION 1.2.2 → 1.3.0 (minor bump: new platform policy + restored portability rules).
+- AGENTS.md: rewrote the compliance section properly. Kept Gemini's 3 new policies (Windows-First, Local-only Git, .env permitted) BUT restored 3 rules Gemini deleted as collateral damage: "no client identifiers in knowledge/" (portability invariant), "run validate.mjs before snapshotting" (still useful even without push), "single-client by design" (architecture decision). Also fixed double `---` separator Gemini left, and added a §6 "Org policy pre-flight" so the assumptions list isn't lost. Total: 6 numbered subsections under "Compliance, Org Policy & Platform Philosophy".
+- .github/copilot-instructions.md: kept Gemini's Rule 5 rewrite (Local credentials + Purely Local Git) and Rule 8 new (Windows-First Cross-Platform Compatibility). No further edits needed.
+- scripts/build-index.mjs: accepted Gemini's fix verbatim — `zoneName = path.basename(zoneRelPath)` declared at top of buildIndexForZone. Empirically verified by triggering the no-INDEX branch in sandbox (created empty zone, ran build-index, got clean INDEX.md instead of ReferenceError).
+- .snapshotignore: added `*.env`, `*.env.local`, `.secrets` (Gemini didn't mention this gap, but it's the load-bearing piece of the .env policy — ZIPs often end up in client-managed Teams archives, so creds must stay out of them too).
+DECISIONS:
+- Platform policy: Windows-First / PowerShell primary, full cross-platform parity. No script changes needed — already uses path.join() + process.platform branching in snapshot.mjs.
+- Cred policy: .env files OK with real creds (gitignored AND snapshotignored). Tracked .md files stay creds-free.
+- No-push: documented as a workflow invariant, not enforced with a hook (no remote = nothing to enforce against). If a remote ever gets wired in by accident, the rule says "remove the remote, don't push".
+- Skipped: timezone fix in daysSince, pre-commit hook (owner declined), CHANGELOG/LICENSE/CI/knowledge-seeds (owner declined v1.2.2).
+BLOCKERS: none.
+READINESS: green to start using. The template is complete enough for first real client. Latent concerns (timezone jitter, no automated PII gate) are explicitly Watch, not blocker. Owner-driven NEXT items if they surface in real use: clients/ zone (multi-tenancy), seed examples in knowledge/{patterns,playwright,istqb}, optional CI.

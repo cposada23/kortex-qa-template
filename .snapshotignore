@@ -7,6 +7,16 @@ versions/
 .git/
 .cache/
 node_modules/
+
+# Credentials — NEVER snapshot (even though snapshots are local-only,
+# they often end up in client-managed backup locations like Teams
+# archives, so credentials must stay out)
 client-secrets/
+*.env
+*.env.local
+.secrets
+
+# OS junk
 .DS_Store
 Thumbs.db
+desktop.ini

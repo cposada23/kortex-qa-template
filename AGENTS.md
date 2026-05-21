@@ -180,36 +180,98 @@ prompt** (the primary mechanism), backed by
 
 ---
 
-## Compliance & org policy
+## Compliance, Org Policy & Platform Philosophy
 
-Assumptions baked into the template:
+### 1. Platform invariant: Windows-First, cross-platform always
 
-1. The owner's organization permits Copilot on client artifacts.
-2. Local git on the client-issued machine is permitted.
-3. ZIP backups in the user's local profile are permitted.
-4. Node.js 18+ is installed (Playwright requires it).
+The primary work environment is **Windows with PowerShell**. Scripts,
+paths, and instructions optimize for that.
 
-If any are not allowed, adapt per
-`playbooks/client-rotation.md` and the org-policy section in the
-top-level `README.md`.
+- **Path separators:** normalize internally — Node's `path.join()` /
+  `path.sep` always; never hardcode `/` or `\` in script logic.
+- **Shells:** any inline shell snippet that ships in docs or scripts
+  must be PowerShell-safe (quoting, env-var syntax). Bash equivalents
+  are documented alongside when relevant.
+- **Cross-platform:** the brain must work on macOS and Linux
+  identically. The owner uses macOS for personal QA projects inside
+  their main `mykortex` graph; cross-platform parity is not optional.
 
-**v1.0 is strictly single-client.** One clone serves one
-engagement. The `clients/` zone (multi-tenant) is deferred to
-v1.1. Rotation means wipe-and-re-clone, not switch-context.
+If a script or doc adds a Windows-only or Unix-only step, mark it
+explicitly with the alternative for the other platform.
 
-Hard rules regardless of org:
+### 2. Local-only Git (no push, offline-first)
 
-- **No credentials in any file.** Use `environments/users.md` for
-  test users only (no passwords). Real secrets go outside this
-  repo.
+This brain runs as **local Git only** on the client-issued machine.
+There is no remote origin. `git push` is not used and is not
+supported by the workflow.
+
+- Git is the within-laptop history / undo buffer.
+- ZIPs under `versions/` are the cross-laptop / disaster-recovery
+  channel (see [playbooks/version-snapshot.md](playbooks/version-snapshot.md)).
+- A push command is a sign someone wired a remote by mistake.
+  Remove the remote, don't push.
+
+### 3. Local credentials & environment variables
+
+Because the brain never leaves the laptop, the owner **may store
+real test credentials in local, gitignored env files** (e.g.,
+`.env`, `.env.local`, `client-secrets/*.env`) for daily SUT
+testing and Playwright runs.
+
+- **OK:** real usernames, passwords, API tokens, base URLs in a
+  local `.env` that scripts and Playwright fixtures read via
+  `process.env.*`.
+- **NOT OK:** real credentials inside tracked `.md` files (stories,
+  test cases, environments/users.md, etc.). Those stay
+  placeholders or roles-only.
+- **Required:** any new credential file pattern must appear in
+  both [.gitignore](.gitignore) (so git can't track it) and
+  [.snapshotignore](.snapshotignore) (so ZIPs don't smuggle it to
+  the client's Teams archive). The current `.gitignore` covers
+  `*.env`, `*.env.local`, `.secrets`, `client-secrets/`. The
+  current `.snapshotignore` covers all of those too.
+
+### 4. Single-client by design
+
+One Kortex-QA clone serves **one client engagement** at a time. No
+`clients/` sub-folder, no multi-tenancy. Rotation between clients
+means **wipe and re-clone**, not switch-context. The constraint is
+intentional: client data isolation is easier when the filesystem
+itself enforces "one client per folder." Full off-boarding ritual:
+[playbooks/client-rotation.md](playbooks/client-rotation.md).
+
+Within a client, multi-team is fully supported via
+`teams/active-team.txt`.
+
+### 5. Hard content rules (independent of credential policy)
+
 - **No client identifiers in `knowledge/`.** That zone is the only
-  one designed to travel across clients. Everything else stays with
-  the client clone.
-- **Run `node scripts/validate.mjs` before committing or
-  snapshotting.** It checks frontmatter and scans for common
-  PII / secret patterns (credit cards, SSNs, JWTs, `api_key=`
-  assignments). The PII check is best-effort, not perfect —
-  the engineer is still the final reviewer.
+  one designed to travel across clients. Everything else stays
+  with the client clone. Promotion to `knowledge/` requires the
+  sanitization checklist in
+  [playbooks/team-knowledge-promotion.md](playbooks/team-knowledge-promotion.md).
+- **No credentials in tracked `.md` files.** Even in a local-only
+  repo, mixing creds into stories/test-cases/bugs/reviews makes
+  them un-shareable with peers down the line. Keep them in `.env`.
+- **Run `node scripts/validate.mjs` before snapshotting.** Even
+  without a push concern, the validator catches frontmatter drift
+  and surfaces patterns that may have leaked into tracked content
+  by mistake (e.g., a coworker's email pasted into the wrong
+  file). Best-effort, not perfect — the engineer is still the
+  final reviewer.
+
+### 6. Org policy pre-flight (run before first commit on a new client)
+
+Confirm with the client (or your direct manager) that the
+following are permitted on the client-issued machine. The template
+*assumes* they are; if any aren't, see the adaptation table in
+[README.md](README.md) §"Org policy fit":
+
+1. GitHub Copilot on client artifacts (per Copilot data policy).
+2. Local Git on the client-issued machine.
+3. Local ZIP backups in the user profile / Teams archive.
+4. Node.js 18+ installed (Playwright requires it; the scripts are
+   zero-dep ESM modules).
 
 ---
 

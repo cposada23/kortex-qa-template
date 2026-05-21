@@ -95,12 +95,10 @@ contract. If a file doesn't fit an existing zone, propose where it
 should go rather than creating a new directory. New teams are
 added via `node scripts/new-team.mjs <slug>` — never by hand.
 
-### 5. No credentials, ever
+### 5. Local credentials and Purely Local Git
 
-No passwords, tokens, API keys, or real customer data in any
-file. `teams/<slug>/environments/users.md` lists emails / roles
-only. Real secrets live in the team's vault or `client-secrets/`
-(gitignored).
+- **Local Git:** Git is used 100% locally on the physical machine as a history/undo tracker. There is no remote repository and no push capability.
+- **Local Credentials:** Real daily SUT testing credentials, API tokens, and usernames can reside in local gitignored configuration files (such as a `.env` file). Never place real credentials inside tracked `.md` files; use env variables in manual test cases and automated scripts. Ensure `.env` is added to `.gitignore` and `.snapshotignore`.
 
 ### 6. Auto-INDEX is automatic
 
@@ -117,6 +115,10 @@ specifying a team, default to the **primary** active team (line 1
 of `teams/active-team.txt`). `/session-start` is the exception —
 it defaults to **all** active teams so the user sees the full
 picture on a 50/50 split.
+
+### 8. Windows-First Cross-Platform Compatibility
+
+The system is optimized for **Windows and PowerShell** as its primary environment. Ensure all shell commands, scripts, quoting, variables, and path structures resolve correctly in Windows PowerShell environments, while maintaining full cross-platform compatibility with macOS and Linux.
 
 ## Style preferences
 
