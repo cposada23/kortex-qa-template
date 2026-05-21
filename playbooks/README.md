@@ -5,7 +5,7 @@ invokable; these playbooks are detailed reference for cold reading
 (returning after a vacation, onboarding a peer, debugging a
 workflow that isn't working).
 
-## Full playbook set (v1.5)
+## Full playbook set (v1.6)
 
 ### Lifecycle (cradle to grave)
 
@@ -50,6 +50,10 @@ workflow that isn't working).
 - **[version-snapshot.md](version-snapshot.md)** — ZIP cadence,
   VERSION bump rules, storage targets, retention windows, restore
   procedure
+- **[import-prior-brain.md](import-prior-brain.md)** — bulk-migrate
+  a prior markdown-based brain (Obsidian, plain folder, etc.) into
+  the v1.6 structure using `scripts/import-prior-brain.mjs` with
+  confidence scoring + staging
 
 ## Relationship to `.github/prompts/`
 

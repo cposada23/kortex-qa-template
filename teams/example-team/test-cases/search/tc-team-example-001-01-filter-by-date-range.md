@@ -4,7 +4,7 @@ type: test-case
 id: TC-TEAM-EXAMPLE-001-01
 area: search
 coverage: positive
-status: reviewed
+status: active
 automation_status: manual-only
 automation_path: ../../<automation-repo>/tests/search/filter-by-date-range.spec.ts
 linked_stories: [TEAM-EXAMPLE-001]

@@ -5,14 +5,14 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.5.2 — team-centric architecture, full playbook set
-(13 playbooks), extended Copilot prompt library (12 prompts),
-pre-commit hook + AI cred read restrictions + path-drift sweep +
-Copilot prompt schema sync (`mode:` → `agent:`) + client-bootstrap
-playbook with explicit `init-client` → `create-first-team` flow
-+ 4 import scenarios. Built and packaged 2026-05-20 → 2026-05-21
-inside the upstream Kortex repo `mykortex`, extracted to its own
-repo for cloning.
+**Status:** v1.6.0 — team-centric architecture, single-home test
+cases with immutable IDs, link integrity validator, chat handoff
+workflow, prior-brain import skill, full playbook set (14
+playbooks), Copilot prompt library (14 prompts), pre-commit hook
+running 3 checks (frontmatter + INDEX drift + link integrity), AI
+cred read restrictions, client-bootstrap with 4 import scenarios.
+Built and packaged 2026-05-20 → 2026-05-21 inside the upstream
+Kortex repo `mykortex`, extracted to its own repo for cloning.
 
 ---
 
@@ -370,6 +370,28 @@ with an ASCII tree showing the resulting filesystem. Added a
 "Mental model — client vs team" section up front. Concrete
 example pair `client-a` + `team-a` runs through the whole
 playbook.
+
+**v1.6.0** (2026-05-21) — structural refactor + chat handoff +
+import skill. Test cases now live in a **single home** at
+`teams/<team>/test-cases/<area>/` (no story-local subfolder, no
+library/ split) with immutable IDs (`TC-<AREA>-<NNN>`). Stories
+link via `linked_test_cases:` + `linked_bugs:` frontmatter
+(canonical) plus markdown links in the body (navigation).
+`scripts/new-test-case.mjs --link-story <TICKET>` + the
+equivalent flag on `new-bug.mjs` auto-update both sides. NEW
+`scripts/validate-links.mjs` checks ID integrity (runs in the
+pre-commit hook). NEW `CHAT-HANDOFF.md` + `/chat-handoff` +
+`/resume-from-handoff` workflow for context transfer between
+chat sessions. NEW `scripts/import-prior-brain.mjs` for bulk
+migration of a prior markdown brain with confidence scoring +
+staging + bulk approval. `review_status:` field on stories and
+TCs replaces dual-source review state (frontmatter is now
+canonical; `reviews/<TICKET>.md` files are optional supporting
+prose). v1.5 → v1.6 migration is one-shot via
+`scripts/migrate-v1.5-to-v1.6.mjs` (idempotent). Cross-validated
+by 3 external LLMs; owner overrode the "defer import skill"
+recommendation because there's a real prior brain to bring over
+today.
 
 **v1.5.0** (2026-05-21) — Codex audit pass: Copilot prompt schema
 synced from `mode:` to `agent:` (the legacy key triggers a

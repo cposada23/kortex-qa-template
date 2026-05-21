@@ -21,7 +21,7 @@ artifact root to refresh.
 - **[TEAM-EXAMPLE-001 — execution log](stories/TEAM-EXAMPLE-001-search-filter/execution-log.md)** _[pending]_ `execution, search, example`
 - **[Search filter — restrict results by date range](stories/TEAM-EXAMPLE-001-search-filter/story.md)** _[in-progress]_ `story, search, filter, date-range, example`
 - **[TC-AUTH-001 — Login happy path](test-cases/library/auth/tc-auth-001-login-happy-path.md)** _[active]_ `auth, login, happy-path, smoke, example`
-- **[TC-TEAM-EXAMPLE-001-01 — Filter reports by date range (happy path)](test-cases/search/tc-team-example-001-01-filter-by-date-range.md)** _[reviewed]_ `search, filter, date-range, happy-path, example`
+- **[TC-TEAM-EXAMPLE-001-01 — Filter reports by date range (happy path)](test-cases/search/tc-team-example-001-01-filter-by-date-range.md)** _[active]_ `search, filter, date-range, happy-path, example`
 - **[Team — workflow](workflow.md)** _[active]_ `team, jira, workflow, dor, dod`
 
 <!-- build-index:end -->
