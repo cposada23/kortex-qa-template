@@ -305,15 +305,14 @@ Two policies that sit next to each other:
 
 `kortex-qa.code-workspace` (renamed on init to
 `<client-slug>-qa.code-workspace`) is a VS Code multi-root workspace
-template. It expects three roots:
+template. It starts with one root:
 
 1. **This brain** (Kortex-QA folder)
-2. **The SUT repo** (system under test — set the path post-clone)
-3. **The automation repo** (set the path post-clone)
 
-Opening the workspace gives you one window with all three
-contexts. Copilot reads instructions from this folder's `.github/`
-regardless of which root you're editing.
+After opening it, add the SUT repo and automation repo via VS Code's
+**File → Add Folder to Workspace...** and save the workspace. Avoid
+placeholder roots that point to non-existent folders; Copilot works
+best when every workspace root resolves to a real path.
 
 ---
 

@@ -1,17 +1,9 @@
 {
-  "//": "Kortex-QA multi-root workspace template. After running scripts/init.mjs <client-slug>, this file is renamed to <client-slug>-qa.code-workspace. Fill in the SUT and automation repo paths post-clone.",
+  "//": "Kortex-QA workspace template. After running scripts/init.mjs <client-slug>, this file is renamed to <client-slug>-qa.code-workspace. Add the SUT and automation repos after opening the workspace.",
   "folders": [
     {
       "name": "Kortex-QA (brain)",
       "path": "."
-    },
-    {
-      "name": "SUT (set me)",
-      "path": "../<set-me-to-the-system-under-test-repo>"
-    },
-    {
-      "name": "Automation (set me)",
-      "path": "../<set-me-to-the-automation-repo>"
     }
   ],
   "settings": {

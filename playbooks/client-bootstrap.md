@@ -287,10 +287,16 @@ code client-a-qa.code-workspace
 VS Code opens with three folder roots:
 
 1. **Kortex-QA (this brain)** — `kortex-qa-client-a/`
-2. **SUT** — the system-under-test repo (set the path after
-   opening: right-click the placeholder root → "Edit Workspace
-   File" → update the SUT path).
-3. **Automation** — the Playwright automation repo (same).
+
+Add the other two roots after the first open:
+
+1. VS Code → **File → Add Folder to Workspace...**
+2. Add the SUT repo.
+3. Add the automation repo.
+4. Save the workspace when VS Code asks.
+
+Do not leave placeholder workspace paths in place. Missing folder
+roots make Copilot's workspace scan less predictable.
 
 Confirm Copilot can read this folder:
 
@@ -505,8 +511,8 @@ substitute your real slugs.
 - [ ] `node scripts/build-index.mjs --check` → no drift
 - [ ] `git log --oneline` → at least one commit (the `init`
       commit), pre-commit hook ran cleanly
-- [ ] `client-a-qa.code-workspace` opens in VS Code with three
-      roots (brain + SUT + automation)
+- [ ] `client-a-qa.code-workspace` opens in VS Code with the brain
+      root; SUT + automation have been added as real folder roots
 - [ ] `cat .client-slug` → prints `client-a`
 - [ ] `cat teams/active-team.txt` → line 1 is `team-a` (your
       primary team)
