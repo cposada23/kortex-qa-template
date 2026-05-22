@@ -85,19 +85,57 @@ function tryTar(tarPath, excludes) {
 
 function tryPowerShellZip(zipPath, excludes) {
   // Windows PowerShell: Compress-Archive can't natively exclude
-  // patterns; we approximate via Get-ChildItem + filter.
-  // Best-effort fallback.
+  // patterns. Passing a recursive Get-ChildItem result directly can
+  // also produce duplicate archive paths, so stage the filtered tree
+  // first and zip that directory.
   const excludeArgs = excludes.map((e) => `'${e.replace(/'/g, "''")}'`).join(',');
+  const escapedZipPath = zipPath.replace(/'/g, "''");
   const cmd = `
+    $ErrorActionPreference = 'Stop';
     $excludes = @(${excludeArgs});
-    $files = Get-ChildItem -Path . -Recurse |
-      Where-Object {
-        foreach ($e in $excludes) {
-          if ($_.FullName -like "*$e*") { return $false }
+    $root = (Get-Location).ProviderPath;
+    $stage = Join-Path ([System.IO.Path]::GetTempPath()) ('kortex-qa-snapshot-' + [System.Guid]::NewGuid().ToString());
+    New-Item -ItemType Directory -Path $stage | Out-Null;
+
+    function Test-SnapshotExclude([string] $relPath) {
+      $norm = $relPath -replace '\\\\', '/';
+      $name = Split-Path $norm -Leaf;
+      foreach ($raw in $excludes) {
+        $e = ($raw -replace '\\\\', '/').Trim();
+        if (-not $e) { continue }
+        if ($e.EndsWith('/')) {
+          $prefix = $e.TrimEnd('/');
+          if ($norm -eq $prefix -or $norm.StartsWith($e)) { return $true }
+        } elseif ($e.Contains('*') -or $e.Contains('?')) {
+          if ($norm -like $e -or $name -like $e) { return $true }
+        } else {
+          if ($norm -eq $e -or $name -eq $e) { return $true }
         }
-        return $true
-      };
-    Compress-Archive -Path $files -DestinationPath '${zipPath}' -Force
+      }
+      return $false
+    }
+
+    try {
+      Get-ChildItem -LiteralPath $root -Recurse -File -Force |
+        ForEach-Object {
+          $rel = $_.FullName.Substring($root.Length).TrimStart('\\', '/');
+          if (Test-SnapshotExclude $rel) { return }
+          $target = Join-Path $stage $rel;
+          $targetDir = Split-Path $target -Parent;
+          New-Item -ItemType Directory -Path $targetDir -Force | Out-Null;
+          Copy-Item -LiteralPath $_.FullName -Destination $target -Force;
+        }
+
+      Add-Type -AssemblyName System.IO.Compression.FileSystem;
+      if (Test-Path '${escapedZipPath}') {
+        Remove-Item -LiteralPath '${escapedZipPath}' -Force;
+      }
+      [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, '${escapedZipPath}');
+    } finally {
+      if (Test-Path $stage) {
+        Remove-Item -LiteralPath $stage -Recurse -Force;
+      }
+    }
   `;
   const r = spawnSync('powershell', ['-NoProfile', '-Command', cmd], {
     cwd: REPO_ROOT,
