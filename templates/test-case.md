@@ -3,6 +3,7 @@ title: "{{TITLE}}"
 type: test-case
 id: {{ID}}
 area: {{AREA}}
+level: ui
 coverage: positive
 status: draft
 automation_status: manual-only

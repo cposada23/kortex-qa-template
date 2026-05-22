@@ -18,7 +18,7 @@ teams/<team-slug>/
 ├── deploy.md             How this team ships
 ├── ceremonies-info.md    Sprint cadence (lightweight schedule)
 ├── stories/              One folder per Jira ticket
-├── test-cases/           Reusable test cases (library/<area>/)
+├── test-cases/<area>/    Reusable test cases (single home)
 ├── bugs/                 Bug registry
 ├── reviews/              Peer reviews of others' test cases
 ├── ceremonies/           Meeting notes (sprint-planning/, daily-standups/, reviews/, retrospectives/)
@@ -90,13 +90,13 @@ team's* `workflow.md` when you ask "use our team's workflow." With
 multiple teams active, Copilot's `@workspace` retrieval may pull
 documents from another team's folder.
 
-Mitigation in v1.1: when invoking team-sensitive prompts (anything
+Mitigation: when invoking team-sensitive prompts (anything
 that reads `workflow.md`, `members.md`, `deploy.md`, or
 `environments/`), include the team slug in the prompt input:
 "...for team `seis-pro-tagema`..." This forces Copilot to scope
-its retrieval. Deferred to v1.2: an ephemeral
-`.current-team-context.md` written by `switch-team.mjs` that
-Copilot reads first.
+its retrieval. A future improvement may add an ephemeral
+`.current-team-context.md`, but the current supported mechanism is
+the explicit team slug plus `teams/active-team.txt`.
 
 ### Optional vs always-on zones
 

@@ -46,5 +46,5 @@ brain doesn't validate that the file exists in the other repo.
 
 - [../AGENTS.md](../AGENTS.md)
 - [../../../playbooks/automation-flow.md](../../../playbooks/automation-flow.md)
-  (stub in v1.0 — fill out as the automation strategy stabilizes)
+  (full workflow for manual TC → Playwright skeleton)
 - [INDEX.md](INDEX.md)

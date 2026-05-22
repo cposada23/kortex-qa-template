@@ -72,7 +72,7 @@ you want to *do* the workflow.
 | automation-flow.md | `/automation-from-test-case` |
 | session-start.md | `/session-start` |
 | session-end.md | `/session-end` |
-| (no matching playbook yet) | `/sprint-planning-intake`, `/retro-intake`, `/question-generator`, `/bug-report-formatter` |
+| (no matching playbook yet) | `/sprint-planning-intake`, `/retro-intake`, `/question-generator`, `/bug-report-formatter`, `/chat-handoff`, `/resume-from-handoff` |
 
 The four prompts without a dedicated playbook are intentional —
 each is self-contained enough that the prompt body is the

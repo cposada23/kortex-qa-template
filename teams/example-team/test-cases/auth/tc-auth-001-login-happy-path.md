@@ -3,11 +3,13 @@ title: "TC-AUTH-001 — Login happy path"
 type: test-case
 id: TC-AUTH-001
 area: auth
+level: ui
 coverage: positive
 status: active
 automation_status: automated
 automation_path: "../../<automation-repo>/tests/auth/login.spec.ts"
 linked_stories: []
+review_status: approved
 language: en
 tags: [auth, login, happy-path, smoke, example]
 updated: 2026-05-20
