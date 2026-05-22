@@ -8,12 +8,12 @@
 //   3. status value is type-specific and valid
 //   4. language is 'en' (template invariant)
 //   5. updated is YYYY-MM-DD shaped
-//   6. PII patterns in body (best-effort regex scan; warns only)
+//   6. Type-specific vocab fields for stories, test cases, bugs, reviews
+//   7. PII patterns in body (best-effort regex scan; warns only)
 //
 // Exit codes:
 //   0 — all clean (PII warnings still print but don't fail)
-//   1 — violations found (printed to stderr)
-//   2 — only PII warnings; still safe to commit but flagged
+//   1 — schema violations, or PII warnings when --strict-pii is enabled
 //
 // Usage:
 //   node scripts/validate.mjs                # validate whole brain
@@ -36,7 +36,7 @@ const ALLOWED_TYPES = new Set([
 const STATUS_BY_TYPE = {
   story: ['backlog', 'in-progress', 'design-done', 'review-done',
           'execution-done', 'closed', 'blocked', 'cancelled'],
-  'test-case': ['draft', 'reviewed', 'active', 'deprecated'],
+  'test-case': ['draft', 'active', 'retired'],
   bug: ['open', 'assigned', 'fixed', 'verified', 'closed',
         'wontfix', 'duplicate'],
   review: ['in-progress', 'approved', 'changes-requested',
@@ -45,6 +45,26 @@ const STATUS_BY_TYPE = {
   knowledge: ['active', 'draft', 'deprecated'],
   playbook: ['active', 'stub', 'deprecated'],
   reference: ['active', 'pending', 'done', 'archived'],
+};
+
+const VOCAB_BY_FIELD = {
+  priority: ['low', 'medium', 'high', 'critical'],
+  ac_audit_status: ['pending', 'done'],
+  review_status: ['not-reviewed', 'requested', 'in-review', 'changes-requested', 'approved'],
+  coverage: ['positive', 'negative', 'edge', 'integration', 'regression'],
+  level: ['ui', 'api', 'contract'],
+  automation_status: ['auto-soon', 'auto-eventually', 'automated', 'manual-only', 'not-feasible'],
+  severity: ['low', 'medium', 'high', 'critical'],
+  environment: ['local', 'dev', 'qa', 'prod-readonly'],
+  review_outcome: ['in-progress', 'approved', 'changes-requested', 'rejected'],
+};
+
+const REQUIRED_BY_TYPE = {
+  story: ['ticket', 'sprint', 'priority', 'status', 'ac_audit_status', 'linked_test_cases', 'linked_bugs', 'review_status'],
+  'test-case': ['id', 'area', 'level', 'coverage', 'status', 'automation_status', 'linked_stories', 'review_status'],
+  bug: ['id', 'severity', 'status', 'linked_stories', 'environment'],
+  review: ['reviewing_ticket', 'review_outcome', 'reviewed_at', 'status'],
+  ceremony: ['ceremony_type', 'date'],
 };
 
 // Files exempt from frontmatter requirements (operational, not content).
@@ -216,6 +236,18 @@ function validateFrontmatter(relPath, fm) {
   if (fm.type && fm.status && STATUS_BY_TYPE[fm.type]) {
     if (!STATUS_BY_TYPE[fm.type].includes(fm.status)) {
       errs.push(`status '${fm.status}' invalid for type '${fm.type}' (allowed: ${STATUS_BY_TYPE[fm.type].join(', ')})`);
+    }
+  }
+  const requiredByType = REQUIRED_BY_TYPE[fm.type] || [];
+  for (const field of requiredByType) {
+    if (fm[field] == null || fm[field] === '') {
+      errs.push(`missing required field for type '${fm.type}': ${field}`);
+    }
+  }
+  for (const [field, allowed] of Object.entries(VOCAB_BY_FIELD)) {
+    if (fm[field] == null || fm[field] === '' || Array.isArray(fm[field])) continue;
+    if (!allowed.includes(fm[field])) {
+      errs.push(`${field} '${fm[field]}' invalid (allowed: ${allowed.join(', ')})`);
     }
   }
   return errs;

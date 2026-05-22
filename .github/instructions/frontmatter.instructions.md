@@ -54,6 +54,7 @@ review_status: not-reviewed | requested | in-review | changes-requested | approv
 ```yaml
 id: TC-AUTH-001                # TC-<AREA>-<NNN> — IMMUTABLE once assigned
 area: auth | billing | search | ...     # folder name under teams/<team>/test-cases/
+level: ui | api | contract              # primary automation/test surface
 coverage: positive | negative | edge | integration | regression
 status: draft | active | retired         # lifecycle: born draft, ships active, eventually retired
 automation_status: auto-soon | auto-eventually | automated | manual-only | not-feasible
@@ -78,7 +79,7 @@ environment: local | dev | qa | prod-readonly
 
 ```yaml
 reviewing_ticket: TEAM-1234
-review_outcome: approved | changes-requested | rejected
+review_outcome: in-progress | approved | changes-requested | rejected
 reviewed_at: YYYY-MM-DD
 status: in-progress | done
 ```

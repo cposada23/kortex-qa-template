@@ -3,6 +3,7 @@ title: TC-TEAM-EXAMPLE-001-01 — Filter reports by date range (happy path)
 type: test-case
 id: TC-TEAM-EXAMPLE-001-01
 area: search
+level: ui
 coverage: positive
 status: active
 automation_status: manual-only

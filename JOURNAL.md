@@ -204,3 +204,22 @@ DECISIONS:
 BLOCKERS: none.
 
 READINESS: green. v1.6.1 closes the gaps. Smoke-tested end-to-end: new-story now accepts multi-segment ticket keys; validate-links blocks duplicates; example-team has zero library/ residue; docs no longer teach the old model.
+
+## 2026-05-22 11:00 — v1.6.2 QA audit fixes before team handoff
+
+STATE: Owner asked for a critical QA Lead/SDET audit pass before handing Kortex-QA to the work team. Compliance/snapshot policy was explicitly accepted as-is; no changes there. Fixed only concrete drift that would confuse Copilot, validation, or onboarding.
+
+DID:
+1. **Test-case contract unified.** `.github/instructions/frontmatter.instructions.md`, `.github/instructions/test-cases.instructions.md`, `.github/prompts/test-case-design.prompt.md`, `templates/test-case.md`, example test cases, and `scripts/validate.mjs` now agree on test case lifecycle (`draft | active | retired`), automation status (`auto-soon | auto-eventually | automated | manual-only | not-feasible`), and separate `review_status:`.
+2. **`level:` made explicit.** `/automation-from-test-case` already depended on `level: ui | api | contract`; the field now exists in the schema docs, authoring rules, template, examples, and validator.
+3. **Validator tightened.** `validate.mjs` now checks type-specific required fields and vocab fields instead of only checking `status:`. PII warning exit-code docs also match behavior.
+4. **Active doc drift swept.** Fixed remaining active-doc references to old `library/<area>` wording, stale automation-flow "stub" text, scripts README version/check list, prompt count, and README version ordering.
+
+DECISIONS:
+- Patch bump (1.6.1 → 1.6.2). No architecture change, no compliance change.
+- Added `level:` instead of removing automation prompt logic; the field is useful and already implied by automation-flow.
+- Kept migration-script references to `bugs.md` / old story-local test-cases because those are historical migration inputs, not active guidance.
+
+BLOCKERS: none.
+
+READINESS: green. Validated with `node scripts/validate.mjs`, `node scripts/validate-links.mjs`, and `node scripts/build-index.mjs --check`.

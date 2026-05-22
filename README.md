@@ -5,7 +5,7 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.6.1 — team-centric architecture, single-home test
+**Status:** v1.6.2 — team-centric architecture, single-home test
 cases with immutable IDs (validator now errors on duplicates),
 link integrity validator, chat handoff workflow, prior-brain
 import skill, full playbook set (14 playbooks), Copilot prompt
@@ -28,7 +28,7 @@ Inside, you'll find:
   inbox); five global zones (`knowledge/`, `playbooks/`, `scripts/`,
   `templates/`, `.github/`) sit alongside.
 - Pre-wired **Copilot configuration** in `.github/` — 5 scoped
-  instruction files (`applyTo:` globs) + 12 reusable prompts.
+  instruction files (`applyTo:` globs) + 14 reusable prompts.
 - **Zero-dependency Node.js scripts** for scaffolding (new story,
   test case, bug, team), snapshots, validation, and index building.
 - **A complete playbook set** for the core daily loop, peer review,
@@ -181,6 +181,8 @@ Chat with `/<name>`:
 | `/sprint-planning-intake` | Capture a sprint-planning meeting into `ceremonies/sprint-planning/`. |
 | `/retro-intake` | Capture a retrospective into `ceremonies/retrospectives/`. |
 | `/question-generator` | Standalone "dev/PO question generator" — when AC isn't the source (verbal clarification, design doc, etc.). |
+| `/chat-handoff` | Write `CHAT-HANDOFF.md` when switching chat surfaces mid-task. |
+| `/resume-from-handoff` | Resume from an existing `CHAT-HANDOFF.md` in a new chat. |
 
 ---
 
@@ -357,6 +359,22 @@ restrictions formalized: `.aiexclude` file + AGENTS.md §7 + Rule 9
 in `copilot-instructions.md` to keep credential files out of AI
 context windows.
 
+**v1.5.0** (2026-05-21) — Codex audit pass: Copilot prompt schema
+synced from `mode:` to `agent:` (the legacy key triggers a
+deprecation warning in current Copilot Chat); 6 prompts had
+pre-team-centric path drift (`stories/INDEX.md`, `bugs/`,
+`test-cases/library/` at repo root) corrected to
+`teams/<active>/...`; `build-index.mjs --check` is now truly
+read-only (computes diff in memory, returns `would-update` /
+`would-create` instead of writing then failing); `validate.mjs`
+exit code reconciled with its own documentation (PII warnings
+exit 0 unless `--strict-pii`, so the pre-commit hook doesn't
+silently block on heuristic false positives);
+`automation_status` vocabulary unified across frontmatter
+instructions, prompts, playbooks, example team, and templates
+(`auto-soon | auto-eventually | automated | manual-only |
+not-feasible`).
+
 **v1.5.1** (2026-05-21) — `client-bootstrap.md` playbook
 (clone-to-first-story + 4 import scenarios for previous-brain
 migration) + final prose-level drift fix in
@@ -406,21 +424,16 @@ invocation). 11+ doc files swept for stale `test-cases/library/`,
 (`TEAM-EXAMPLE-001`, `ACME-PROJ-9001`) matching what
 `validate-links.mjs` already did in v1.6.0.
 
-**v1.5.0** (2026-05-21) — Codex audit pass: Copilot prompt schema
-synced from `mode:` to `agent:` (the legacy key triggers a
-deprecation warning in current Copilot Chat); 6 prompts had
-pre-team-centric path drift (`stories/INDEX.md`, `bugs/`,
-`test-cases/library/` at repo root) corrected to
-`teams/<active>/...`; `build-index.mjs --check` is now truly
-read-only (computes diff in memory, returns `would-update` /
-`would-create` instead of writing then failing); `validate.mjs`
-exit code reconciled with its own documentation (PII warnings
-exit 0 unless `--strict-pii`, so the pre-commit hook doesn't
-silently block on heuristic false positives);
-`automation_status` vocabulary unified across frontmatter
-instructions, prompts, playbooks, example team, and templates
-(`auto-soon | auto-eventually | automated | manual-only |
-not-feasible`).
+**v1.6.2** (2026-05-22) — QA audit fixes before team handoff.
+Aligned the test-case contract across frontmatter instructions,
+Copilot instructions, prompt examples, templates, example files,
+and `validate.mjs`: lifecycle is now `draft | active | retired`,
+automation status uses the v1.6 vocabulary, and peer review lives
+in `review_status:`. Added explicit `level: ui | api | contract`
+so `/automation-from-test-case` no longer depends on an undeclared
+field. Tightened validator checks for type-specific required
+fields and vocabularies. Swept active docs for lingering `library/`
+and stale script/prompt counts.
 
 Future versions (real-usage-driven): a `clients/` zone gated by
 `multi-client: true` for parallel freelance engagements, plus

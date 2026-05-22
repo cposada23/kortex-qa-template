@@ -33,12 +33,14 @@ case file that follows the schema in
    existing IDs in `teams/<active>/test-cases/<area>/`. The ID
    is **immutable** once assigned — renaming the file does not
    change it.
-3. Identify preconditions: env, user, data setup, feature flags.
-4. Write Gherkin-influenced steps (Given / When / Then) for the
+3. Identify the `level:` (`ui`, `api`, or `contract`) so
+   `/automation-from-test-case` can choose the right team pattern.
+4. Identify preconditions: env, user, data setup, feature flags.
+5. Write Gherkin-influenced steps (Given / When / Then) for the
    scenario. Single-action checks can use plain imperative steps.
-5. Specify expected result in one paragraph (the "human pass
+6. Specify expected result in one paragraph (the "human pass
    summary").
-6. Identify whether automation is feasible — if yes, set
+7. Identify whether automation is feasible — if yes, set
    `automation_status: auto-soon` (planned this sprint),
    `auto-eventually` (planned later), or `manual-only` (with a
    one-sentence reason in the body). Add an `automation_path:`
@@ -66,7 +68,8 @@ Then in chat, output a one-paragraph summary:
 
 ID: TC-<AREA>-<NNN>
 Coverage: <positive | negative | edge | integration | regression>
-Automation status: manual
+Level: <ui | api | contract>
+Automation status: <auto-soon | auto-eventually | automated | manual-only | not-feasible>
 Linked story: <TICKET-KEY>
 
 Recommendation: <flag if peer review needed, or if it duplicates
@@ -85,12 +88,14 @@ Before writing, ensure:
 - [ ] `type: test-case`
 - [ ] `id:` matches the title
 - [ ] `area:` is a directory name under `teams/<active>/test-cases/`
+- [ ] `level:` is `ui`, `api`, or `contract`
 - [ ] `coverage:` is one of the five labels
-- [ ] `status: draft` initially (becomes `reviewed` after peer
-  review, `active` after first execution)
+- [ ] `status: draft` initially (becomes `active` once accepted
+  into the usable regression set, `retired` when obsolete)
 - [ ] `automation_status:` set
 - [ ] `automation_path:` set (or removed if not applicable)
 - [ ] `linked_stories:` lists the parent ticket
+- [ ] `review_status:` is set separately from lifecycle status
 - [ ] `language: en`
 - [ ] `tags:` 2–5 lowercase
 - [ ] `updated:` today
@@ -125,11 +130,13 @@ title: "TC-SEARCH-005 — Filter results by date range (happy path)"
 type: test-case
 id: TC-SEARCH-005
 area: search
+level: ui
 coverage: positive
 status: draft
 automation_status: manual-only
 automation_path: "../../<automation-repo>/tests/search/filter-date-range.spec.ts"
 linked_stories: [TEAM-1234]
+review_status: not-reviewed
 language: en
 tags: [search, filter, date-range, happy-path]
 updated: 2026-05-20
