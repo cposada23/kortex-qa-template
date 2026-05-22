@@ -54,9 +54,9 @@ async function readChatHandoff() {
 }
 
 function parseFrontmatter(content) {
-  const match = content.match(/^---\n([\s\S]*?)\n---\n/);
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
   if (!match) return null;
-  const lines = match[1].split('\n');
+  const lines = match[1].split(/\r?\n/);
   const out = {};
   for (const line of lines) {
     if (!line.trim() || line.trim().startsWith('#')) continue;

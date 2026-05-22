@@ -113,7 +113,7 @@ async function linkTcToStory(storyDir, tcId, tcTitle, tcRelPath) {
   }
 
   // Update frontmatter linked_test_cases array
-  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!fmMatch) throw new Error('story.md missing frontmatter');
   let fmBlock = fmMatch[1];
   const lineRe = /^linked_test_cases:\s*\[(.*?)\]$/m;
@@ -131,7 +131,7 @@ async function linkTcToStory(storyDir, tcId, tcTitle, tcRelPath) {
   }
   // Bump updated:
   fmBlock = fmBlock.replace(/^updated:\s*.*$/m, `updated: ${todayISO()}`);
-  content = content.replace(/^---\n[\s\S]*?\n---/, `---\n${fmBlock}\n---`);
+  content = content.replace(/^---\r?\n[\s\S]*?\r?\n---/, `---\n${fmBlock}\n---`);
 
   // Update body "## Test cases" section — append a markdown link.
   // tcRelPath is a path from teams/<team>/test-cases/<area>/<file>.md

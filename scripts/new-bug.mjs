@@ -103,7 +103,7 @@ async function linkBugToStory(storyDir, bugId, bugTitle, bugRelPath) {
     throw new Error(`story.md not found at ${path.relative(REPO_ROOT, storyMd)}`);
   }
 
-  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!fmMatch) throw new Error('story.md missing frontmatter');
   let fmBlock = fmMatch[1];
   const lineRe = /^linked_bugs:\s*\[(.*?)\]$/m;
@@ -119,7 +119,7 @@ async function linkBugToStory(storyDir, bugId, bugTitle, bugRelPath) {
     fmBlock = fmBlock + `\nlinked_bugs: [${bugId}]`;
   }
   fmBlock = fmBlock.replace(/^updated:\s*.*$/m, `updated: ${todayISO()}`);
-  content = content.replace(/^---\n[\s\S]*?\n---/, `---\n${fmBlock}\n---`);
+  content = content.replace(/^---\r?\n[\s\S]*?\r?\n---/, `---\n${fmBlock}\n---`);
 
   const linkPath = path.relative(storyDir, bugRelPath).split(path.sep).join('/');
   const bullet = `- [${bugId} — ${bugTitle}](${linkPath})`;

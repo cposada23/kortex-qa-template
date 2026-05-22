@@ -25,10 +25,10 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const TEAMS_DIR = path.join(REPO_ROOT, 'teams');
 
 function parseFrontmatter(content) {
-  const m = content.match(/^---\n([\s\S]*?)\n---/);
+  const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!m) return { fm: null, body: content };
   const fm = {};
-  for (const line of m[1].split('\n')) {
+  for (const line of m[1].split(/\r?\n/)) {
     const kv = line.match(/^([a-zA-Z_][a-zA-Z0-9_]*):\s*(.*)$/);
     if (!kv) continue;
     const key = kv[1];
