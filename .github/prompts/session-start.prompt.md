@@ -1,6 +1,7 @@
 ---
 description: Morning ritual — surface what's active, blocked, and today's likely focus
-agent: ask
+agent: agent
+tools: ['read', 'search/codebase']
 ---
 
 # Session start
@@ -11,6 +12,10 @@ engineer can pick up where they left off without rebuilding
 context from scratch.
 
 ## Input
+
+Use workspace file-reading tools to gather this context. Do not ask
+the engineer to paste file contents. If a file is missing, note it
+briefly and continue with the remaining files.
 
 Read the following files in this order:
 
