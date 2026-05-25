@@ -23,19 +23,25 @@ inbox.
 
 1. **Open the workspace.** `<client-slug>-qa.code-workspace` —
    loads brain + SUT + automation repos.
-2. **Invoke `/session-start` in Copilot Chat.** Output is a
+2. **Start an isolated session branch.**
+   ```bash
+   node scripts/session-branch-start.mjs
+   ```
+   This creates `session/YYYYMMDD-HHMM` from a clean `main`.
+   If you already are on `session/*`, continue there.
+3. **Invoke `/session-start` in Copilot Chat.** Output is a
    one-screen summary: today's focus, active stories, blockers,
    inbox count, stale items, suggested first action.
-3. **Cross-check what Copilot surfaced** against:
+4. **Cross-check what Copilot surfaced** against:
    - Jira board — has anyone moved a ticket since last EOD?
    - Teams DMs — overnight messages from devs answering your
      questions?
    - The SUT repo — has anyone merged something that affects a
      story you're testing?
-4. **Decide the first 25 minutes** (one pomodoro): pick the
+5. **Decide the first 25 minutes** (one pomodoro): pick the
    single highest-leverage task. Often the suggested action from
    `/session-start` is right; sometimes external signals override.
-5. **Promote any unprocessed inbox items** that are urgent. The
+6. **Promote any unprocessed inbox items** that are urgent. The
    rest wait until `/session-end`.
 
 ## What to do if `/session-start` flags stale items
@@ -68,6 +74,9 @@ Three causes:
 
 - Don't open Jira before this ritual. Jira is an interrupt
   generator; the brain is a context restorer. Order matters.
+- Don't do session work directly on `main`. `main` is the
+  consolidated end-of-session state; day work happens on
+  `session/*`.
 - If the day's actual first action is "go to a meeting", set the
   suggested first action *after* the meeting. The ritual still
   runs.

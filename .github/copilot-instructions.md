@@ -42,7 +42,7 @@ Reusable prompts live in [./prompts/](./prompts/). The user invokes
 them as `/<name>` in Copilot Chat. They map to the QA daily loop:
 
 - `/session-start` — morning intake
-- `/session-end` — evening wrap
+- `/session-end` — evening wrap + session branch consolidation
 - `/story-intake` — new Jira ticket
 - `/ac-auditor` — AC quality audit (and Teams-ready questions)
 - `/story-analyzer` — scenario discovery from a story
@@ -117,11 +117,24 @@ of `teams/active-team.txt`). `/session-start` is the exception —
 it defaults to **all** active teams so the user sees the full
 picture on a 50/50 split.
 
-### 8. Windows-First Cross-Platform Compatibility
+### 8. Session branches protect main
+
+Daily work happens on `session/*` branches. `main` is the
+consolidated end-of-session state.
+
+- At `/session-start`, create a branch with
+  `node scripts/session-branch-start.mjs` if currently on `main`.
+- During the day, write only on that `session/*` branch.
+- At `/session-end`, after the engineer approves the final state,
+  close with `node scripts/session-branch-finish.mjs -m
+  "session: YYYY-MM-DD - <summary>"`.
+- Do not merge a session branch without explicit engineer approval.
+
+### 9. Windows-First Cross-Platform Compatibility
 
 The system is optimized for **Windows and PowerShell** as its primary environment. Ensure all shell commands, scripts, quoting, variables, and path structures resolve correctly in Windows PowerShell environments, while maintaining full cross-platform compatibility with macOS and Linux.
 
-### 9. AI model read restrictions — DO NOT read credential files
+### 10. AI model read restrictions — DO NOT read credential files
 
 Real credentials live in local `.env`-style files per Rule 5. Those files exist on disk and are read by scripts at runtime (`process.env.*`), but **you, the AI assistant, MUST NOT read, open, paste, summarize, or otherwise process the contents of any file matching these patterns:**
 
@@ -135,7 +148,7 @@ Real credentials live in local `.env`-style files per Rule 5. Those files exist 
 
 The `.aiexclude` file in the repo root encodes this same list for Gemini Code Assist. AGENTS.md §7 has the full rationale.
 
-### 10. Chat handoff — read CHAT-HANDOFF.md when resuming
+### 11. Chat handoff — read CHAT-HANDOFF.md when resuming
 
 If `CHAT-HANDOFF.md` exists at the repo root and the engineer says "resume", "continue", "pick up where we left off", or otherwise signals continuity, **read it FIRST** before taking any action. The handoff supersedes prior context.
 

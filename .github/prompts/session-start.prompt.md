@@ -13,6 +13,15 @@ context from scratch.
 
 ## Input
 
+Before reading state, make sure the session is isolated in git:
+
+1. Check the current branch.
+2. If the current branch is `main`, run or ask the engineer to run:
+   `node scripts/session-branch-start.mjs`
+3. If already on `session/*`, continue.
+4. If on any other branch, stop and ask the engineer whether to
+   finish/discard that branch first.
+
 Use workspace file-reading tools to gather this context. Do not ask
 the engineer to paste file contents. If a file is missing, note it
 briefly and continue with the remaining files.
@@ -99,6 +108,8 @@ last JOURNAL>
 ## Hard rules
 
 - Read-only. Do not modify any files.
+- The only write allowed during this prompt is creating the session
+  branch via `node scripts/session-branch-start.mjs`.
 - Be terse — the engineer reads this every morning and time
   matters.
 - Don't recommend tasks that aren't grounded in the files. If

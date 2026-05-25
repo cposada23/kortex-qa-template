@@ -128,13 +128,16 @@ Daily rhythm:
 
 1. **Morning** — invoke `/session-start` in Copilot Chat. Lists
    active stories, blocked items, today's likely focus, recent
-   journal entries.
+   journal entries. Session work happens on a `session/*` branch
+   created by `node scripts/session-branch-start.mjs`.
 2. **Working hours** — edit stories, capture in the active team's
    `inbox/`, run scripts, draft test cases. Use the prompts listed
    below as you work.
 3. **Evening** — invoke `/session-end`. Appends a journal entry,
-   updates `TODO.md`, surfaces dirty git files. Owner manually
-   commits when satisfied.
+   updates `TODO.md`, surfaces dirty git files. When satisfied,
+   close with `node scripts/session-branch-finish.mjs -m
+   "session: YYYY-MM-DD - <summary>"` to validate, commit, and
+   merge the session branch into `main`.
 
 Weekly: optionally run `node scripts/snapshot.mjs` to ZIP the brain
 for offline backup.
@@ -379,14 +382,16 @@ node scripts/init.mjs <client-slug>
 git init && git add . && git commit -m "init: kortex-qa v$(cat VERSION)"
 
 # Session end
-git add . && git commit -m "session: $(date +%Y-%m-%d) — <summary>"
+node scripts/session-branch-finish.mjs -m "session: YYYY-MM-DD - <summary>"
 
 # Backup (whenever)
 node scripts/snapshot.mjs
 ```
 
-The git log is the within-laptop history. ZIPs are the
-cross-laptop / disaster-recovery channel.
+The git log is the within-laptop history. `main` should represent
+only consolidated end-of-session states; daily work happens on
+`session/*` branches. ZIPs are the cross-laptop /
+disaster-recovery channel.
 
 ---
 

@@ -20,6 +20,8 @@ has a clean slate to read.
 5. `teams/<active>/inbox/INBOX.md` for each active team (read
    `teams/active-team.txt` for the list) — to triage if anything
    was added today.
+6. Current git branch. If it is `session/*`, this prompt should
+   prepare the branch for merge back to `main`.
 
 ## Process
 
@@ -47,6 +49,11 @@ has a clean slate to read.
    action so the new chat can pick up without replaying history.
    If they'll resume in this same chat, skip the handoff (the
    conversation context is enough).
+7. Ask the engineer whether the session is ready to consolidate
+   into `main`. If yes, run or ask them to run:
+   `node scripts/session-branch-finish.mjs -m "session: YYYY-MM-DD - <one-line summary>"`
+   This validates, commits the session branch, switches to `main`,
+   merges with `--no-ff`, and deletes the session branch.
 
 ## Output — JOURNAL entry to append
 
@@ -88,6 +95,9 @@ Inbox: <N> items remain unprocessed.
 Suggested commit message:
 > session: YYYY-MM-DD — <one-line summary>
 
+If on a session branch and the engineer approves consolidation:
+> node scripts/session-branch-finish.mjs -m "session: YYYY-MM-DD - <one-line summary>"
+
 <If the engineer is resuming tomorrow in a different chat:>
 Next: invoke `/chat-handoff` to write CHAT-HANDOFF.md so the
 new chat picks up cleanly.
@@ -95,8 +105,10 @@ new chat picks up cleanly.
 
 ## Hard rules
 
-- Do NOT auto-commit. The engineer commits manually after
-  reviewing.
+- Do NOT auto-merge without explicit engineer approval.
+- If the engineer approves consolidation, use
+  `scripts/session-branch-finish.mjs`; do not improvise git
+  merge commands.
 - Do NOT modify history in `JOURNAL.md` (only append).
 - If the engineer says "blocked" but doesn't say on whom or why,
   ask. Vague blockers are useless.

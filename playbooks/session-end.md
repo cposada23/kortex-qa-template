@@ -41,9 +41,13 @@ something — finish the active task or park it cleanly first.
    - **Delete** if it was noise.
 5. **Commit.** Review the diff one more time, then:
    ```bash
-   git add .
-   git commit -m "session: $(date +%Y-%m-%d) — <one-line summary>"
+   node scripts/session-branch-finish.mjs -m "session: YYYY-MM-DD - <one-line summary>"
    ```
+   This validates, commits the current `session/*` branch, switches
+   to `main`, merges with `--no-ff`, and deletes the session branch.
+   If something went wrong during the day, do not run this command;
+   switch back to `main` and delete the session branch after
+   confirming you do not need its changes.
 6. **Optionally snapshot** if a milestone hit (story closed,
    sprint ended, big test pass):
    ```bash
@@ -73,6 +77,9 @@ Snapshot when:
   obvious — review backlog" is a valid NEXT.
 - Don't commit without reviewing the diff. Especially after a
   long session, you may have left scratch text in a file.
+- Don't merge a session branch unless the end-of-day state is worth
+  preserving on `main`. If the day went sideways, keep or delete the
+  `session/*` branch instead of polluting `main`.
 - Don't tag a session "done" if it's actually "abandoned mid-task."
   Mark blockers honestly. Future-you needs the truth.
 

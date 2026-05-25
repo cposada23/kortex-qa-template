@@ -89,7 +89,11 @@ node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
 /session-end
 ```
 
-End-of-day: `git add . && git commit -m "session: $(date +%F)"`.
+`/session-start` should start a `session/YYYYMMDD-HHMM` branch.
+End-of-day consolidation runs:
+`node scripts/session-branch-finish.mjs -m "session: YYYY-MM-DD - <summary>"`.
+That validates, commits the session branch, merges it into `main`,
+and deletes the session branch.
 
 Weekly: `node scripts/snapshot.mjs` to ZIP the brain to
 `versions/` for offline backup. See
@@ -236,7 +240,8 @@ first week without maintainer help:
 7. **Format a bug** — `/bug-report-formatter` outputs a
    Jira-ready paste block; no AI scaffolding language leaks.
 8. **End a day** — `/session-end` appends a journal entry and
-   suggests a commit message.
+   consolidates the `session/*` branch back into `main` after
+   review.
 9. **Capture ceremonies** — `/sprint-planning-intake` and
    `/retro-intake` produce structured meeting notes in the right
    folder.
