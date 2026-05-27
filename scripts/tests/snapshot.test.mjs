@@ -16,17 +16,21 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SNAPSHOT_SCRIPT = path.join(REPO_ROOT, 'scripts', 'snapshot.mjs');
 
-// Import the exported normalizeEntry for direct unit testing. The
-// snapshot.mjs script gates its main() on direct-invocation so the
-// import doesn't trigger a snapshot.
-const { normalizeEntry } = await import(SNAPSHOT_SCRIPT);
+// Import the exported normalizeEntry for direct unit testing.
+// Node's ESM loader on Windows rejects raw absolute paths like
+// "C:\..." with ERR_UNSUPPORTED_ESM_URL_SCHEME — they must be
+// converted to file:// URLs. macOS/Linux are lenient and accept
+// the bare path, but using pathToFileURL is the portable way.
+// The snapshot.mjs script gates its main() on direct-invocation
+// so this import doesn't trigger a snapshot.
+const { normalizeEntry } = await import(pathToFileURL(SNAPSHOT_SCRIPT).href);
 
 let passed = 0;
 let failed = 0;
