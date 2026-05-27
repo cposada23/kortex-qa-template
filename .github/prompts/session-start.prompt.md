@@ -1,8 +1,18 @@
 ---
 description: Morning ritual — surface what's active, blocked, and today's likely focus
 agent: agent
-tools: ['read', 'search/codebase']
 ---
+
+<!--
+  No `tools:` declared on purpose — that field restricts Copilot
+  Agent to only the listed tools. Earlier versions limited this
+  prompt to `['read', 'search/codebase']`, which blocked Copilot
+  from running `node scripts/session-branch-start.mjs` even though
+  the prompt body explicitly told it to (Copilot would respond with
+  "I cannot execute terminal commands with the available tools").
+  Read-only discipline is enforced socially via "Hard rules" below.
+-->
+
 
 # Session start
 
