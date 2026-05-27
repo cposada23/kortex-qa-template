@@ -102,17 +102,34 @@ cadence guidance.
 
 ---
 
-## Architecture overview — team-centric
+## Architecture overview — team-centric with shared/ (v1.7)
 
 Read [AGENTS.md](AGENTS.md) for the full breakdown.
+
+### Client-wide content (`shared/`)
+
+Everything that's true for EVERY team on this client: env URLs,
+test users, dataset filters, deploy cadence. One place, no
+duplication, no drift between team copies.
+
+| File | Purpose |
+|---|---|
+| `environments/local.md`, `dev.md`, `qa.md` | Per-env setup with sections for UI / API / DB. |
+| `users.md` | Test user accounts + naming convention. |
+| `filters.md` | Recurring test datasets + magic strings to find a scenario. |
+| `deploy.md` | Deploy cadence and ownership across envs. |
+
+If ONE team has its own env / users / filters / deploy (e.g. owns a
+separate microservice), drop a file with the same name at
+`teams/<slug>/<asset>` — the resolver picks team override > shared.
+Full rule: [shared/README.md](shared/README.md).
 
 ### Team-scoped content (`teams/<slug>/`)
 
 Each team you belong to (or rotate through) gets its own folder
-containing **everything team-specific**: stories, test cases,
-bugs, peer reviews, ceremony notes, environments, automation
-patterns, members, workflow, deploy procedures, and a team-scoped
-inbox.
+containing **only the truly team-specific stuff**: stories, test
+cases, bugs, peer reviews, ceremony notes, automation patterns,
+members, workflow.
 
 | Sub-zone | Purpose |
 |---|---|
@@ -121,10 +138,10 @@ inbox.
 | `bugs/` | Bug registry for this team. |
 | `reviews/` | Your peer reviews of this team's test cases. |
 | `ceremonies/` | This team's meeting notes (daily, planning, review, retro). |
-| `environments/` | This team's local / dev / qa setup. |
 | `automation/` | This team's Playwright patterns. |
 | `inbox/` | This team's free-form captures. |
-| `members.md`, `workflow.md`, `deploy.md`, `ceremonies-info.md` | Team-level meta files. |
+| `members.md`, `workflow.md`, `ceremonies-info.md` | Team-level meta files. |
+| `environments/` | Empty by default (README explains override). |
 
 Plus `teams/active-team.txt` (currently active team slug(s);
 first line = primary) and `teams/_template-team/` (empty scaffold
@@ -135,15 +152,16 @@ defaults to **all** active teams (so you see the full picture on a
 50/50 split); scaffold scripts default to the **first** line (the
 primary) and accept `--team <slug>` to override.
 
-### Global zones (cross-team)
+### Global zones (cross-team, not client-wide)
 
 | Zone | Purpose |
 |---|---|
-| `knowledge/` | Distilled lessons. **The only portable zone** — must be sanitized before traveling across teams or clients. |
+| `knowledge/` | Distilled lessons. **The only portable zone across clients** — must be sanitized before traveling. |
 | `playbooks/` | Long-form workflow docs (session-start/end, story-intake, ac-audit, test-case-design, peer-review, automation-flow, version-snapshot, client-rotation, day-in-the-life, team-onboarding, team-knowledge-promotion). |
 | `scripts/` | Node.js tooling (zero-deps). |
 | `templates/` | Source files for scaffolds. |
-| `.github/` | Copilot wiring. |
+| `.github/` | Copilot wiring (primary AI surface). |
+| `.agents/` | Cross-AI portability (permissions, README explaining multi-AI policy). |
 
 ### Top-level files
 

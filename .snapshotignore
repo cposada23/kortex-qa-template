@@ -1,18 +1,29 @@
 # Paths excluded from ZIP snapshots created by scripts/snapshot.mjs.
 # Same shape as .gitignore (one path/glob per line; # comments OK).
 #
-# Snapshots are PERSONAL recovery archives — the owner sends them
-# to their own Teams self-DM and uses them to restore on a new
-# laptop. They are NOT shared with anyone, so credentials are
-# allowed (and desired) inside the ZIP. See AGENTS.md
-# §"Local credentials" for the policy.
+# Snapshots are PERSONAL recovery archives — the owner sends them to
+# their own Teams self-DM and uses them to restore on a new laptop.
+# They never leave the owner's control, so credentials (.env,
+# client-secrets/, .secrets, CHAT-HANDOFF.md, .cache/) ARE included.
+# This is intentional — the whole point of the recovery channel is
+# that a laptop swap restores the working brain without re-collecting
+# credentials.
+#
+# What MUST stay included (do not add these here):
+#   - .git/         the local git history; without it, branches and
+#                   undo are gone on the new machine
+#   - .github/      Copilot Custom Instructions live here; without
+#                   them the AI surface forgets all repo rules
+#   - .env*         per Rule 5 of .github/copilot-instructions.md
+#   - client-secrets/  same
+#
+# Only exclude what would either bloat the ZIP beyond Teams limits
+# or recurse on itself.
 
-versions/
-.git/
-.cache/
-node_modules/
+versions/       # recursion guard — snapshots are stored here
+node_modules/   # size: can hit GB; reinstall with npm install
 
-# OS junk
+# OS junk (small but noisy when extracting)
 .DS_Store
 Thumbs.db
 desktop.ini

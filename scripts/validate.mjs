@@ -71,6 +71,8 @@ const REQUIRED_BY_TYPE = {
 const SKIP_FILENAMES = new Set([
   'README.md', 'AGENTS.md', 'INDEX.md', 'INBOX.md',
   'JOURNAL.md', 'TODO.md',
+  // Cross-AI wrapper files — delegate to AGENTS.md.
+  'CLAUDE.md', 'GEMINI.md',
 ]);
 
 const SKIP_DIRS = new Set([

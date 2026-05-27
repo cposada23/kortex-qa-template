@@ -29,7 +29,7 @@ list to reports whose `created_at` is within the inclusive range.
   has report-read permissions)
 - **Data:** At least 10 reports in the dataset, spread across the
   last 90 days. Filter `created_at >= "<30 days ago>"` returns
-  at least 5 reports (see [../../environments/filters.md](../../environments/filters.md)).
+  at least 5 reports (see [../../../../shared/filters.md](../../../../shared/filters.md)).
 - **Other:** the search-results-v2 feature flag is ON for the
   test user (default on QA).
 
@@ -43,7 +43,7 @@ list to reports whose `created_at` is within the inclusive range.
 4. Then the result list reloads and shows only reports whose
    `created_at` falls within `[<30 days ago>, today]` inclusive.
 5. And the visible count matches the expected count (compare
-   against the filter from [filters.md](../../environments/filters.md)).
+   against the filter from [filters.md](../../../../shared/filters.md)).
 6. And the result list is sorted by `created_at desc` (newest
    first).
 

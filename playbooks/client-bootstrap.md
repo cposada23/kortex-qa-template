@@ -160,9 +160,11 @@ node scripts/switch-team.mjs team-a
 `new-team.mjs team-a` does:
 
 1. Copies `teams/_template-team/` → `teams/team-a/`.
-2. Pre-fills the template's `members.md`, `workflow.md`,
-   `deploy.md`, `ceremonies-info.md`, and `environments/*.md`
-   with placeholder content you'll fill in later.
+2. Pre-fills the template's `members.md`, `workflow.md`, and
+   `ceremonies-info.md` with placeholder content you'll fill in
+   later. The team does NOT get its own `environments/`, `users.md`,
+   `filters.md`, or `deploy.md` — it inherits those from `shared/`
+   (override only if needed; see [shared/README.md](../shared/README.md)).
 3. Calls `build-index.mjs teams` so `teams/INDEX.md` reflects the
    new team.
 
@@ -178,23 +180,27 @@ After Step 4, the filesystem looks like:
 kortex-qa-client-a/
 ├── .client-slug                  ← contains "client-a"
 ├── client-a-qa.code-workspace    ← renamed by init.mjs
+├── shared/                       ← client-wide (every team reads from here)
+│   ├── environments/             (local/dev/qa.md — UI/API/DB sections each)
+│   ├── users.md                  (test users, naming convention)
+│   ├── filters.md                (recurring datasets)
+│   └── deploy.md                 (deploy cadence + ownership)
 ├── teams/
 │   ├── active-team.txt           ← line 1: "team-a"
 │   ├── team-a/                   ← NEW, your first team
 │   │   ├── AGENTS.md
 │   │   ├── members.md            (placeholder, fill in later)
 │   │   ├── workflow.md           (placeholder)
-│   │   ├── deploy.md             (placeholder)
 │   │   ├── ceremonies-info.md    (placeholder)
 │   │   ├── stories/              (empty, ready for first story)
 │   │   ├── test-cases/           (empty, populated by area subfolder as you author TCs)
 │   │   ├── bugs/                 (empty)
 │   │   ├── reviews/              (empty)
 │   │   ├── ceremonies/           (empty)
-│   │   ├── environments/         (placeholders for local/dev/qa)
+│   │   ├── environments/         (README only — drop override files here if THIS team has its own envs)
 │   │   ├── automation/           (empty)
 │   │   └── inbox/INBOX.md
-│   ├── example-team/             ← shipped as reference (see below)
+│   ├── example-team/             ← shipped as reference (no envs/users — pure shared/ inheritance)
 │   └── _template-team/           ← DO NOT EDIT (scaffold source)
 └── (other repo files)
 ```

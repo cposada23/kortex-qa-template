@@ -4,24 +4,35 @@ type: reference
 status: active
 language: en
 tags: [environment, qa]
-updated: 2026-05-20
+updated: 2026-05-26
 ---
 
 # Environment — QA
 
 > Replace placeholders after init.
 
-## Purpose
-
 The dedicated test environment. Deployed at sprint start (or on
 demand) for QA execution. More stable than `dev`, less so than
-prod.
+prod. Used by every team on this client unless one overrides at
+`teams/<slug>/environments/qa.md`.
 
-## URLs
+## UI
 
-- Frontend: _<https://qa.example.client.internal>_
-- API: _<https://qa.example.client.internal/api>_
-- Admin / back-office: _<...>_
+- URL: _<https://qa.example.client.internal>_
+- Admin / back-office: _<https://qa-admin.example.client.internal>_
+- Feature flags: _<dashboard URL>_
+
+## API
+
+- URL: _<https://qa.example.client.internal/api>_
+- Auth: _<...>_
+- API docs: _<https://qa.example.client.internal/swagger>_
+
+## DB
+
+- Read-only access: _<vault location / admin panel only>_
+- Data shape: _<seeded from prod anonymized / synthetic fixtures>_
+- Reset cadence: _<sprint-start wipe / never reset>_
 
 ## Access
 
@@ -31,7 +42,7 @@ prod.
 
 ## Test users
 
-See [users.md](users.md). On QA, the `qa+qa@...` set or named
+See [../users.md](../users.md). On QA, the `qa+qa@...` set or named
 test users for specific scenarios.
 
 ## Caveats

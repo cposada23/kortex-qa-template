@@ -1,0 +1,75 @@
+# .agents/permissions.yml — cross-AI write authority for this brain.
+#
+# Declares what each AI agent may write to. Read by humans and (if
+# enforced in the future) by a pre-commit hook similar to mykortex's
+# scripts/hooks/validate-agent-permissions.mjs.
+#
+# Today this file is documentation-only. Copilot is the primary
+# surface and writes everywhere (subject to AGENTS.md §7 file-read
+# restrictions). Other agents follow these guidelines socially.
+#
+# All agents are DENIED writes to credential files regardless of
+# the per-agent list below (the deny rule wins).
+
+version: 1
+
+# Deny list applies to EVERY agent — no exceptions, even copilot.
+deny_all:
+  - ".env"
+  - ".env.*"
+  - ".secrets"
+  - "client-secrets/**"
+  - "versions/*.zip"
+  - "versions/*.tar.gz"
+  - ".cache/**"
+
+agents:
+  # GitHub Copilot — the engineer's primary surface. Writes anywhere
+  # in the brain (subject to deny_all above).
+  copilot:
+    role: primary
+    write:
+      - "**/*"
+    notes: |
+      Used daily. Lives at .github/copilot-instructions.md plus
+      .github/instructions/ and .github/prompts/. Custom Instructions
+      that ship inside this repo via .github/instructions/*.md
+      auto-apply to file globs.
+
+  # Claude Code — secondary surface, used when Copilot's context
+  # window is insufficient or when the engineer wants Claude's reasoning
+  # for structural changes (refactors, schema migrations, etc.).
+  claude:
+    role: secondary
+    write:
+      - "**/*"
+    notes: |
+      Reads CLAUDE.md (wrapper) → AGENTS.md (canonical). For large
+      structural changes the engineer typically uses Claude inside
+      mykortex (with safe-change branches), not directly inside this
+      brain.
+
+  # Gemini Code Assist — tertiary, used for cross-checking or when
+  # the engineer wants a second AI opinion.
+  gemini:
+    role: tertiary
+    write:
+      - "knowledge/**"
+      - "playbooks/**"
+      - "teams/**/inbox/**"
+    notes: |
+      Reads GEMINI.md (wrapper) → AGENTS.md (canonical). The
+      .aiexclude file in the repo root reinforces deny_all for
+      Gemini specifically. Restricted write scope by default —
+      promote to "**/*" if the engineer decides Gemini is trusted
+      for that surface.
+
+  # OpenAI Codex / GPT — same default as Gemini. Used rarely.
+  codex:
+    role: tertiary
+    write:
+      - "knowledge/**"
+      - "playbooks/**"
+      - "teams/**/inbox/**"
+    notes: |
+      Reads AGENTS.md directly (no wrapper file by convention).

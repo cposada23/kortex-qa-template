@@ -11,11 +11,16 @@ A local, markdown-first second brain for one QA engineer on one
 client engagement. Not a test management system; not a Jira
 replacement; not a shared team space.
 
-Architecture is **team-centric** (v1.1+): everything team-specific
-(stories, test cases, bugs, reviews, ceremonies, environments,
-automation, members, workflow, deploy, inbox) lives under
-`teams/<slug>/`. Five global zones sit alongside: `knowledge/`,
-`playbooks/`, `scripts/`, `templates/`, `.github/`.
+Architecture is **team-centric with shared/** (v1.7+):
+
+- Team-specific (stories, test cases, bugs, reviews, ceremonies,
+  automation, members, workflow, inbox) lives under `teams/<slug>/`.
+- Client-wide (envs, users, filters, deploy procedures) lives under
+  `shared/` and is inherited by every team. A team may override an
+  individual asset by dropping a file at the matching path inside
+  its own folder — the resolver picks team-override > shared.
+- Global zones: `knowledge/`, `playbooks/`, `scripts/`, `templates/`,
+  `.github/`, `.agents/`.
 
 ## Discovery order
 
@@ -33,7 +38,15 @@ When given a task, ground yourself in this order:
    - `teams/<active>/bugs/README.md` for bugs
    - `teams/<active>/reviews/README.md` for peer reviews
    - `teams/<active>/automation/README.md` for Playwright patterns
-5. Recent [../JOURNAL.md](../JOURNAL.md) entries for in-flight
+5. **For env / users / filters / deploy questions: apply the
+   shared/teams resolver.** Check `teams/<active>/<asset>` first
+   (e.g. `teams/<active>/environments/qa.md`); fall back to
+   `shared/<asset>` (`shared/environments/qa.md`) if the team has
+   no override. Surface where the answer came from ("from team
+   override" vs "from shared client-wide") so the engineer can
+   confirm. Full rule: [../AGENTS.md](../AGENTS.md) §"Shared vs
+   team resolution".
+6. Recent [../JOURNAL.md](../JOURNAL.md) entries for in-flight
    context.
 
 ## Reusable prompts

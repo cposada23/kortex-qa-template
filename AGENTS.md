@@ -9,11 +9,23 @@ local, Copilot-driven, markdown-first second brain for a solo QA
 automation engineer. Your job is to help the owner design, audit,
 and execute QA work for one client engagement at a time.
 
-This file replaces the role that `CLAUDE.md` plays in upstream
-Kortex. GitHub Copilot supports `AGENTS.md` natively since
-November 2025; Claude and other agents read it by convention.
-`.github/copilot-instructions.md` exists only as a thin pointer to
-this file.
+This file is the single source of truth for every AI agent that
+opens this brain — Copilot (the primary surface), Claude, Codex,
+Gemini, Cursor, etc. GitHub Copilot supports `AGENTS.md` natively
+since November 2025; others read it by convention or via per-agent
+wrapper files that delegate here:
+
+- `.github/copilot-instructions.md` — Copilot-specific wrapper with
+  prompt list + idiosyncrasies; defers to this file for canonical
+  rules. **Primary surface — the engineer uses Copilot daily.**
+- `CLAUDE.md` — one-line wrapper for Claude Code.
+- `GEMINI.md` — one-line wrapper for Gemini.
+- `.agents/permissions.yml` — declares what each agent can write
+  (cross-AI policy; secrets are always denied).
+
+We do **not** use symlinks because the brain must work on Windows
+without `git config core.symlinks=true`. Each wrapper is a regular
+file with a single sentence pointing at this one.
 
 ---
 
@@ -51,15 +63,39 @@ The brain is **not**:
 
 ---
 
-## Architecture — team-centric (v1.1)
+## Architecture — team-centric with shared/ (v1.7)
 
 The brain is organized around **teams**. You may belong to one team
 or to multiple teams concurrently (or rotate across teams over
 time). The architecture supports all three.
 
+**Three scopes** divide what lives where:
+
+1. **Client-wide** (`shared/`) — facts true for EVERY team on this
+   client engagement: env URLs, test users, dataset filters, deploy
+   cadence. Default home for these things.
+2. **Team-specific** (`teams/<slug>/`) — stories, bugs, test cases,
+   ceremonies, members, workflow. Always per-team because the work
+   itself is per-team.
+3. **Per-team override of a client-wide asset** (`teams/<slug>/<asset>`)
+   — optional. Drop a file with the same name as the shared one if
+   ONLY this team uses a different env/users/filters/deploy.
+
+### `shared/` — client-wide content
+
+```
+shared/
+├── README.md
+├── environments/        Local / dev / qa setup, per env, sections for UI / API / DB
+├── users.md             Test user accounts, naming convention
+├── filters.md           Recurring test datasets / magic strings
+└── deploy.md            Deploy cadence + ownership across envs
+```
+
 ### `teams/<slug>/` — team-scoped content
 
-Each team gets one folder containing **everything team-specific**:
+Each team gets one folder containing **only the truly team-specific
+stuff** (no env duplication):
 
 ```
 teams/<slug>/
@@ -67,26 +103,27 @@ teams/<slug>/
 ├── README.md, INDEX.md
 ├── members.md          Roster
 ├── workflow.md         Jira board, DoR, DoD
-├── deploy.md           Deploy procedures
 ├── ceremonies-info.md  Sprint cadence
 ├── stories/            One folder per Jira ticket
 ├── test-cases/<area>/  All test cases for the team (single home)
 ├── bugs/               Bug registry, linked from stories
 ├── reviews/            Peer reviews of others' test cases
 ├── ceremonies/         Meeting notes (sprint-planning/, daily-standups/, reviews/, retrospectives/)
-├── environments/       Local / dev / qa setup, users, filters
 ├── automation/         Playwright meta-knowledge
-└── inbox/              Team-specific captures
+├── inbox/              Team-specific captures
+└── environments/       (override only — README explains; empty by default)
 ```
 
 Plus two special files at the `teams/` level:
 - **`teams/active-team.txt`** — line(s) listing currently active
   team slug(s). First line = primary (default target for scaffolds).
   Read all lines for default `/session-start` scope.
-- **`teams/_template-team/`** — empty scaffold copied by
-  `node scripts/new-team.mjs <slug>` when adding a team.
+- **`teams/_template-team/`** — scaffold copied by
+  `node scripts/new-team.mjs <slug>` when adding a team. Does NOT
+  contain env/deploy/users/filters by default; new teams inherit
+  from `shared/`.
 
-### Global zones (cross-team)
+### Global zones (cross-team, not client-wide)
 
 ```
 knowledge/    SYNTHESIS ZONE    Distilled lessons. Portable across teams AND across clients.
@@ -94,20 +131,68 @@ playbooks/    WORKFLOW DOCS     How-to guides for the core daily loop.
 scripts/      TOOLING           Node.js .mjs scripts (zero-dep, Windows-safe).
 templates/    SCAFFOLD SOURCES  Used by new-story.mjs, new-team.mjs, etc.
 .github/      COPILOT WIRING    copilot-instructions.md + instructions/ + prompts/
+.agents/      CROSS-AI POLICY   permissions.yml + README explaining multi-AI policy
 ```
 
-Top-level meta: `AGENTS.md` (this file), `README.md`, `INDEX.md`,
-`TODO.md`, `JOURNAL.md`, `VERSION`.
+Top-level meta: `AGENTS.md` (this file), `CLAUDE.md` / `GEMINI.md`
+(wrappers), `README.md`, `INDEX.md`, `TODO.md`, `JOURNAL.md`, `VERSION`.
 
-### Why team-centric (cf. v1.0 flat-10-zone)
+### Why this split
 
-- "What's the ceremony for my current team?" → one-folder jump:
-  `teams/<active>/ceremonies/`.
-- Multi-team support: zero cross-team leakage in stories, ceremonies,
-  envs, bugs. Each team's content is physically isolated.
-- The `knowledge/` zone is the only zone designed to cross teams
-  (and clients) — and it must be sanitized before traveling. See
+- "What's the QA env URL?" → one place: `shared/environments/qa.md`.
+  No more guessing which team folder to read first; no more silent
+  drift between team copies.
+- Team override stays cheap: drop `teams/<slug>/environments/qa.md`
+  and the resolver picks it. Zero config.
+- Stories / bugs / test cases stay team-isolated (still no cross-team
+  leakage).
+- The `knowledge/` zone remains the only zone designed to cross
+  clients — and still requires sanitization per
   [playbooks/team-knowledge-promotion.md](playbooks/team-knowledge-promotion.md).
+
+---
+
+## Shared vs team resolution
+
+**Convention without config:** for any client-wide asset
+(`environments/`, `users.md`, `filters.md`, `deploy.md`), the
+presence of an override file at the team path IS the switch.
+
+| Asset | Default location | Team override |
+|---|---|---|
+| local env | `shared/environments/local.md` | `teams/<slug>/environments/local.md` |
+| dev env | `shared/environments/dev.md` | `teams/<slug>/environments/dev.md` |
+| qa env | `shared/environments/qa.md` | `teams/<slug>/environments/qa.md` |
+| test users | `shared/users.md` | `teams/<slug>/users.md` |
+| filters / datasets | `shared/filters.md` | `teams/<slug>/filters.md` |
+| deploy procedures | `shared/deploy.md` | `teams/<slug>/deploy.md` |
+
+**Resolution rule:** check the team folder first; fall back to
+`shared/` if not present.
+
+**For agents (you):** when the engineer asks "what's the QA URL?"
+for a given team, read `teams/<slug>/environments/qa.md` if it
+exists, else `shared/environments/qa.md`. Surface the source ("from
+team override" vs "from shared client-wide") so the engineer can
+confirm.
+
+**For scripts:** use [scripts/lib/resolve-shared.mjs](scripts/lib/resolve-shared.mjs).
+API:
+```js
+import { resolveSharedWithSource } from './lib/resolve-shared.mjs';
+const { source, path } = resolveSharedWithSource(repoRoot, teamSlug, 'environments/qa.md');
+// source: 'team' | 'shared' | 'missing'
+```
+
+**When to put something in shared/ vs team:**
+
+- Same URL/user/filter for every team on this client → `shared/`.
+- One team owns a separate microservice / different SSO realm /
+  different qa env → that team gets an override file. Everyone else
+  still reads `shared/`.
+- The work itself is team-specific (stories, bugs, test cases,
+  ceremonies, members, workflow) → `teams/<slug>/` always. No
+  shared/ equivalent.
 
 ---
 

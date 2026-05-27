@@ -1,18 +1,20 @@
 ---
-title: "Environment — filters & datasets"
+title: "Test data filters & datasets"
 type: reference
 status: active
 language: en
-tags: [environment, test-data, filters]
-updated: 2026-05-20
+tags: [test-data, filters]
+updated: 2026-05-26
 ---
 
-# Environment — filters & datasets
+# Test data filters & datasets
 
 > Replace placeholders after init.
 
-Recurring test datasets, filter combinations, and "the magic
-strings to find a specific scenario in the SUT's data."
+Recurring test datasets, filter combinations, and "the magic strings
+to find a specific scenario in the SUT's data." Client-wide by
+default. Override at `teams/<slug>/filters.md` if a team works on
+data the others don't touch.
 
 ## Why this file exists
 

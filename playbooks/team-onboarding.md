@@ -67,14 +67,22 @@ skip:
   team's DoR/DoD, and which QA subtasks the team uses. If the team
   has any unusual conventions (branch naming, PR templates, etc.),
   note them here.
-- **`teams/<slug>/deploy.md`** — how this team ships. Deploy
-  cadence, who triggers, smoke test policy.
 - **`teams/<slug>/ceremonies-info.md`** — sprint length, daily
   standup time, sprint planning/review/retro timing.
-- **`teams/<slug>/environments/*.md`** — at minimum `local.md`,
-  `dev.md`, `qa.md` with URLs and login hints (no passwords).
-  Also `users.md` for the test user emails (no passwords) and
-  `filters.md` for common dataset queries.
+
+**Client-wide content the team inherits** (no per-team duplication):
+
+- **`shared/environments/{local,dev,qa}.md`** — env URLs and login
+  hints (no passwords). Sections inside each: UI / API / DB.
+- **`shared/users.md`** — test user emails + naming convention.
+- **`shared/filters.md`** — common dataset queries to find a
+  scenario in the SUT's data.
+- **`shared/deploy.md`** — deploy cadence and ownership.
+
+If THIS team needs an override (e.g. owns a separate microservice
+with its own qa URL), drop the corresponding file at
+`teams/<slug>/environments/<env>.md` or `teams/<slug>/<asset>.md`
+and the resolver picks it. See [shared/README.md](../shared/README.md).
 
 The other zones (`stories/`, `bugs/`, `reviews/`, `automation/`,
 `ceremonies/`, `inbox/`) populate as you do the work — don't try

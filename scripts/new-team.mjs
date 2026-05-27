@@ -143,12 +143,18 @@ async function main() {
   process.stdout.write(`  1. Activate the team:\n`);
   process.stdout.write(`       node scripts/switch-team.mjs ${slug}        # set as primary\n`);
   process.stdout.write(`       node scripts/switch-team.mjs ${slug} --add  # add as secondary\n`);
-  process.stdout.write(`  2. Fill in team details:\n`);
+  process.stdout.write(`  2. Fill in team-specific details:\n`);
   process.stdout.write(`       teams/${slug}/members.md\n`);
   process.stdout.write(`       teams/${slug}/workflow.md\n`);
-  process.stdout.write(`       teams/${slug}/deploy.md\n`);
   process.stdout.write(`       teams/${slug}/ceremonies-info.md\n`);
-  process.stdout.write(`       teams/${slug}/environments/*.md\n`);
+  process.stdout.write(`  3. Client-wide assets (envs / users / filters / deploy) live in:\n`);
+  process.stdout.write(`       shared/environments/   shared/users.md   shared/filters.md   shared/deploy.md\n`);
+  process.stdout.write(`     By default this team inherits all of them.\n`);
+  process.stdout.write(`  4. If THIS team needs an override (e.g. owns a separate qa env), drop a file at:\n`);
+  process.stdout.write(`       teams/${slug}/environments/qa.md   (override shared/environments/qa.md)\n`);
+  process.stdout.write(`       teams/${slug}/users.md             (override shared/users.md)\n`);
+  process.stdout.write(`     The resolver picks team override > shared.\n`);
+  process.stdout.write(`     Details: shared/README.md + teams/${slug}/environments/README.md\n`);
 }
 
 main().catch((err) => {

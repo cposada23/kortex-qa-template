@@ -153,13 +153,14 @@ async function main() {
   process.stdout.write(`       node scripts/install-hooks.mjs   # pre-commit hook (idempotent)\n`);
   process.stdout.write(`       git add . && git commit -m "init: kortex-qa for ${slug} v$(cat VERSION)"\n`);
   if (firstTeam) {
-    process.stdout.write(`  4. Fill in team details:\n`);
+    process.stdout.write(`  4. Fill in client-wide details (apply to every team on this client):\n`);
+    process.stdout.write(`       shared/environments/local.md  shared/environments/dev.md  shared/environments/qa.md\n`);
+    process.stdout.write(`       shared/users.md  shared/filters.md  shared/deploy.md\n`);
+    process.stdout.write(`  5. Fill in team-specific details:\n`);
     process.stdout.write(`       teams/${firstTeam}/members.md\n`);
     process.stdout.write(`       teams/${firstTeam}/workflow.md\n`);
-    process.stdout.write(`       teams/${firstTeam}/deploy.md\n`);
     process.stdout.write(`       teams/${firstTeam}/ceremonies-info.md\n`);
-    process.stdout.write(`       teams/${firstTeam}/environments/*.md\n`);
-    process.stdout.write(`  5. Capture your first Jira ticket:\n`);
+    process.stdout.write(`  6. Capture your first Jira ticket:\n`);
     process.stdout.write(`       node scripts/new-story.mjs <TICKET-KEY> <slug>\n`);
   } else {
     process.stdout.write(`  4. Scaffold your first real team:\n`);
