@@ -178,9 +178,21 @@ async function main() {
   assert(entries !== null, 'archive can be listed');
   if (!entries) process.exit(1);
 
-  // Critical: paths that MUST be inside.
-  const hasPrefix = (prefix) => entries.some((e) => e === prefix || e.startsWith(prefix));
-  const hasExact = (p) => entries.some((e) => e === p);
+  // Critical: paths that MUST be inside. Comparison uses
+  // normalizeEntry on both sides so the test passes even when the
+  // ZIP creator wrote backslashes or mixed casing (the production
+  // verifier already normalizes — the test must match its policy
+  // so a "the file IS there, just slashed differently" case
+  // doesn't get flagged as a regression).
+  const normEntries = entries.map(normalizeEntry);
+  const hasPrefix = (prefix) => {
+    const n = normalizeEntry(prefix);
+    return normEntries.some((e) => e === n || e.startsWith(n));
+  };
+  const hasExact = (p) => {
+    const n = normalizeEntry(p);
+    return normEntries.some((e) => e === n);
+  };
 
   assert(hasPrefix('.git/'), '.git/ is inside the archive');
   assert(hasExact('.git/HEAD'), '.git/HEAD specifically is inside');
