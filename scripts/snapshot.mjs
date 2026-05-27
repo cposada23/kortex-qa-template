@@ -183,13 +183,20 @@ function tryPowerShellZip(zipPath, excludes) {
         Copy-Item -LiteralPath $f -Destination $target -Force;
       }
 
-      # Sanity check the stage before zipping. If .git/ exists in the
-      # source but produced ZERO staged files, something silently
-      # skipped it — fail loudly so the caller can fall back to zip CLI.
+      # Sanity check the stage before zipping. If .git/ exists in
+      # the source but produced ZERO staged files AND was not
+      # legitimately excluded by .snapshotignore, something silently
+      # skipped it — fail loudly so the caller can fall back to zip
+      # CLI. The exclusion guard prevents this check from firing on
+      # the synthetic test scenario where .snapshotignore
+      # intentionally excludes .git/ to simulate the verifier
+      # failure path.
       foreach ($critical in @('.git', '.github')) {
         $srcDir = Join-Path $root $critical;
         $stagedDir = Join-Path $stage $critical;
         if ((Test-Path -LiteralPath $srcDir) -and -not (Test-Path -LiteralPath $stagedDir)) {
+          # Was it excluded legitimately? Check against .snapshotignore.
+          if (Test-SnapshotExclude ($critical + '/')) { continue }
           throw "Stage missing $critical/ contents — enumeration skipped a hidden directory. Aborting so caller can fall back to zip CLI.";
         }
       }
