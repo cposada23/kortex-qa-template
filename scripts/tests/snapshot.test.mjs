@@ -23,6 +23,11 @@ const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SNAPSHOT_SCRIPT = path.join(REPO_ROOT, 'scripts', 'snapshot.mjs');
 
+// Import the exported normalizeEntry for direct unit testing. The
+// snapshot.mjs script gates its main() on direct-invocation so the
+// import doesn't trigger a snapshot.
+const { normalizeEntry } = await import(SNAPSHOT_SCRIPT);
+
 let passed = 0;
 let failed = 0;
 const failures = [];
@@ -102,8 +107,12 @@ function listArchive(archivePath) {
 }
 
 async function findArchive(versionsDir) {
+  // Only match the canonical snapshot name pattern (kortex-qa-*).
+  // The fixture pre-seeds versions/old.zip as a "previous snapshot"
+  // to verify the recursion guard; we must not pick that one.
   const items = await fs.readdir(versionsDir);
   for (const it of items) {
+    if (!it.startsWith('kortex-qa-')) continue;
     if (it.endsWith('.zip') || it.endsWith('.tar.gz')) {
       return path.join(versionsDir, it);
     }
@@ -114,6 +123,27 @@ async function findArchive(versionsDir) {
 async function main() {
   process.stdout.write('snapshot.test.mjs\n');
   process.stdout.write('=================\n\n');
+
+  // ============================================================
+  // Unit tests for normalizeEntry — fast, no I/O, covers the
+  // Windows path quirks (backslash, leading ./, case mismatch,
+  // leading /) that motivated the v1.7.x verifier hardening.
+  // ============================================================
+  process.stdout.write('Unit: normalizeEntry\n');
+  assert(normalizeEntry('.git/HEAD') === '.git/head', 'unix path lowercased');
+  assert(normalizeEntry('.git\\HEAD') === '.git/head', 'Windows backslash → forward slash');
+  assert(normalizeEntry('./.git/HEAD') === '.git/head', 'leading ./ stripped');
+  assert(normalizeEntry('/.git/HEAD') === '.git/head', 'leading / stripped');
+  assert(normalizeEntry('.GIT/HEAD') === '.git/head', 'case folded to lower');
+  assert(normalizeEntry('.github\\workflows\\test.yml') === '.github/workflows/test.yml', 'multi-segment Windows path');
+  assert(normalizeEntry('AGENTS.md') === 'agents.md', 'plain file lowercased');
+  assert(normalizeEntry('') === '', 'empty stays empty');
+  assert(normalizeEntry('.git/').startsWith('.git/') === true, 'dir-suffix preserved');
+
+  // ============================================================
+  // Integration: end-to-end snapshot against a synthetic fixture.
+  // ============================================================
+  process.stdout.write('\nIntegration: snapshot end-to-end\n');
 
   // The current snapshot.mjs uses a hard-coded REPO_ROOT computed from
   // its own location, which means the test fixture cannot redirect it.
@@ -139,6 +169,8 @@ async function main() {
   const archivePath = await findArchive(path.join(fixture, 'versions'));
   assert(archivePath !== null, 'archive was produced in versions/');
   if (!archivePath) {
+    process.stdout.write('\nDEBUG — snapshot stdout:\n' + r.stdout + '\n');
+    process.stdout.write('DEBUG — snapshot stderr:\n' + r.stderr + '\n');
     process.exit(1);
   }
 
@@ -170,9 +202,38 @@ async function main() {
   // Stdout must show the verification block.
   assert(r.stdout.includes('✓ .git/ included'), 'stdout reports .git/ included');
   assert(r.stdout.includes('✓ .github/ included'), 'stdout reports .github/ included');
+  assert(r.stdout.includes('Created by:'), 'stdout reports which creator was used');
+  assert(r.stdout.includes('Platform:'), 'stdout reports platform + node version');
 
-  // Cleanup.
+  // Cleanup the happy-path fixture.
   await fs.rm(fixture, { recursive: true, force: true });
+
+  // ============================================================
+  // Integration: verifier diagnostic dump when .git/ is missing
+  // from the archive. Simulates the bug class where .snapshotignore
+  // accidentally excludes a critical path — the verifier must
+  // abort, list what it DID see (so the engineer can diagnose),
+  // and exit non-zero.
+  // ============================================================
+  process.stdout.write('\nIntegration: verifier diagnostic dump on missing path\n');
+  const brokenFixture = await buildFixture();
+  await fs.mkdir(path.join(brokenFixture, 'scripts'), { recursive: true });
+  await fs.copyFile(SNAPSHOT_SCRIPT, path.join(brokenFixture, 'scripts', 'snapshot.mjs'));
+  // Force the bug: add .git/ to .snapshotignore so the creator
+  // excludes it, while the working tree still has it.
+  const ignorePath = path.join(brokenFixture, '.snapshotignore');
+  const existingIgnore = await fs.readFile(ignorePath, 'utf8');
+  await fs.writeFile(ignorePath, existingIgnore + '\n.git/\n');
+
+  const brokenRun = runSnapshot(brokenFixture);
+  assert(brokenRun.status === 3, `verifier exits 3 when critical path missing (got ${brokenRun.status})`);
+  assert(brokenRun.stderr.includes('missing critical paths'), 'stderr reports missing critical paths');
+  assert(brokenRun.stderr.includes('.git/'), 'stderr names the missing .git/ path');
+  assert(brokenRun.stderr.includes('First') && brokenRun.stderr.includes('entries the verifier saw'), 'stderr dumps the entries the verifier actually saw');
+  assert(brokenRun.stderr.includes('AGENTS.md'), 'diagnostic dump contains AGENTS.md (a real entry from the archive)');
+  assert(brokenRun.stderr.includes('unzip -l'), 'stderr suggests the manual diagnostic command');
+
+  await fs.rm(brokenFixture, { recursive: true, force: true });
 
   process.stdout.write(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) {

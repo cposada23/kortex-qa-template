@@ -23,7 +23,7 @@
 // Usage:
 //   node scripts/snapshot.mjs
 
-import { promises as fs } from 'node:fs';
+import { promises as fs, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -125,9 +125,22 @@ function tryTar(tarPath, excludes) {
 
 function tryPowerShellZip(zipPath, excludes) {
   // Windows PowerShell: Compress-Archive can't natively exclude
-  // patterns. Passing a recursive Get-ChildItem result directly can
-  // also produce duplicate archive paths, so stage the filtered tree
-  // first and zip that directory.
+  // patterns. We stage the filtered tree to a temp dir and zip
+  // that directory.
+  //
+  // Enumeration uses [System.IO.Directory]::EnumerateFiles with
+  // AllDirectories, not Get-ChildItem -Recurse -Force. Reason:
+  // PowerShell 5.1's Get-ChildItem has a long-standing inconsistency
+  // where -Force on -Recurse does not always descend into hidden
+  // subdirectories (Git on Windows marks .git/ as +H Hidden, so
+  // its contents would silently be skipped). The .NET API recurses
+  // unconditionally — it sees what NTFS sees.
+  //
+  // After staging, we verify that at least one entry under .git/
+  // and .github/ was actually staged (when those folders exist in
+  // the source tree). If not, the function throws so the caller
+  // falls back to a different creator instead of producing a broken
+  // ZIP.
   const excludeArgs = excludes.map((e) => `'${e.replace(/'/g, "''")}'`).join(',');
   const escapedZipPath = zipPath.replace(/'/g, "''");
   const cmd = `
@@ -156,15 +169,30 @@ function tryPowerShellZip(zipPath, excludes) {
     }
 
     try {
-      Get-ChildItem -LiteralPath $root -Recurse -File -Force |
-        ForEach-Object {
-          $rel = $_.FullName.Substring($root.Length).TrimStart('\\', '/');
-          if (Test-SnapshotExclude $rel) { return }
-          $target = Join-Path $stage $rel;
-          $targetDir = Split-Path $target -Parent;
-          New-Item -ItemType Directory -Path $targetDir -Force | Out-Null;
-          Copy-Item -LiteralPath $_.FullName -Destination $target -Force;
+      # .NET enumeration — recurses into hidden subdirectories
+      # (Get-ChildItem -Recurse -Force does NOT, reliably, in PS 5.1).
+      $rootLen = $root.Length;
+      if (-not ($root.EndsWith('\\') -or $root.EndsWith('/'))) { $rootLen = $rootLen + 1 }
+      $files = [System.IO.Directory]::EnumerateFiles($root, '*', [System.IO.SearchOption]::AllDirectories);
+      foreach ($f in $files) {
+        $rel = $f.Substring($rootLen);
+        if (Test-SnapshotExclude $rel) { continue }
+        $target = Join-Path $stage $rel;
+        $targetDir = Split-Path $target -Parent;
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null;
+        Copy-Item -LiteralPath $f -Destination $target -Force;
+      }
+
+      # Sanity check the stage before zipping. If .git/ exists in the
+      # source but produced ZERO staged files, something silently
+      # skipped it — fail loudly so the caller can fall back to zip CLI.
+      foreach ($critical in @('.git', '.github')) {
+        $srcDir = Join-Path $root $critical;
+        $stagedDir = Join-Path $stage $critical;
+        if ((Test-Path -LiteralPath $srcDir) -and -not (Test-Path -LiteralPath $stagedDir)) {
+          throw "Stage missing $critical/ contents — enumeration skipped a hidden directory. Aborting so caller can fall back to zip CLI.";
         }
+      }
 
       Add-Type -AssemblyName System.IO.Compression.FileSystem;
       if (Test-Path '${escapedZipPath}') {
@@ -238,6 +266,21 @@ function listSnapshot(archivePath) {
   return null;
 }
 
+// normalizeEntry — make path comparison robust across platforms.
+// Windows zip producers may emit entries with backslashes or
+// leading "./", and filesystems are case-insensitive. We normalize
+// both sides before comparison so a single canonical form decides
+// the match.
+//
+// Exported for unit tests in scripts/tests/snapshot.test.mjs.
+export function normalizeEntry(p) {
+  return String(p)
+    .replace(/\\/g, '/')      // backslash → forward slash (Windows)
+    .replace(/^\.\//, '')     // strip leading "./"
+    .replace(/^\/+/, '')      // strip any leading "/"
+    .toLowerCase();           // case-insensitive (Windows + macOS default)
+}
+
 // verifySnapshot — check that everything in REQUIRED_IF_PRESENT
 // that exists in the working tree is also in the archive. Returns
 // { ok: boolean, missing: string[], notable: { path, present }[] }.
@@ -252,15 +295,19 @@ async function verifySnapshot(archivePath) {
     };
   }
 
+  // Pre-normalize entries once so we don't re-normalize per check.
+  const normEntries = entries.map(normalizeEntry);
+
   const missing = [];
   for (const rel of REQUIRED_IF_PRESENT) {
     if (!(await pathExistsRelative(rel))) continue;
     const isDir = rel.endsWith('/');
-    const found = entries.some((entry) => {
+    const relNorm = normalizeEntry(rel);
+    const found = normEntries.some((entry) => {
       if (isDir) {
-        return entry === rel || entry.startsWith(rel);
+        return entry === relNorm || entry.startsWith(relNorm);
       }
-      return entry === rel;
+      return entry === relNorm;
     });
     if (!found) missing.push(rel);
   }
@@ -269,9 +316,10 @@ async function verifySnapshot(archivePath) {
   for (const rel of NOTABLE_IF_PRESENT) {
     if (!(await pathExistsRelative(rel))) continue;
     const isDir = rel.endsWith('/');
-    const present = entries.some((entry) => {
-      if (isDir) return entry === rel || entry.startsWith(rel);
-      return entry === rel;
+    const relNorm = normalizeEntry(rel);
+    const present = normEntries.some((entry) => {
+      if (isDir) return entry === relNorm || entry.startsWith(relNorm);
+      return entry === relNorm;
     });
     notable.push({ path: rel, present });
   }
@@ -282,6 +330,7 @@ async function verifySnapshot(archivePath) {
     notable,
     listingFailed: false,
     entryCount: entries.length,
+    rawEntries: entries,   // surfaced for diagnostic prints on failure
   };
 }
 
@@ -301,26 +350,44 @@ async function main() {
   process.stdout.write(`Creating snapshot for client="${clientSlug}", version="${version}"...\n`);
   process.stdout.write(`Excluding ${excludes.length} pattern(s): ${excludes.join(', ')}\n\n`);
 
+  process.stdout.write(`Platform: ${process.platform} (node ${process.version})\n\n`);
+
   let succeeded = false;
   let outputPath = null;
+  let creator = null;
   if (process.platform !== 'win32') {
+    process.stdout.write('→ Trying zip CLI...\n');
     if (tryZip(zipPath, excludes)) {
       succeeded = true;
       outputPath = zipPath;
+      creator = 'zip CLI';
     } else {
       process.stderr.write('zip not available or failed. Falling back to tar...\n');
       if (tryTar(tarPath, excludes)) {
         succeeded = true;
         outputPath = tarPath;
+        creator = 'tar';
       }
     }
   } else {
-    if (tryPowerShellZip(zipPath, excludes)) {
+    // Windows: prefer Git Bash's `zip` CLI when available (info-zip
+    // is well-tested for dotfolders like .git/ and .github/). Fall
+    // back to PowerShell + System.IO.Compression only if zip CLI is
+    // missing or fails. The previous order (PowerShell first) had a
+    // hidden-directory enumeration gotcha on PowerShell 5.1 where
+    // Get-ChildItem -Recurse -Force silently skipped .git/ contents.
+    process.stdout.write('→ Trying zip CLI (Git Bash on Windows)...\n');
+    if (tryZip(zipPath, excludes)) {
       succeeded = true;
       outputPath = zipPath;
-    } else if (tryZip(zipPath, excludes)) {
-      succeeded = true;
-      outputPath = zipPath;
+      creator = 'zip CLI (Git Bash)';
+    } else {
+      process.stdout.write('→ zip CLI not available. Trying PowerShell ZipFile fallback...\n');
+      if (tryPowerShellZip(zipPath, excludes)) {
+        succeeded = true;
+        outputPath = zipPath;
+        creator = 'PowerShell ZipFile';
+      }
     }
   }
 
@@ -352,6 +419,7 @@ async function main() {
   }
 
   process.stdout.write(`\n✓ Snapshot created: ${path.relative(REPO_ROOT, outputPath)} (${size})\n`);
+  process.stdout.write(`  Created by: ${creator}\n`);
 
   // Post-ZIP verification.
   process.stdout.write('\nVerifying snapshot contents...\n');
@@ -367,13 +435,34 @@ async function main() {
   }
 
   if (!verification.ok) {
-    process.stderr.write('\n❌ Snapshot is missing critical paths:\n');
+    process.stderr.write('\n❌ Snapshot verifier reports missing critical paths:\n');
     for (const m of verification.missing) {
       process.stderr.write(`   - ${m}  (present in working tree but NOT in archive)\n`);
     }
-    process.stderr.write('\n   This means the snapshot is unsafe for recovery.\n');
-    process.stderr.write('   Check .snapshotignore — these paths must NOT be excluded.\n');
-    process.stderr.write(`   Delete the bad snapshot: rm ${path.relative(REPO_ROOT, outputPath)}\n`);
+
+    // Diagnostic dump: print what the verifier ACTUALLY saw inside
+    // the archive. If the engineer expected .git/ to be in there
+    // and it IS in the list below, the bug is the comparison logic
+    // (normalize already runs; report it). If it's NOT in the list
+    // below, the bug is in the archive itself or the listing tool.
+    const sample = (verification.rawEntries || []).slice(0, 30);
+    if (sample.length > 0) {
+      process.stderr.write(`\n   First ${sample.length} entries the verifier saw inside the archive:\n`);
+      for (const e of sample) {
+        process.stderr.write(`     ${e}\n`);
+      }
+      if (verification.rawEntries.length > sample.length) {
+        process.stderr.write(`     ... and ${verification.rawEntries.length - sample.length} more.\n`);
+      }
+    } else {
+      process.stderr.write('\n   (the verifier got an EMPTY listing — the archive may be empty or the lister tool failed silently)\n');
+    }
+
+    process.stderr.write('\n   Diagnostic next step (run manually, send the output if asking for help):\n');
+    process.stderr.write(`     unzip -l ${path.relative(REPO_ROOT, outputPath)} | head -40\n`);
+    process.stderr.write('   If that shows the missing paths but the verifier above did NOT, it is a listing-tool mismatch.\n');
+    process.stderr.write('   If it ALSO does not show them, the ZIP creator skipped them — re-create with:\n');
+    process.stderr.write(`     rm ${path.relative(REPO_ROOT, outputPath)} && node scripts/snapshot.mjs\n`);
     process.exit(3);
   }
 
@@ -395,7 +484,24 @@ async function main() {
   process.stdout.write('(or other IT-approved backup channel — per client policy).\n');
 }
 
-main().catch((err) => {
-  process.stderr.write(`snapshot failed: ${err.message}\n`);
-  process.exit(1);
-});
+// Only run main() when invoked as a script. If this module is
+// imported (by snapshot.test.mjs for unit-testing exports like
+// normalizeEntry), the import side-effects must be inert.
+//
+// Use realpathSync on both sides so that symlinks like /tmp →
+// /private/tmp on macOS, or any other filesystem indirection, do
+// not break the equality check.
+const invokedDirectly = (() => {
+  try {
+    if (!process.argv[1]) return false;
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
+})();
+if (invokedDirectly) {
+  main().catch((err) => {
+    process.stderr.write(`snapshot failed: ${err.message}\n`);
+    process.exit(1);
+  });
+}
