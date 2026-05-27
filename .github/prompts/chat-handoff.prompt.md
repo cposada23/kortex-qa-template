@@ -100,15 +100,33 @@ Body sections in this exact order:
 
 ## After saving
 
-In chat, summarize:
+1. **Verify the write.** Use the read_file tool to read back the
+   file you just wrote. If the read fails (file not found at the
+   expected path), surface that immediately to the engineer — do
+   NOT claim success. Try again with the absolute workspace path.
 
-```
-Handoff written to CHAT-HANDOFF.md (updated YYYY-MM-DD HH:MM).
+2. **Print the absolute path.** Tell the engineer exactly where
+   the file landed, so they can confirm with `ls` if needed.
 
-Goal: <one line>
-Files in focus: <N>
-Open questions: <N>
-Next: <one line>
+3. In chat, summarize:
 
-To resume in a new chat: paste this prompt or invoke /resume-from-handoff.
-```
+   ```
+   Handoff written to <absolute workspace path>/CHAT-HANDOFF.md
+   (updated YYYY-MM-DD HH:MM).
+
+   Goal: <one line>
+   Files in focus: <N>
+   Open questions: <N>
+   Next: <one line>
+
+   To resume in a new chat: open the SAME workspace, then invoke
+   /resume-from-handoff. The handoff is gitignored — it lives only
+   on this machine until you snapshot.
+   ```
+
+4. **Common pitfall to flag.** If `/resume-from-handoff` later
+   reports "No CHAT-HANDOFF.md found" but the file exists on disk,
+   the new chat opened a different workspace. Have the engineer
+   verify `ls CHAT-HANDOFF.md` in the new chat's terminal — if it
+   exists, the workspace is correct and the prompt has a bug; if
+   it doesn't, the workspace is wrong.

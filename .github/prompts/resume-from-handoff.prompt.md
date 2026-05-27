@@ -1,7 +1,15 @@
 ---
 description: Read CHAT-HANDOFF.md and propose the next step
-agent: ask
+agent: agent
 ---
+
+<!--
+  agent: agent (not "ask"). The previous "ask" mode read only files
+  open in editor tabs and honored .gitignore for discovery, so
+  CHAT-HANDOFF.md (gitignored on purpose) was silently invisible
+  and this prompt would always reply "No CHAT-HANDOFF.md found"
+  even when the file existed.
+-->
 
 # Resume from handoff
 
@@ -9,15 +17,33 @@ You are a new chat session. The engineer wants to pick up where the previous cha
 
 ## Input
 
-1. `CHAT-HANDOFF.md` at the repo root. If it doesn't exist, tell the engineer: "No CHAT-HANDOFF.md found. Either we have no pending work, or the previous chat ended without writing a handoff. Start fresh with /session-start."
+1. **Read `CHAT-HANDOFF.md` at the workspace / repo root** using the read_file tool with the explicit relative path `CHAT-HANDOFF.md`. Do not rely on file picker discovery — `CHAT-HANDOFF.md` is gitignored on purpose and the picker may hide it.
 
-2. Read it in full. Pay special attention to:
+2. If `read_file CHAT-HANDOFF.md` fails:
+   - Try once more with the absolute path resolved from the workspace root.
+   - If it still fails, tell the engineer **explicitly** what you tried and what to check:
+
+     ```
+     No CHAT-HANDOFF.md found at the workspace root.
+     Tried: <relative path you used>, <absolute path you used>.
+     Possible causes:
+       1. `/chat-handoff` was never invoked in the previous chat.
+       2. `/chat-handoff` was invoked but Copilot silently failed
+          to write (rare — check for write-permission errors).
+       3. You opened a different workspace than the previous chat
+          was in.
+     To verify: run `ls CHAT-HANDOFF.md` in the terminal. If it
+     exists, paste the output here and I'll resume manually. If
+     it doesn't, start fresh with /session-start.
+     ```
+
+3. Read the file in full. Pay special attention to:
    - **Next exact action** (this is what the engineer expects you to start with).
    - **Files in focus** (open these immediately).
    - **Do not redo** (don't re-verify or re-run things already done).
    - **Risks / gotchas** (avoid these mistakes).
 
-3. Also read `AGENTS.md` for the canonical project context.
+4. Also read `AGENTS.md` for the canonical project context.
 
 ## Process
 
