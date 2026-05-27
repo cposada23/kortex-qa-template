@@ -119,7 +119,10 @@ function destinationFor(classification, filename, team = '_template-team') {
     case 'ceremony':
       return `teams/${team}/ceremonies/imported/${filename}`;
     case 'environment-note':
-      return `teams/${team}/environments/${filename}`;
+      // env notes from a prior brain land in shared/ by default
+      // (most apply client-wide). Move to teams/<slug>/environments/
+      // manually if the note is team-specific.
+      return `shared/environments/${filename}`;
     case 'loose-note':
       return `teams/${team}/inbox/imported/${filename}`;
     default:

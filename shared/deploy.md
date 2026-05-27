@@ -1,22 +1,25 @@
 ---
-title: "Team — deploy"
+title: "Deploy procedures"
 type: reference
 status: active
 language: en
-tags: [team, deploy, ci-cd]
-updated: 2026-05-20
+tags: [deploy, ci-cd]
+updated: 2026-05-26
 ---
 
-# Team — deploy procedures
+# Deploy procedures
 
-> Replace placeholders after init. This file captures *how the
-> team actually deploys*. Not the CI/CD config (that's in the SUT
-> repo), but the human side.
+> Replace placeholders after init. This file captures *how teams
+> actually deploy on this client*. Not the CI/CD config (that's in
+> the SUT repo), but the human side.
+
+Client-wide by default. If a team owns a separate service with its
+own pipeline, override at `teams/<slug>/deploy.md`.
 
 ## Environments
 
-See [../environments/](../environments/) for technical setup.
-Here we cover **deploy cadence and ownership**.
+See [environments/](environments/) for technical setup. Here we
+cover **deploy cadence and ownership**.
 
 | Env | Purpose | Deploys via | Cadence | Who triggers |
 |---|---|---|---|---|

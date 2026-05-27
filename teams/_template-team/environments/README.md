@@ -1,47 +1,52 @@
-# environments/ — Infra zone
+# teams/<slug>/environments/ — Per-team override (optional)
 
-How to run the system under test (SUT). The environments your QA
-work touches: **local**, **dev**, **qa**, and the configurations
-for test users and data filters.
+By default, every team on this client uses the shared envs at
+[../../../shared/environments/](../../../shared/environments/).
 
-## Files
+This folder exists **only** to host overrides — drop a file here
+ONLY if your team works on a different env than the rest. The
+resolver (`scripts/lib/resolve-shared.mjs`) checks this folder first
+and falls back to `shared/environments/` automatically.
 
-- **[local.md](local.md)** — Docker compose, ports, troubleshooting.
-- **[dev.md](dev.md)** — dev env URL, login, what's deployed.
-- **[qa.md](qa.md)** — QA env URL, login, what's deployed.
-- **[users.md](users.md)** — test user accounts (no passwords).
-- **[filters.md](filters.md)** — common test data filters / datasets.
+## When to override
 
-## Compliance & credentials
+Override when:
+- Your team owns a separate microservice with its own dev/qa URL.
+- Your team works on a fork of the SUT with different auth.
+- Anything else where "the shared file is wrong for me."
 
-**No real credentials in any file here.** Passwords for test users
-live in a password manager (or `client-secrets/` gitignored). Real
-prod credentials never enter this brain.
+Don't override when:
+- The URLs match the shared file → just use shared.
+- You only need to add ONE note → consider opening a PR (or git
+  commit) on the shared file instead, since other teams probably
+  hit the same gotcha.
 
-Acceptable in this zone:
+## How to override
 
-- URLs (internal hostnames are fine for working within the client)
-- Usernames (the email of the test user is not a secret in a QA
-  context)
-- Port numbers, Docker service names
-- Steps to obtain credentials (e.g. "fetch login key from
-  1Password vault `<vault-name>`")
+Create the file with the same shape as the shared one:
 
-Not acceptable:
+```bash
+cp ../../../shared/environments/qa.md ./qa.md
+# Edit ./qa.md with your team's specifics
+```
 
-- Password / token values in plaintext
-- API keys
-- Real customer data (use anonymized fixtures)
+The resolver picks `teams/<slug>/environments/qa.md` over
+`shared/environments/qa.md` whenever both exist.
 
-## When environments change
+## Same pattern for users / filters / deploy
 
-The team will update infra periodically (URL changes, new
-auth method, new env added). Update these files **immediately**
-when you notice — stale env docs are a recurring source of
-30-minute time sinks.
+Same logic applies at the team root for these client-wide files:
+
+| Asset | Shared | Team override |
+|---|---|---|
+| users | `shared/users.md` | `teams/<slug>/users.md` |
+| filters | `shared/filters.md` | `teams/<slug>/filters.md` |
+| deploy | `shared/deploy.md` | `teams/<slug>/deploy.md` |
+
+Just drop the file at the team root with the same name.
 
 ## See also
 
-- [../AGENTS.md](../AGENTS.md)
-- [../deploy.md](../deploy.md) — deploy cadence and
-  ownership (the human side)
+- [../../../shared/README.md](../../../shared/README.md) — full
+  shared vs team rule.
+- [../../../AGENTS.md](../../../AGENTS.md) §"Shared vs team resolution".

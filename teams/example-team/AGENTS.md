@@ -33,20 +33,35 @@ When an AI agent is helping with files under
 
 ## Where things live (this team)
 
+Team-specific (always under this folder):
+
 - **Stories:** [stories/](stories/) — one folder per Jira ticket.
 - **All test cases (single home):** [test-cases/<area>/](test-cases/)
 - **Bugs:** [bugs/](bugs/) — local bug records, linked from stories.
 - **Peer reviews:** [reviews/](reviews/) — your reviews of others' test cases.
 - **Ceremony notes:** [ceremonies/](ceremonies/) — sprint planning, dailies, reviews, retros.
-- **Environments:** [environments/](environments/) — local Docker, dev, QA URLs.
 - **Automation meta:** [automation/](automation/) — Playwright patterns specific to this team.
 - **Inbox:** [inbox/](inbox/) — team-specific captures.
+- **Meta:** [members.md](members.md), [workflow.md](workflow.md), [ceremonies-info.md](ceremonies-info.md).
+
+Client-wide (this example team has NO overrides → full inheritance
+from `shared/`):
+
+- **Environments:** [../../shared/environments/](../../shared/environments/)
+- **Test users:** [../../shared/users.md](../../shared/users.md)
+- **Filters:** [../../shared/filters.md](../../shared/filters.md)
+- **Deploy:** [../../shared/deploy.md](../../shared/deploy.md)
+
+This is the typical case — most teams on a single client share the
+same envs/users/filters/deploy. example-team demonstrates that "no
+override" is a complete, valid setup.
 
 ## Cross-team boundary
 
-This team's content stays in this folder. The only zone that
-crosses teams is the global [knowledge/](../../knowledge/), and it
-must remain client-safe (no team identifiers, no internal URLs).
+This team's team-specific content stays in this folder. Client-wide
+content lives in `shared/`. The only zone that crosses CLIENTS is
+the global [knowledge/](../../knowledge/), and it must remain
+client-safe (no team identifiers, no internal URLs).
 
 If a pattern proves itself in two teams, promote it from each team's
 local folder up to `knowledge/`. See
@@ -56,4 +71,4 @@ local folder up to `knowledge/`. See
 
 - [README.md](README.md) — humans-first overview of this team
 - [INDEX.md](INDEX.md) — full file map for this team
-- [members.md](members.md), [workflow.md](workflow.md), [deploy.md](deploy.md), [ceremonies-info.md](ceremonies-info.md)
+- [../../shared/README.md](../../shared/README.md) — client-wide assets + override pattern

@@ -1,23 +1,27 @@
 ---
-title: "Environment — test users"
+title: "Test users"
 type: reference
 status: active
 language: en
-tags: [environment, users, test-data]
-updated: 2026-05-20
+tags: [users, test-data]
+updated: 2026-05-26
 ---
 
-# Environment — test users
+# Test users
 
 > Replace placeholders after init.
 >
-> **No passwords in this file.** Credentials live in the team's
+> **No passwords in this file.** Credentials live in the client's
 > shared vault (1Password, Bitwarden, Azure Key Vault, etc.).
 > This file lists *which user to use for what scenario*.
 
+Client-wide by default. If a team has its own set of users (e.g.
+team-B works on a separate microservice with its own SSO realm),
+override at `teams/<slug>/users.md`.
+
 ## Naming convention
 
-The team uses (or should use): `qa+<env>+<persona>@example.client.internal`.
+Users follow: `qa+<env>+<persona>@example.client.internal`.
 
 - `<env>` = `local`, `dev`, `qa`, `prod-readonly`
 - `<persona>` = `admin`, `user`, `manager`, `viewer`, etc.
@@ -35,7 +39,7 @@ The team uses (or should use): `qa+<env>+<persona>@example.client.internal`.
 
 ## Where to get passwords
 
-_<Describe the team's vault — e.g. "1Password vault 'TEAM-X / QA'
+_<Describe the client's vault — e.g. "1Password vault 'CLIENT-X / QA'
 shared item 'qa-test-users'">_.
 
 ## Resetting a test user
@@ -48,7 +52,7 @@ If you suspect a test user's data is polluted:
 
 ## Production-readonly access
 
-_<If the team has prod-readonly accounts for QA verification, list
+_<If the client has prod-readonly accounts for QA verification, list
 the policy here — when it's appropriate to use, who approves.>_
 
 ## Hard rule

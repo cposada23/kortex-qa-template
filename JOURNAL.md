@@ -20,6 +20,100 @@ NEXT: <what to do next session>
 
 <!-- entries below -->
 
+## 2026-05-26 20:35 — v1.7.0: shared/ refactor + snapshot bugfix + cross-AI portability
+
+STATE: Template v1.7.0 ready. Three independent fixes shipped on
+the same safe-change branch (`safe-change/v1.7.0-shared-snapshot-crossai`)
+because all three were uncovered in the same session triggered by a
+real recovery failure on the engineer's other laptop.
+
+DID:
+- **Snapshot bugfix (critical).** `.snapshotignore` was excluding
+  `.git/`, which broke the recovery channel: a snapshot taken on
+  laptop A and restored to laptop B arrived without git history,
+  branches, or stashes. New policy: snapshot includes EVERYTHING
+  except `versions/` (recursion), `node_modules/` (size), and OS
+  junk (`.DS_Store` / `Thumbs.db` / `desktop.ini`). Credentials
+  (`.env*`, `client-secrets/`, `.cache/`, `CHAT-HANDOFF.md`) are
+  intentionally inside per AGENTS.md §3.
+  Added post-ZIP verification step in `scripts/snapshot.mjs` that
+  reads the archive contents and aborts if `.git/`, `.github/`, or
+  `AGENTS.md` is missing. Print at end now lists exactly what's
+  included, including credentials.
+  New test `scripts/tests/snapshot.test.mjs` (17 assertions, runs
+  against a synthetic fixture so changes to the live tree don't flake).
+- **shared/ refactor.** Environments, users, filters, and deploy
+  procedures were duplicated under every `teams/<slug>/` folder.
+  Wrong layout for the real use case: most clients have one set of
+  envs/users/filters that every team uses. Created `shared/` at
+  repo root with `environments/{local,dev,qa}.md`, `users.md`,
+  `filters.md`, `deploy.md`. Each env file now has internal
+  sections for UI / API / DB (the engineer's apps span all three
+  tiers per env).
+  Removed `teams/_template-team/environments/{local,dev,qa,users,filters}.md`,
+  `teams/_template-team/deploy.md`, and all the same under
+  `teams/example-team/`. `_template-team/environments/` keeps only
+  a README explaining the override pattern. `example-team/` keeps
+  no `environments/` folder at all — demonstrates pure shared
+  inheritance.
+- **Resolver helper.** New `scripts/lib/resolve-shared.mjs` with
+  `resolveShared(repoRoot, teamSlug, rel)` + `resolveSharedWithSource`
+  variant that returns `{ source: 'team' | 'shared' | 'missing' }`.
+  Convention without config: presence of the file IS the switch. No
+  registry, no flag. Test at `scripts/tests/resolve-shared.test.mjs`
+  (15 assertions).
+- **Cross-AI portability (Kortex-style, no symlinks).** Added
+  `CLAUDE.md` and `GEMINI.md` as one-paragraph wrappers pointing at
+  `AGENTS.md`. Added `.agents/permissions.yml` + `.agents/README.md`
+  documenting the multi-AI policy: Copilot stays primary; Claude /
+  Gemini / Codex are secondary surfaces that all read the same
+  canonical context. Wrappers are plain files (not symlinks) so
+  Windows clones work without `git config core.symlinks=true`.
+- **Doc + script propagation.** Updated root `AGENTS.md`,
+  `README.md`, `.github/copilot-instructions.md` discovery order,
+  `teams/_template-team/AGENTS.md`, `teams/example-team/AGENTS.md`,
+  `playbooks/team-onboarding.md`, `playbooks/client-bootstrap.md`,
+  `scripts/init.mjs` Next-steps print, `scripts/new-team.mjs`
+  Next-steps print, `scripts/import-prior-brain.mjs` env routing
+  default (now lands in `shared/environments/`).
+
+DECISIONS:
+- No symlinks for cross-AI wrappers. Windows compat > elegance.
+- Plain files with single-paragraph delegation, not adapters
+  regenerated from canonical (Kortex's pattern). Three reasons:
+  (1) the canonical lives at AGENTS.md and never changes shape per
+  agent; (2) one-paragraph wrappers don't drift in practice;
+  (3) adding a build step (regenerate adapters on commit) is more
+  Windows friction than the duplication it prevents.
+- `.snapshotignore` is now permissive by default (3 patterns +
+  3 OS-junk lines). The owner's recovery story works because the
+  snapshot is a personal channel to the owner's own Teams self-DM
+  — the trade-off of "what if I share it?" is handled in AGENTS.md
+  §3 ("Snapshot ZIPs are never shared. This is a hard rule.").
+- Resolver helper is exported as a module (not bundled into a CLI)
+  because today there are zero scripts that consume it. Documenting
+  the pattern in AGENTS.md + having the helper available is enough
+  for Copilot / agents to do the resolution mentally. If a future
+  script needs it, the import is one line.
+- `teams/_template-team/environments/README.md` kept on purpose —
+  it teaches the override pattern to anyone scaffolding a new team
+  via `node scripts/new-team.mjs <slug>`.
+
+BLOCKERS: none.
+
+NEXT: owner pulls this template on the other laptop (the one that
+lost work in the last recovery cycle):
+1. `git pull origin safe-change/v1.7.0-shared-snapshot-crossai`
+   (or copy the new `scripts/snapshot.mjs` + `.snapshotignore` over
+   the existing files if `.git/` is borked).
+2. Run `node scripts/snapshot.mjs` — verify the new "Verified
+   .git/ included" print appears.
+3. Copy the resulting ZIP to Teams self-DM.
+4. On the new machine: unzip + verify `.git/` is in place + `git
+   status` works + `git log` shows recent history.
+5. If everything looks right, mergear safe-change/v1.7.0... a
+   main local + decidir si pushear `cposada23/kortex-qa-template`.
+
 ## 2026-05-21 13:30 — v1.2.0 completion pass
 
 STATE: Template v1.2.0 ready for first real-client use. Three deferred playbooks promoted from stub → full (test-case-peer-review, automation-flow, version-snapshot). Five new Copilot prompts added per v1.1 plan (test-case-reviewer, automation-from-test-case, sprint-planning-intake, retro-intake, question-generator). README rewritten to reflect team-centric architecture + v1.2 scope.

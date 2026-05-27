@@ -11,6 +11,12 @@
 //      but is equivalent for backup purposes).
 //   3. On Windows, try PowerShell's Compress-Archive.
 //
+// Post-ZIP verification (added v1.7.0 after a snapshot lost .git/
+// and forced a manual recovery): listSnapshot() reads the archive
+// and asserts that critical paths present in the working tree are
+// also in the archive. If `.git/`, `.github/`, or `AGENTS.md` are
+// missing, the script aborts with a clear error.
+//
 // Client slug is read from .client-slug if present (written by
 // init.mjs) or falls back to "client".
 //
@@ -21,11 +27,31 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import os from 'node:os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
+
+// Paths whose presence in the working tree means they MUST also be
+// in the snapshot. If any of these is missing from the produced
+// archive, the snapshot is treated as failed.
+const REQUIRED_IF_PRESENT = [
+  '.git/',
+  '.github/',
+  'AGENTS.md',
+  'README.md',
+];
+
+// Paths whose presence in the snapshot is noteworthy enough to
+// print at the end (so the owner sees "yes, my creds are inside"
+// or "no, I forgot to copy .env before snapshotting").
+const NOTABLE_IF_PRESENT = [
+  '.env',
+  '.env.local',
+  '.secrets',
+  'client-secrets/',
+  'CHAT-HANDOFF.md',
+];
 
 function timestamp() {
   const d = new Date();
@@ -56,10 +82,24 @@ async function readSnapshotIgnore() {
     const content = await fs.readFile(path.join(REPO_ROOT, '.snapshotignore'), 'utf8');
     return content
       .split('\n')
-      .map((l) => l.trim())
+      .map((l) => {
+        // Strip inline comments so 'versions/       # recursion guard' works.
+        const hashIdx = l.indexOf('#');
+        const noComment = hashIdx === -1 ? l : l.slice(0, hashIdx);
+        return noComment.trim();
+      })
       .filter((l) => l && !l.startsWith('#'));
   } catch {
     return [];
+  }
+}
+
+async function pathExistsRelative(rel) {
+  try {
+    await fs.access(path.join(REPO_ROOT, rel.replace(/\/$/, '')));
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -144,13 +184,113 @@ function tryPowerShellZip(zipPath, excludes) {
   return r.status === 0;
 }
 
+// listSnapshot — return the list of entries inside the archive as
+// repo-relative POSIX paths (directory entries end with '/').
+// Returns null if listing failed; caller decides what to do.
+function listSnapshot(archivePath) {
+  const isZip = archivePath.endsWith('.zip');
+  const isTar = archivePath.endsWith('.tar.gz');
+
+  if (isZip) {
+    // Try `unzip -l` first (mac/linux/git-bash).
+    const r = spawnSync('unzip', ['-Z1', archivePath], { encoding: 'utf8' });
+    if (r.status === 0) {
+      return r.stdout
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => l.replace(/^\.\//, ''));
+    }
+    // Windows fallback: PowerShell System.IO.Compression listing.
+    if (process.platform === 'win32') {
+      const escaped = archivePath.replace(/'/g, "''");
+      const cmd = `
+        Add-Type -AssemblyName System.IO.Compression.FileSystem;
+        $zip = [System.IO.Compression.ZipFile]::OpenRead('${escaped}');
+        try {
+          $zip.Entries | ForEach-Object { $_.FullName }
+        } finally { $zip.Dispose() }
+      `;
+      const p = spawnSync('powershell', ['-NoProfile', '-Command', cmd], { encoding: 'utf8' });
+      if (p.status === 0) {
+        return p.stdout
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((l) => l.replace(/\\/g, '/').replace(/^\.\//, ''));
+      }
+    }
+    return null;
+  }
+
+  if (isTar) {
+    const r = spawnSync('tar', ['-tzf', archivePath], { encoding: 'utf8' });
+    if (r.status === 0) {
+      return r.stdout
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => l.replace(/^\.\//, ''));
+    }
+    return null;
+  }
+
+  return null;
+}
+
+// verifySnapshot — check that everything in REQUIRED_IF_PRESENT
+// that exists in the working tree is also in the archive. Returns
+// { ok: boolean, missing: string[], notable: { path, present }[] }.
+async function verifySnapshot(archivePath) {
+  const entries = listSnapshot(archivePath);
+  if (entries === null) {
+    return {
+      ok: false,
+      missing: [],
+      notable: [],
+      listingFailed: true,
+    };
+  }
+
+  const missing = [];
+  for (const rel of REQUIRED_IF_PRESENT) {
+    if (!(await pathExistsRelative(rel))) continue;
+    const isDir = rel.endsWith('/');
+    const found = entries.some((entry) => {
+      if (isDir) {
+        return entry === rel || entry.startsWith(rel);
+      }
+      return entry === rel;
+    });
+    if (!found) missing.push(rel);
+  }
+
+  const notable = [];
+  for (const rel of NOTABLE_IF_PRESENT) {
+    if (!(await pathExistsRelative(rel))) continue;
+    const isDir = rel.endsWith('/');
+    const present = entries.some((entry) => {
+      if (isDir) return entry === rel || entry.startsWith(rel);
+      return entry === rel;
+    });
+    notable.push({ path: rel, present });
+  }
+
+  return {
+    ok: missing.length === 0,
+    missing,
+    notable,
+    listingFailed: false,
+    entryCount: entries.length,
+  };
+}
+
 async function main() {
   const version = await readVersion();
   const clientSlug = await readClientSlug();
   const ts = timestamp();
   const baseName = `kortex-qa-${clientSlug}-v${version}-${ts}`;
 
-  // Ensure versions/ exists
   const versionsDir = path.join(REPO_ROOT, 'versions');
   await fs.mkdir(versionsDir, { recursive: true });
 
@@ -159,9 +299,8 @@ async function main() {
   const excludes = await readSnapshotIgnore();
 
   process.stdout.write(`Creating snapshot for client="${clientSlug}", version="${version}"...\n`);
-  process.stdout.write(`Excluding ${excludes.length} pattern(s).\n\n`);
+  process.stdout.write(`Excluding ${excludes.length} pattern(s): ${excludes.join(', ')}\n\n`);
 
-  // Try zip first
   let succeeded = false;
   let outputPath = null;
   if (process.platform !== 'win32') {
@@ -179,12 +318,9 @@ async function main() {
     if (tryPowerShellZip(zipPath, excludes)) {
       succeeded = true;
       outputPath = zipPath;
-    } else {
-      // Try git bash zip if present
-      if (tryZip(zipPath, excludes)) {
-        succeeded = true;
-        outputPath = zipPath;
-      }
+    } else if (tryZip(zipPath, excludes)) {
+      succeeded = true;
+      outputPath = zipPath;
     }
   }
 
@@ -206,7 +342,6 @@ async function main() {
     process.exit(1);
   }
 
-  // Print size
   let size = '?';
   try {
     const stat = await fs.stat(outputPath);
@@ -217,8 +352,47 @@ async function main() {
   }
 
   process.stdout.write(`\n✓ Snapshot created: ${path.relative(REPO_ROOT, outputPath)} (${size})\n`);
-  process.stdout.write('\nNext step: copy this file to your client-approved backup location\n');
-  process.stdout.write('(Teams archive, IT-managed folder, encrypted drive — per client policy).\n');
+
+  // Post-ZIP verification.
+  process.stdout.write('\nVerifying snapshot contents...\n');
+  const verification = await verifySnapshot(outputPath);
+
+  if (verification.listingFailed) {
+    process.stderr.write('\n⚠️  Could not list snapshot contents to verify.\n');
+    process.stderr.write('   The snapshot was created but its contents were not\n');
+    process.stderr.write('   confirmed. Manually verify with:\n');
+    process.stderr.write(`     unzip -l ${path.relative(REPO_ROOT, outputPath)}\n`);
+    process.stderr.write('   and check that .git/, .github/, AGENTS.md are inside.\n');
+    process.exit(2);
+  }
+
+  if (!verification.ok) {
+    process.stderr.write('\n❌ Snapshot is missing critical paths:\n');
+    for (const m of verification.missing) {
+      process.stderr.write(`   - ${m}  (present in working tree but NOT in archive)\n`);
+    }
+    process.stderr.write('\n   This means the snapshot is unsafe for recovery.\n');
+    process.stderr.write('   Check .snapshotignore — these paths must NOT be excluded.\n');
+    process.stderr.write(`   Delete the bad snapshot: rm ${path.relative(REPO_ROOT, outputPath)}\n`);
+    process.exit(3);
+  }
+
+  process.stdout.write(`✓ Verified ${verification.entryCount} entries.\n`);
+  for (const rel of REQUIRED_IF_PRESENT) {
+    if (await pathExistsRelative(rel)) {
+      process.stdout.write(`  ✓ ${rel} included\n`);
+    }
+  }
+  if (verification.notable.length > 0) {
+    process.stdout.write('\nCredentials & session state (included by design):\n');
+    for (const n of verification.notable) {
+      const mark = n.present ? '✓ included' : '⚠ not in archive (file exists in working tree)';
+      process.stdout.write(`  ${mark}: ${n.path}\n`);
+    }
+  }
+
+  process.stdout.write('\nNext step: copy this file to your Teams self-DM\n');
+  process.stdout.write('(or other IT-approved backup channel — per client policy).\n');
 }
 
 main().catch((err) => {

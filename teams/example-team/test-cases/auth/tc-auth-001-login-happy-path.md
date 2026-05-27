@@ -27,10 +27,10 @@ correctly" check).
 
 - **Env:** local | dev | qa (any)
 - **User:** `qa+<env>+user@example.client.internal` (standard
-  role; see [../../environments/users.md](../../environments/users.md))
+  role; see [../../../../shared/users.md](../../../../shared/users.md))
 - **Data:** the test user exists and is unlocked. If the user is
   locked, follow the reset procedure in
-  [../../environments/users.md](../../environments/users.md).
+  [../../../../shared/users.md](../../../../shared/users.md).
 - **Other:** SSO is on the default path (no MFA challenge in
   this scenario — for MFA, see TC-AUTH-002 once it exists).
 
