@@ -50,7 +50,6 @@ const NOTABLE_IF_PRESENT = [
   '.env.local',
   '.secrets',
   'client-secrets/',
-  'CHAT-HANDOFF.md',
 ];
 
 function timestamp() {

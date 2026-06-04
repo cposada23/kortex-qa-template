@@ -1,5 +1,5 @@
 ---
-description: Morning ritual — surface what's active, blocked, and today's likely focus
+description: Morning ritual — start (or reuse) the session branch + log file, then surface what's active, blocked, and today's likely focus
 agent: agent
 ---
 
@@ -16,44 +16,66 @@ agent: agent
 
 # Session start
 
-You are the QA engineer's morning briefing. Your job is to read
-the brain's current state and produce a one-screen summary so the
-engineer can pick up where they left off without rebuilding
-context from scratch.
+You are the QA engineer's morning briefing. Your job is to (1) make
+sure today's work is isolated on a session branch with its own
+committed log file, then (2) read the brain's current state and
+produce a one-screen summary so the engineer can pick up where they
+left off without rebuilding context from scratch.
 
 ## Input
 
-Before reading state, make sure the session is isolated in git:
+Before reading state, isolate the session in git. This is the ONLY
+write this prompt performs.
 
-1. Check the current branch.
-2. If the current branch is `main`, run or ask the engineer to run:
+1. Check the current branch (`git branch --show-current`).
+2. **If the current branch is `main`**, run:
    `node scripts/session-branch-start.mjs`
-3. If already on `session/*`, continue.
-4. If on any other branch, stop and ask the engineer whether to
-   finish/discard that branch first.
+   This atomically creates the branch `session/YYYYMMDD-HHMM[-slug]`
+   AND its log file `sessions/<session-id>.md` (`status: open`). The
+   script prints `Session log: sessions/<id>.md`.
+3. **VERIFY you ended up on a `session/*` branch** — run
+   `git branch --show-current` again and confirm it now starts with
+   `session/`. If it does NOT, **HARD-STOP loudly** (see Output →
+   "Branch isolation failed"). Do not read any further state and do
+   not let the engineer start the day believing they are isolated
+   when they are still on `main`.
+4. **If already on `session/*`**, reuse it — run
+   `node scripts/session-branch-start.mjs` anyway (it is idempotent:
+   it reuses the branch and re-creates the log file only if missing,
+   printing `Already on session branch: ...`).
+5. **If on any other branch** (not `main`, not `session/*`), stop and
+   ask the engineer whether to finish/discard that branch first. Do
+   not create a session branch on top of it.
 
-Use workspace file-reading tools to gather this context. Do not ask
-the engineer to paste file contents. If a file is missing, note it
-briefly and continue with the remaining files.
+Use workspace file-reading tools to gather the rest of the context.
+Do not ask the engineer to paste file contents. If a file is
+missing, note it briefly and continue with the remaining files.
 
-Read the following files in this order:
+Read the following, in this order:
 
-1. `CHAT-HANDOFF.md` at the repo root — if it exists, it is
-   session state from a previous chat. Surface it at the top of
-   the summary (see Output). `scripts/session-start.mjs` does
-   the same — this prompt mirrors that behavior for
-   AI-augmented session starts.
-2. [../../TODO.md](../../TODO.md) — active TODOs
-3. [../../JOURNAL.md](../../JOURNAL.md) — most recent 1–3 entries
-4. [../../teams/active-team.txt](../../teams/active-team.txt) —
-   identify the active team(s) (line 1 = primary)
-5. `teams/<active>/stories/INDEX.md` for each active team — the
-   story roster scoped to that team
-6. Any `teams/<active>/stories/*/story.md` with `status: in-progress`
+1. **`sessions/<session-id>.md`** for the session you are now on —
+   read its last block (`## Handoff` / `## Note` / `## Bridge-out`)
+   so you can pick up mid-thought.
+2. **The open-session scan** — `scripts/session-start.mjs` already
+   prints every session whose frontmatter is still `status: open`
+   (the "previous session was never closed" detection, sorted by id
+   so it is immune to mtime). Either run
+   `node scripts/session-start.mjs` and read its output, or scan
+   `sessions/*.md` yourself for `status: open`. Surface every open
+   session at the top of the summary and offer **close-or-continue**
+   (see Output → "Open sessions").
+3. [../../TODO.md](../../TODO.md) — active TODOs.
+4. [../../JOURNAL.md](../../JOURNAL.md) — most recent 1–3 entries
+   (the last entry's `NEXT:` line is today's stated next step).
+5. [../../teams/active-team.txt](../../teams/active-team.txt) —
+   identify the active team(s) (line 1 = primary).
+6. `teams/<active>/stories/INDEX.md` for each active team — the
+   story roster scoped to that team.
+7. Any `teams/<active>/stories/*/story.md` with `status: in-progress`
    or `status: blocked` — read the frontmatter and any "Notes"
-   section
-7. `teams/<active>/inbox/INBOX.md` for each active team — last
-   few items, to surface unprocessed observations
+   section.
+8. `teams/<active>/inbox/INBOX.md` for each active team — last few
+   items, to surface unprocessed observations.
 
 ## Process
 
@@ -73,21 +95,21 @@ Read the following files in this order:
 Single response, structured as:
 
 ```markdown
-## Chat handoff (if CHAT-HANDOFF.md exists)
+## Open sessions (if any sessions/*.md has status: open)
 
-⚠ CHAT-HANDOFF.md exists (last updated YYYY-MM-DD).
-Consider running `/resume-from-handoff` first.
+⚠ Open session: <session-id> — never closed, open since YYYY-MM-DD.
+Last block: <## Handoff / Note / Bridge-out HH:MM>.
+→ Continue on its branch, or run `/session-end` there to close it.
 
-<If the handoff is older than 7 days, instead surface:
-ℹ CHAT-HANDOFF.md exists but is stale (>7 days). Delete or
-refresh.>
-
-<If no CHAT-HANDOFF.md exists, omit this section entirely.>
+<List every open session, oldest first. If the only open session is
+the one you just started/reused, that's expected — note it as
+"current session" rather than a warning. If no other session is
+open, omit this section entirely.>
 
 ## Today's focus
 
-<one-line summary of what the engineer planned to do next, per
-last JOURNAL>
+<one-line summary of what the engineer planned to do next, per the
+last JOURNAL NEXT: line and the current session's last block>
 
 ## Active stories
 
@@ -115,11 +137,28 @@ last JOURNAL>
 <one concrete thing the engineer should do in the next 15 min>
 ```
 
+If branch isolation failed (step 3 above), output ONLY this and stop:
+
+```markdown
+## ⛔ Branch isolation FAILED
+
+I tried to start the session branch but you are still on `main`.
+Your work would NOT be isolated — a full day of edits on `main`
+bypasses the session log and the merge-back ritual.
+
+Remedy: run `node scripts/session-branch-start.mjs` yourself and
+read its error output (likely a dirty working tree — commit or
+clean it first), then re-invoke `/session-start`.
+
+I have NOT read any further state. Fix the branch first.
+```
+
 ## Hard rules
 
-- Read-only. Do not modify any files.
-- The only write allowed during this prompt is creating the session
-  branch via `node scripts/session-branch-start.mjs`.
+- Read-only **except** creating the session branch + log file via
+  `node scripts/session-branch-start.mjs`. No other writes.
+- **Always verify you are on a `session/*` branch after starting.**
+  Never proceed with the briefing from `main` — hard-stop instead.
 - Be terse — the engineer reads this every morning and time
   matters.
 - Don't recommend tasks that aren't grounded in the files. If
@@ -128,18 +167,30 @@ last JOURNAL>
 
 ## Example
 
-Input: `JOURNAL.md` has an entry from yesterday with
-`NEXT: finish ac-audit for TEAM-1234`. `TEAM-1234/story.md` shows
-`status: in-progress`, `ac_audit_status: pending`. One inbox item
-from 2 days ago. TEAM-1100 has been in-progress for 5 days with
-no JOURNAL mention.
+Input: on `main` with a clean tree.
+`node scripts/session-branch-start.mjs` creates
+`session/20260520-0915` and `sessions/20260520-0915.md`; the
+follow-up `git branch --show-current` returns `session/20260520-0915`.
+One older session `sessions/20260518-1400.md` is still `status: open`.
+`JOURNAL.md` last entry has `NEXT: finish ac-audit for TEAM-1234`.
+`TEAM-1234/story.md` shows `status: in-progress`,
+`ac_audit_status: pending`. TEAM-1100 has been in-progress for 5 days
+with no JOURNAL mention.
 
 Output:
 
 ```markdown
+## Open sessions
+
+⚠ Open session: 20260518-1400 — never closed, open since 2026-05-18.
+Last block: ## Note 16:20.
+→ Continue on its branch, or run `/session-end` there to close it.
+
+(Current session 20260520-0915 just started — that's the one you're on.)
+
 ## Today's focus
 
-Finish AC audit for TEAM-1234 (per yesterday's JOURNAL).
+Finish AC audit for TEAM-1234 (per yesterday's JOURNAL NEXT).
 
 ## Active stories
 

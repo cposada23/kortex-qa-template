@@ -1,8 +1,15 @@
 # Journal
 
-Append-only session log. Each `/session-end` invocation appends a
-block. Never edit history — if a past entry was wrong, append a
-new entry that supersedes it.
+Append-only session log. Each `/session-end` invocation appends one
+synthesized block here (STATE / DID / DECISIONS / BLOCKERS / NEXT),
+stamped with the session's start date. Never edit history — if a
+past entry was wrong, append a new entry that supersedes it.
+
+The **granular** per-session record — the Handoff / Note /
+Bridge-out blocks captured during a single session — lives in
+`sessions/<id>.md` (one file per session branch, committed to
+history). This JOURNAL is the distilled day-level trail; `sessions/`
+is the detailed operational log.
 
 Format per entry:
 

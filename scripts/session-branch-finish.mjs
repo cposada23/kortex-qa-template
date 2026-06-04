@@ -70,6 +70,13 @@ function main() {
   runCheck(['scripts/validate.mjs']);
   runCheck(['scripts/validate-links.mjs']);
   runCheck(['scripts/build-index.mjs', '--check']);
+  // Secret gate (v1.8): session log files are committed to permanent
+  // history and, with autonomous /session-end, no human reviews the diff.
+  // Run the PII/secret scan in BLOCKING mode scoped to sessions/ so a
+  // credential pasted into a Handoff/Note block aborts the merge and
+  // preserves the branch for cleanup, instead of landing on main silently.
+  // (Whole-repo PII stays warn-only above; only sessions/ is hard-gated.)
+  runCheck(['scripts/validate.mjs', 'sessions', '--strict-pii']);
 
   const dirty = dirtyStatus();
   if (dirty == null) {

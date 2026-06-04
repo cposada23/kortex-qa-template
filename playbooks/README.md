@@ -5,7 +5,7 @@ invokable; these playbooks are detailed reference for cold reading
 (returning after a vacation, onboarding a peer, debugging a
 workflow that isn't working).
 
-## Full playbook set (v1.6)
+## Full playbook set (v1.8)
 
 ### Lifecycle (cradle to grave)
 
@@ -70,12 +70,21 @@ you want to *do* the workflow.
 | test-case-design.md | `/test-case-design` (+ `/story-analyzer` upstream) |
 | test-case-peer-review.md | `/test-case-reviewer` |
 | automation-flow.md | `/automation-from-test-case` |
-| session-start.md | `/session-start` |
-| session-end.md | `/session-end` |
-| (no matching playbook yet) | `/sprint-planning-intake`, `/retro-intake`, `/question-generator`, `/bug-report-formatter`, `/chat-handoff`, `/resume-from-handoff` |
+| session-start.md | `/session-start` (branch + session log creation, pop-last-session) |
+| session-end.md | `/session-end` (autonomous close, auto-merge) |
+| (no matching playbook yet) | `/sprint-planning-intake`, `/retro-intake`, `/question-generator`, `/bug-report-formatter`, `/session-note`, `/chat-handoff`, `/resume-from-handoff` |
 
-The four prompts without a dedicated playbook are intentional —
-each is self-contained enough that the prompt body is the
+The session-lifecycle prompts now revolve around the **per-session
+log** at `sessions/<id>.md` (keyed by the session branch, committed
+to history). `/session-note` and `/chat-handoff` append `## Note`
+and `## Handoff` blocks to it during the day; `/session-end` reads
+those blocks to write an autonomous Bridge-out and consolidate the
+branch. The `CHAT-HANDOFF.md` file is retired — there is no
+gitignored handoff file anymore. Full detail is in the
+session-start / session-end playbooks above.
+
+The remaining prompts without a dedicated playbook are intentional
+— each is self-contained enough that the prompt body is the
 documentation. If real usage reveals nuances that don't fit in
 the prompt, promote a playbook later.
 

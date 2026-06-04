@@ -1,22 +1,47 @@
 ---
-description: Compact the current chat state into CHAT-HANDOFF.md for context transfer to a fresh chat
+description: Append a "## Handoff HH:MM" block to today's session file so a fresh chat (or another AI surface) can resume context without replaying history
 agent: agent
 ---
 
+<!--
+  No `tools:` declared on purpose — that field restricts Copilot
+  Agent to only the listed tools, which would block it from deriving
+  the session id (git branch --show-current) and appending to the
+  session file. The handoff is written to TODAY'S session file
+  (sessions/<current-branch-id>.md), NOT a root CHAT-HANDOFF.md —
+  that retired gitignored file is gone.
+-->
+
+
 # Chat handoff
 
-You are compacting the current chat session into a single file the engineer (or a new chat) can read to resume context without replaying history.
+You are compacting the current chat session into a single block the engineer (or a new chat) can read to resume context without replaying history. You write it into **today's session file** so it is committed and discoverable by every AI surface — not into a gitignored root file.
 
 ## When to invoke
 
 The engineer is about to:
 - Start a new chat because this one is full.
-- Stop for the day mid-task and pick up later.
+- Stop for a while mid-task and pick up later.
 - Hand off to themselves in a different surface (Copilot Chat ↔ Claude ↔ Codex).
 
 ## Input
 
-The current chat history. Read the entire conversation back to the most recent goal-setting message. If a previous `CHAT-HANDOFF.md` exists at the repo root, read it too — the new handoff may need to reference or supersede it.
+1. **Derive today's session file.** Run `git branch --show-current`.
+   The session id is the branch name minus the `session/` prefix; the
+   file is `sessions/<session-id>.md` (branch
+   `session/20260604-0930-flaky` → file
+   `sessions/20260604-0930-flaky.md`).
+   - If the current branch does NOT start with `session/`, stop and
+     tell the engineer to run `/session-start` first — there is no
+     session file to append to.
+   - If the session file is missing (rare), tell the engineer to
+     re-run `node scripts/session-branch-start.mjs` (idempotent — it
+     recreates the file).
+2. **The current chat history.** Read the entire conversation back to
+   the most recent goal-setting message.
+3. **The session file itself** — read any earlier `## Handoff` /
+   `## Note` blocks so this handoff can reference or supersede them
+   rather than repeat them.
 
 ## Process
 
@@ -32,7 +57,7 @@ The current chat history. Read the entire conversation back to the most recent g
 
 ## Redaction policy (load-bearing)
 
-Never include in `CHAT-HANDOFF.md`:
+Never include in the session file:
 - Real credentials, API tokens, passwords from `.env` files.
 - Long verbatim excerpts from client-sensitive data.
 - Customer PII.
@@ -40,79 +65,64 @@ Never include in `CHAT-HANDOFF.md`:
 
 If the chat involved reading those files, summarize without quoting (e.g., "verified .env has QA_USER set" — never "QA_USER=joe@acme.com").
 
+This block is now committed to permanent git history (the session file merges to `main`), so the policy is MORE load-bearing than before: a credential pasted here rides along forever and will trip the `validate.mjs sessions --strict-pii` secret gate at session close. Redact at write time.
+
 ## Output
 
-Write to `CHAT-HANDOFF.md` at the repo root. Frontmatter:
-
-```yaml
----
-title: "Current chat handoff"
-type: reference
-status: active
-language: en
-tags: [handoff, session]
-updated: YYYY-MM-DD
----
-```
-
-Body sections in this exact order:
+**Append** a `## Handoff HH:MM` block to `sessions/<session-id>.md`. Do NOT overwrite the file and do NOT touch its frontmatter — `/session-end` flips `status` to `closed`, not this prompt. Append after the last existing block, in this exact section order:
 
 ```markdown
-# Chat handoff — YYYY-MM-DD HH:MM
+## Handoff HH:MM
 
-## Current goal
+### Current goal
 <one-sentence what we're trying to achieve>
 
-## Current state
+### Current state
 <2-4 sentences on where the work stands>
 
-## Files in focus
+### Files in focus
 - path:line — why it matters
 - path:line — pending change / decision
 
-## Decisions made
+### Decisions made
 - <each decision in a single line>
 
-## Open questions
+### Open questions
 - <questions the new chat needs to resolve>
 
-## Risks / gotchas
+### Risks / gotchas
 - <traps the new chat must not fall into>
 
-## Next exact action
+### Next exact action
 <the very next concrete step>
 
-## Do not redo
+### Do not redo
 - <things already verified to save the new chat time>
 
-## Useful commands run
+### Useful commands run
 - `node scripts/validate.mjs` — passed
 - ...
 ```
 
 ## Hard rules
 
-1. **`CHAT-HANDOFF.md` is gitignored.** It's session state, not knowledge. Don't try to commit it.
-2. **It IS included in snapshot ZIPs** — personal recovery if you swap laptops mid-task.
-3. **Overwrite freely.** Each `/chat-handoff` invocation replaces the file. The previous handoff is preserved in the snapshot ZIPs, not in `CHAT-HANDOFF.md`.
+1. **Write to the session file, not a root file.** `CHAT-HANDOFF.md` is retired and gone — never create it.
+2. **Append, never overwrite.** The session file accumulates Handoff/Note/Bridge-out blocks across the day; earlier blocks stay.
+3. **Do not change frontmatter.** Leave `status: open` alone — only `/session-end` closes the session.
 4. **"Next exact action" is mandatory.** Without it, the handoff is decorative.
-5. **Apply the redaction policy.** Re-read your own draft and remove any creds or PII before saving.
+5. **Apply the redaction policy.** Re-read your own draft and remove any creds or PII before saving — this block is committed history.
 
 ## After saving
 
-1. **Verify the write.** Use the read_file tool to read back the
-   file you just wrote. If the read fails (file not found at the
-   expected path), surface that immediately to the engineer — do
-   NOT claim success. Try again with the absolute workspace path.
+1. **Verify the write.** Read back `sessions/<session-id>.md` and
+   confirm the new `## Handoff HH:MM` block is present at the end. If
+   the read fails or the block is missing, surface that immediately —
+   do NOT claim success. Retry with the absolute workspace path.
 
-2. **Print the absolute path.** Tell the engineer exactly where
-   the file landed, so they can confirm with `ls` if needed.
-
-3. In chat, summarize:
+2. In chat, summarize:
 
    ```
-   Handoff written to <absolute workspace path>/CHAT-HANDOFF.md
-   (updated YYYY-MM-DD HH:MM).
+   Handoff appended to sessions/<session-id>.md (## Handoff HH:MM).
 
    Goal: <one line>
    Files in focus: <N>
@@ -120,13 +130,6 @@ Body sections in this exact order:
    Next: <one line>
 
    To resume in a new chat: open the SAME workspace, then invoke
-   /resume-from-handoff. The handoff is gitignored — it lives only
-   on this machine until you snapshot.
+   /resume-from-handoff. The session file is committed, so any AI
+   surface can read it.
    ```
-
-4. **Common pitfall to flag.** If `/resume-from-handoff` later
-   reports "No CHAT-HANDOFF.md found" but the file exists on disk,
-   the new chat opened a different workspace. Have the engineer
-   verify `ls CHAT-HANDOFF.md` in the new chat's terminal — if it
-   exists, the workspace is correct and the prompt has a bug; if
-   it doesn't, the workspace is wrong.

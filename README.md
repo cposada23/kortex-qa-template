@@ -5,15 +5,18 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.6.2 — team-centric architecture, single-home test
+**Status:** v1.8.0 — team-centric architecture, single-home test
 cases with immutable IDs (validator now errors on duplicates),
-link integrity validator, chat handoff workflow, prior-brain
-import skill, full playbook set (14 playbooks), Copilot prompt
-library (14 prompts), pre-commit hook running 3 checks
-(frontmatter + INDEX drift + link integrity), AI cred read
-restrictions, client-bootstrap with 4 import scenarios. Built
-and packaged 2026-05-20 → 2026-05-21 inside the upstream Kortex
-repo `mykortex`, extracted to its own repo for cloning.
+link integrity validator, **autonomous session-end + per-session
+log** (`sessions/<id>.md`, keyed by the session branch, committed
+to history — the gitignored `CHAT-HANDOFF.md` is retired),
+prior-brain import skill, full playbook set, Copilot prompt
+library, pre-commit hook running 3 checks (frontmatter + INDEX
+drift + link integrity) plus a strict-PII secret gate on
+session-finish, AI cred read restrictions, client-bootstrap with 4
+import scenarios. Built and packaged 2026-05-20 → 2026-05-21
+inside the upstream Kortex repo `mykortex`, extracted to its own
+repo for cloning.
 
 ---
 
@@ -85,15 +88,22 @@ node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
 
 # 6. Daily — in Copilot Chat:
 /session-start
-# ... work ...
+# ... work ...   (drop /session-note checkpoints whenever context is at risk)
 /session-end
 ```
 
-`/session-start` should start a `session/YYYYMMDD-HHMM` branch.
-End-of-day consolidation runs:
-`node scripts/session-branch-finish.mjs -m "session: YYYY-MM-DD - <summary>"`.
-That validates, commits the session branch, merges it into `main`,
-and deletes the session branch.
+`/session-start` creates the `session/YYYYMMDD-HHMM` branch **and**
+its per-session log `sessions/<id>.md` (status `open`) atomically,
+then verifies you landed on `session/*`. During the day,
+`/session-note` and `/chat-handoff` append `## Note` / `## Handoff`
+blocks to that log. `/session-end` is **autonomous** — no
+interview: it infers the wrap from the session log + chat + git
+diff + TODO, redacts secrets, closes the log, appends the JOURNAL,
+and runs `node scripts/session-branch-finish.mjs`, which validates
+(including a strict-PII secret gate), commits the session branch,
+merges it `--no-ff` into `main`, and deletes the branch. Auto-merge
+is the default; on any failure the branch is preserved and the
+abort is reported loudly.
 
 Weekly: `node scripts/snapshot.mjs` to ZIP the brain to
 `versions/` for offline backup. See
@@ -203,8 +213,9 @@ Chat with `/<name>`:
 | `/sprint-planning-intake` | Capture a sprint-planning meeting into `ceremonies/sprint-planning/`. |
 | `/retro-intake` | Capture a retrospective into `ceremonies/retrospectives/`. |
 | `/question-generator` | Standalone "dev/PO question generator" — when AC isn't the source (verbal clarification, design doc, etc.). |
-| `/chat-handoff` | Write `CHAT-HANDOFF.md` when switching chat surfaces mid-task. |
-| `/resume-from-handoff` | Resume from an existing `CHAT-HANDOFF.md` in a new chat. |
+| `/session-note` | Lightweight mid-day checkpoint — appends a `## Note HH:MM` block (focus / decision / blocker / next micro-step) to today's session log `sessions/<id>.md`. |
+| `/chat-handoff` | Append a `## Handoff HH:MM` transfer block to today's session log `sessions/<id>.md` when switching chat surfaces mid-task. |
+| `/resume-from-handoff` | Resume from the latest `## Handoff` (or `## Note`) block in the most recent open session log. |
 
 ---
 
@@ -257,9 +268,12 @@ first week without maintainer help:
    compiles and runs against a known-good selector.
 7. **Format a bug** — `/bug-report-formatter` outputs a
    Jira-ready paste block; no AI scaffolding language leaks.
-8. **End a day** — `/session-end` appends a journal entry and
-   consolidates the `session/*` branch back into `main` after
-   review.
+8. **End a day** — `/session-end` runs autonomously (no
+   interview): it infers the wrap, appends a journal entry, closes
+   the per-session log, and consolidates the `session/*` branch
+   back into `main` via an automatic `--no-ff` merge (preserving
+   the branch and reporting loudly if any validation or the
+   strict-PII secret gate fails).
 9. **Capture ceremonies** — `/sprint-planning-intake` and
    `/retro-intake` produce structured meeting notes in the right
    folder.
@@ -456,6 +470,32 @@ so `/automation-from-test-case` no longer depends on an undeclared
 field. Tightened validator checks for type-specific required
 fields and vocabularies. Swept active docs for lingering `library/`
 and stale script/prompt counts.
+
+**v1.8.0** (2026-06-04) — autonomous session-end + per-session
+log. Session state now lives in `sessions/<id>.md`, keyed by the
+session branch (`session/<id>` → `sessions/<id>.md`), not by date —
+one stable file that survives a forgotten close and a past-midnight
+session without splitting or orphaning. The file is **committed on
+the session branch and merged to `main`**, so every AI surface can
+discover it (the old gitignored, ephemeral `CHAT-HANDOFF.md` is
+**retired** — no handoff file is written anywhere anymore).
+`/session-start` now creates the branch + log atomically and
+hard-stops if it didn't land on `session/*`, and "pops" any still-
+open session (open-session detection replaces the forgot-to-handoff
+edge). `/session-end` is now **autonomous** — no 3-question
+interview: it infers STATE/DID/DECISIONS/BLOCKERS/NEXT from the
+session log + chat + `git diff main...<branch>` + TODO, applies a
+redaction pass, closes the log, appends the JOURNAL (NEXT line
+guaranteed via a cascade fallback), rebuilds indexes, and
+auto-merges via `session-branch-finish` — which adds a **blocking
+strict-PII secret gate** and preserves the branch on any failure.
+NEW `/session-note` prompt drops a lightweight `## Note` checkpoint
+into the session log mid-day; `/chat-handoff` and
+`/resume-from-handoff` now read/write the per-session log instead
+of a root file. `sessions/` is intentionally not indexed by
+`build-index` (operational log, like JOURNAL.md). Windows-first,
+local-only git, no remote — the committed session logs ride along
+in snapshot ZIPs automatically.
 
 Future versions (real-usage-driven): a `clients/` zone gated by
 `multi-client: true` for parallel freelance engagements, plus

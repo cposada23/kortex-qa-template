@@ -4,7 +4,8 @@
 # Snapshots are PERSONAL recovery archives — the owner sends them to
 # their own Teams self-DM and uses them to restore on a new laptop.
 # They never leave the owner's control, so credentials (.env,
-# client-secrets/, .secrets, CHAT-HANDOFF.md, .cache/) ARE included.
+# client-secrets/, .secrets, .cache/) ARE included. Per-session logs
+# (sessions/*.md) are git-tracked, so they ride along in .git/ too.
 # This is intentional — the whole point of the recovery channel is
 # that a laptop swap restores the working brain without re-collecting
 # credentials.

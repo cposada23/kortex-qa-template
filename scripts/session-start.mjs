@@ -26,31 +26,57 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
 
-const SKIP_DIRS = new Set(['.git', 'node_modules', '.cache', 'versions']);
+const SKIP_DIRS = new Set(['.git', 'node_modules', '.cache', 'versions', 'sessions']);
 const SKIP_FILENAMES = new Set([
   'INDEX.md', 'README.md', 'AGENTS.md', 'INBOX.md',
   'JOURNAL.md', 'TODO.md',
 ]);
 
-// Detect CHAT-HANDOFF.md at repo root. Returns { updated, staleDays }
-// or null if missing.
-async function readChatHandoff() {
-  const handoffPath = path.join(REPO_ROOT, 'CHAT-HANDOFF.md');
-  let content;
+// Scan sessions/*.md for the per-session logs. Returns:
+//   open    — every session whose frontmatter status is still `open`,
+//             sorted oldest-first by the YYYYMMDD-HHMM prefix of its id
+//             (lexical sort == chronological; immune to mtime rewrites
+//             from git checkout / snapshot restore / laptop swap).
+//   latest  — the most recent session file (for the "where you left off"
+//             pop), regardless of status.
+// Scanning ALL files for status:open — not just the most recent — means a
+// 3-day-old session that was never closed is still surfaced even if a
+// later session was closed normally.
+async function readSessions() {
+  const dir = path.join(REPO_ROOT, 'sessions');
+  let entries;
   try {
-    content = await fs.readFile(handoffPath, 'utf8');
+    entries = await fs.readdir(dir, { withFileTypes: true });
   } catch {
-    return null;
+    return { open: [], latest: null };
   }
-  const fm = parseFrontmatter(content);
-  const updated = (fm && fm.updated) || 'unknown';
-  let staleDays = 0;
-  if (updated && /^\d{4}-\d{2}-\d{2}$/.test(updated)) {
-    const then = new Date(updated).getTime();
-    const now = Date.now();
-    staleDays = Math.floor((now - then) / (1000 * 60 * 60 * 24));
+  const names = entries
+    .filter((e) => e.isFile() && e.name.endsWith('.md') && e.name !== 'README.md')
+    .map((e) => e.name)
+    .sort();
+  const sessions = [];
+  for (const name of names) {
+    try {
+      const content = await fs.readFile(path.join(dir, name), 'utf8');
+      const fm = parseFrontmatter(content);
+      const blocks = content.match(/^## .+$/gm) || [];
+      const nextLine = (content.match(/^NEXT:.*$/m) || [])[0] || null;
+      sessions.push({
+        id: name.replace(/\.md$/, ''),
+        status: (fm && fm.status) || 'unknown',
+        updated: (fm && fm.updated) || 'unknown',
+        branch: (fm && fm.branch) || `session/${name.replace(/\.md$/, '')}`,
+        lastBlock: blocks.length ? blocks[blocks.length - 1].replace(/^##\s*/, '') : '(no blocks yet)',
+        nextLine,
+      });
+    } catch {
+      // unreadable / malformed session file — skip
+    }
   }
-  return { updated, staleDays };
+  return {
+    open: sessions.filter((s) => s.status === 'open'),
+    latest: sessions.length ? sessions[sessions.length - 1] : null,
+  };
 }
 
 function parseFrontmatter(content) {
@@ -246,19 +272,24 @@ async function main() {
 
   const journal = await readLastJournalEntries(3);
   const todo = await countTodoItems();
-  const handoff = await readChatHandoff();
+  const sessions = await readSessions();
 
   process.stdout.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   process.stdout.write(`  Kortex-QA — Session start (${new Date().toISOString().slice(0, 16).replace('T', ' ')})\n`);
   process.stdout.write(`  Scope: ${teams.length === 1 ? teams[0] : teams.join(' + ')}\n`);
   process.stdout.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
 
-  if (handoff) {
-    if (handoff.staleDays > 7) {
-      process.stdout.write(`ℹ CHAT-HANDOFF.md exists but is stale (last updated ${handoff.updated}, ${handoff.staleDays} days ago). Delete or refresh.\n\n`);
-    } else {
-      process.stdout.write(`⚠ CHAT-HANDOFF.md exists (last updated ${handoff.updated}). Consider running /resume-from-handoff first.\n\n`);
+  if (sessions.open.length) {
+    for (const s of sessions.open) {
+      const age = daysSince(s.updated);
+      const ageStr = age === Infinity ? '' : ` (${age} day${age === 1 ? '' : 's'} ago)`;
+      process.stdout.write(`⚠ Open session: ${s.id} — never closed, open since ${s.updated}${ageStr}.\n`);
+      process.stdout.write(`    Last block: ${s.lastBlock}\n`);
+      if (s.nextLine) process.stdout.write(`    ${s.nextLine.trim()}\n`);
+      process.stdout.write(`    → Continue on ${s.branch}, or run /session-end there to close it.\n\n`);
     }
+  } else if (sessions.latest) {
+    process.stdout.write(`▸ Last session: ${sessions.latest.id} (closed). Last block: ${sessions.latest.lastBlock}\n\n`);
   }
 
   for (const team of teams) {

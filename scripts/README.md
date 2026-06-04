@@ -10,7 +10,7 @@ node scripts/<name>.mjs [args]
 This guarantees portability across macOS / Linux / Windows
 (Node is required anyway since Playwright depends on it).
 
-## Available scripts (v1.6 — team-aware + link integrity)
+## Available scripts (v1.8 — team-aware + link integrity + per-session log)
 
 | Script | Purpose |
 |---|---|
@@ -21,9 +21,9 @@ This guarantees portability across macOS / Linux / Windows
 | [new-story.mjs](new-story.mjs) | Scaffold a story (team-scoped; `--team <slug>` overrides primary) |
 | [new-test-case.mjs](new-test-case.mjs) | Scaffold a single-home test case under `teams/<team>/test-cases/<area>/`; `--link-story` updates both sides. |
 | [new-bug.mjs](new-bug.mjs) | Scaffold a bug (team-scoped) |
-| [session-start.mjs](session-start.mjs) | AI-free morning summary (default: all active teams; `--team <slug>` / `--all`) |
-| [session-branch-start.mjs](session-branch-start.mjs) | Create a clean `session/YYYYMMDD-HHMM` branch from `main` at start-of-day. |
-| [session-branch-finish.mjs](session-branch-finish.mjs) | Validate, commit, and merge the current `session/*` branch back to `main`. |
+| [session-start.mjs](session-start.mjs) | AI-free morning summary (default: all active teams; `--team <slug>` / `--all`). Scans `sessions/*.md` for any `status: open` log and surfaces it (the "previous session not closed" detection), plus JOURNAL last entries + TODO counts. |
+| [session-branch-start.mjs](session-branch-start.mjs) | Create a clean `session/YYYYMMDD-HHMM` branch from `main` at start-of-day **and** the per-session log `sessions/<id>.md` (status `open`) atomically; prints `Session log: sessions/<id>.md`. Reuses the branch + ensures the file if already on `session/*`. |
+| [session-branch-finish.mjs](session-branch-finish.mjs) | Validate (frontmatter + links + INDEX drift + a **blocking strict-PII secret gate** over `sessions/`), commit, and merge the current `session/*` branch back to `main` (`--no-ff`, then deletes the branch). Local-only, never pushes; preserves the branch on any failure. |
 | [build-index.mjs](build-index.mjs) | Regenerate INDEX.md files across all team sub-zones + global knowledge/. `--check` exits 1 on drift (used by pre-commit hook). |
 | [snapshot.mjs](snapshot.mjs) | ZIP the brain to versions/ for backup |
 | [validate.mjs](validate.mjs) | Frontmatter + PII integrity check. Run before every commit (also enforced by the pre-commit hook installed by `install-hooks.mjs`). |

@@ -15,6 +15,8 @@ YAML frontmatter at the top:
 - `JOURNAL.md`
 - `TODO.md`
 - Any file under `.github/`
+- Any file under `sessions/` (per-session logs — schema-light;
+  carry minimal session frontmatter, see `type: session` below)
 - Any file under `templates/` (those carry frontmatter, but it
   templates the *new* file's frontmatter — see below)
 
@@ -23,7 +25,7 @@ YAML frontmatter at the top:
 ```yaml
 ---
 title: "<page title>"
-type: story | test-case | bug | review | ceremony | knowledge | playbook | reference | template | index | journal | inbox
+type: story | test-case | bug | review | ceremony | knowledge | playbook | reference | template | index | journal | inbox | session
 status: "<type-specific>"
 language: en
 tags: [tag1, tag2, ...]
@@ -124,6 +126,27 @@ status: active | pending | done | archived
 Schema-light — minimal frontmatter is OK on these. The JOURNAL.md
 and inbox files at zone root are exempted entirely (see top of
 this file).
+
+### `type: session`
+
+Per-session logs at `sessions/<id>.md`, one per session branch
+(`session/<id>` → `sessions/<id>.md`). Schema-light, like
+JOURNAL.md — created and maintained by the session scripts, not by
+hand. Minimal frontmatter:
+
+```yaml
+title: "Session <id>"
+type: session
+status: open | closed        # open while the session runs; closed by /session-end
+language: en
+tags: [session]
+updated: YYYY-MM-DD           # the session start date
+branch: session/<id>
+```
+
+`validate.mjs` accepts `type: session` with `status: open | closed`
+and validates the `sessions/` directory. These files are
+**not** indexed by `build-index` (operational log, like JOURNAL.md).
 
 ## When generating new files
 

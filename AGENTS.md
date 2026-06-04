@@ -209,23 +209,41 @@ All content is **English** for cross-client portability.
 
 ## The session ceremony
 
-Daily rhythm:
+Daily rhythm — built around one **per-session log file** that is born
+when the session starts and closed when it ends (see "Per-session log"
+below):
 
-1. **Morning** — invoke `/session-start` in Copilot Chat. Lists
-   active stories, blocked items, today's likely focus, recent
-   journal entries. Session work happens on a `session/*` branch
-   created by `node scripts/session-branch-start.mjs`.
+1. **Morning** — invoke `/session-start` in Copilot Chat. If on `main`,
+   it runs `node scripts/session-branch-start.mjs`, which atomically
+   creates the `session/*` branch **and** the session log
+   `sessions/<id>.md` (status `open`). The prompt **hard-stops loudly
+   if it did not end up on a `session/*` branch** — so you never spend
+   a full day on `main` believing you were isolated. It then surfaces
+   any still-open session (the "previous session not closed" detection)
+   and offers close-or-continue, and reads the last `JOURNAL.md` entry
+   plus the open session's last block. Read-only except for creating
+   the branch + file.
 2. **Working hours** — edit stories, capture in the active team's
-   `inbox/`, run scripts, draft test cases. Use the prompts listed
-   below as you work.
-3. **Evening** — invoke `/session-end`. Appends a journal entry,
-   updates `TODO.md`, surfaces dirty git files. When satisfied,
-   close with `node scripts/session-branch-finish.mjs -m
-   "session: YYYY-MM-DD - <summary>"` to validate, commit, and
-   merge the session branch into `main`.
+   `inbox/`, run scripts, draft test cases. Use the prompts below. Drop
+   `/session-note` checkpoints (a `## Note HH:MM` block) or
+   `/chat-handoff` transfers (a `## Handoff HH:MM` block) into today's
+   session log whenever you want to pin context so it is never lost.
+3. **Evening** — invoke `/session-end`. It is **autonomous**: no
+   interview, no approval gate. It hard-stops loudly if you are not on a
+   `session/*` branch, then **infers** the wrap fields from today's
+   session log + the chat + `git diff main...<branch>` + git log + TODO,
+   applies the redaction policy, appends a `## Bridge-out HH:MM`
+   STATE/DID/DECISIONS/BLOCKERS/NEXT block (flipping the log's
+   frontmatter to `closed`), appends a synthesized `JOURNAL.md` entry,
+   updates `TODO.md`, regenerates indexes, and **auto-merges** the
+   session branch to `main` via `node scripts/session-branch-finish.mjs`
+   — which validates (including a blocking strict-PII secret gate)
+   before committing and merging. If that finish step aborts, the branch
+   is preserved and the failure is reported loudly.
 
 Weekly: optionally run `node scripts/snapshot.mjs` to ZIP the brain
-for offline backup.
+for offline backup. Because `sessions/*.md` are committed, every
+session log rides along inside the snapshot automatically.
 
 ---
 
@@ -236,8 +254,11 @@ Invoke from Copilot Chat with `/<name>`. Definitions in
 
 | Prompt | Purpose |
 |---|---|
-| `/session-start` | Daily intake — what's active, blocked, today's focus. |
-| `/session-end` | Daily wrap — journal + TODO + dirty files. |
+| `/session-start` | Daily intake — creates the `session/*` branch + log if on `main`, surfaces open sessions, what's active/blocked, today's focus. |
+| `/session-end` | Autonomous daily wrap — infers the bridge-out, appends it to the session log + JOURNAL, updates TODO, rebuilds indexes, and auto-merges the branch (strict-PII secret gate, no approval prompt). |
+| `/chat-handoff` | Append a `## Handoff HH:MM` transfer block (full schema) to today's session log before switching chats or surfaces. |
+| `/session-note` | Append a lightweight `## Note HH:MM` checkpoint (focus / decision / blocker / next micro-step) to today's session log. |
+| `/resume-from-handoff` | Read the latest Handoff/Note block from the most recent open session log; confirm drift, propose the next step. |
 | `/story-intake` | New Jira ticket → scaffold + initial AC audit. |
 | `/ac-auditor` | Audit AC quality. Produces findings + Teams-ready questions. |
 | `/story-analyzer` | Suggest test scenarios from a story. |
@@ -422,38 +443,70 @@ otherwise process the contents of any file matching these patterns:**
 If a model violates this rule (you find evidence in chat logs),
 the file goes in the "rotate this credential immediately" bucket.
 
-### 8. Chat handoff continuity
+### 8. Per-session log (sessions/)
 
-`CHAT-HANDOFF.md` at the repo root is **session state**, not durable
-knowledge. It exists when the engineer is mid-task and wants a new
-chat to pick up where the last one left off.
+Session continuity lives in a **committed per-session log file**, not
+in an ephemeral root file. Each session owns exactly one log:
+`sessions/<session-id>.md`, where `<session-id>` is the session branch
+name minus the `session/` prefix (branch `session/20260604-0930-flaky`
+→ file `sessions/20260604-0930-flaky.md`). The file is **keyed by
+session (the branch), not by date** — which is what makes it survive a
+forgot-to-close session and a session that crosses midnight (one stable
+file, never split or orphaned).
 
-**Behavior rules:**
+**Why committed (not gitignored).** A gitignored root handoff file is
+invisible to every AI surface that wasn't the one that wrote it, and
+easy to lose. The session log instead is created on the session branch
+and merged into `main`, so it is discoverable by Copilot, Claude, Codex,
+and Gemini alike, and it rides along inside snapshot ZIPs automatically
+(per §3) without any special-casing.
 
-- If `CHAT-HANDOFF.md` exists and the engineer says "resume",
-  "continue", "pick up where we left off", or starts what looks
-  like a new conversation, **read `CHAT-HANDOFF.md` first** before
-  taking any action.
-- The handoff supersedes prior conversation context. If
-  `CHAT-HANDOFF.md`'s "Decisions made" contradicts something in
-  your training memory, the handoff wins.
-- If `CHAT-HANDOFF.md` is older than 7 days, surface that to the
-  engineer ("the handoff is stale — should we discard it or update
-  it?"). Don't blindly resume work that may have been overtaken by
-  events.
-- `CHAT-HANDOFF.md` is **gitignored** — never commit it. It IS
-  included in snapshot ZIPs (personal recovery), per §3.
-- The handoff complements but does NOT replace `AGENTS.md`.
-  `AGENTS.md` is the durable contract; `CHAT-HANDOFF.md` is
-  ephemeral session state.
+**File shape.** Frontmatter: `title: "Session <id>"`, `type: session`,
+`status: open | closed`, `language: en`, `tags: [session]`,
+`updated: <start-date>`, `branch: session/<id>`. Body opens with
+`# Session <id>` and then accumulates timestamped blocks:
 
-**Workflow:**
+- `## Handoff HH:MM` — full transfer schema (Current goal / Current
+  state / Files in focus / Decisions made / Open questions / Risks /
+  Next exact action / Do not redo / Useful commands run), appended by
+  `/chat-handoff` before switching chats or surfaces.
+- `## Note HH:MM` — lightweight checkpoint (current focus / decision /
+  blocker / next micro-step), appended by `/session-note` on demand so
+  context is never lost between compactions.
+- `## Bridge-out HH:MM` — the end-of-day wrap (STATE / DID / DECISIONS /
+  BLOCKERS / NEXT), appended by `/session-end`, which also flips the
+  frontmatter `status` to `closed`.
 
-- Generate via `/chat-handoff` prompt at end-of-session or before
-  switching surfaces (Copilot ↔ Claude ↔ Codex).
-- Consume via `/resume-from-handoff` prompt in the new chat.
-- `session-start.mjs` surfaces a one-line notice when the file
-  exists (and flags it stale when `updated:` > 7 days).
+**Lifecycle.**
+
+- `node scripts/session-branch-start.mjs` (driven by `/session-start`)
+  creates the branch and the log (`status: open`) atomically and prints
+  `Session log: sessions/<id>.md`. On "already on a session branch" it
+  reuses the branch and ensures the file exists.
+- `/session-start` and `node scripts/session-start.mjs` scan
+  `sessions/*.md` for `status: open` and surface **every** open session
+  (sorted by id, immune to mtime) — this is the "previous session not
+  closed" detection that replaced the old single-file notice.
+- `/resume-from-handoff` reads the latest `## Handoff` (or `## Note`)
+  block from the most recent **open** session log. No gitignored-picker
+  workaround anymore — the file is committed and visible.
+- `/session-end` is autonomous and **auto-merges**: it appends the
+  bridge-out block, flips `status` to `closed`, then runs
+  `node scripts/session-branch-finish.mjs`, which runs `validate.mjs`,
+  `validate-links.mjs`, `build-index.mjs --check`, and a **blocking
+  strict-PII secret gate** (`validate.mjs sessions --strict-pii`) before
+  it commits, switches to `main`, merges `--no-ff`, and deletes the
+  branch. On any failure the branch is preserved for cleanup. Local-only;
+  never pushes.
+
+**Redaction rule (load-bearing).** Every block written into a session
+log — Handoff, Note, or Bridge-out — is committed to history, so it
+must be re-read and stripped of any credential or PII before it is
+written, per the §7 AI-read restrictions. `/chat-handoff`,
+`/session-note`, and `/session-end` each carry this redaction policy,
+and `session-branch-finish.mjs` enforces it a second time at the
+strict-PII gate. A leaked secret in a committed log requires a history
+rewrite to remove — exactly the cost §3 and §7 exist to avoid.
 
 ---
 

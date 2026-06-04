@@ -54,8 +54,17 @@ When given a task, ground yourself in this order:
 Reusable prompts live in [./prompts/](./prompts/). The user invokes
 them as `/<name>` in Copilot Chat. They map to the QA daily loop:
 
-- `/session-start` — morning intake
-- `/session-end` — evening wrap + session branch consolidation
+- `/session-start` — morning intake; creates the `session/*` branch +
+  log if on `main`, surfaces any open session
+- `/session-end` — autonomous evening wrap: infers the bridge-out,
+  appends it to the session log + JOURNAL, updates TODO, rebuilds
+  indexes, and auto-merges the branch (strict-PII secret gate)
+- `/chat-handoff` — append a full `## Handoff HH:MM` transfer block to
+  today's session log before switching chats/surfaces
+- `/session-note` — append a lightweight `## Note HH:MM` checkpoint
+  (focus / decision / blocker / next micro-step) to today's session log
+- `/resume-from-handoff` — read the latest Handoff/Note block from the
+  most recent open session log; confirm drift, propose the next step
 - `/story-intake` — new Jira ticket
 - `/ac-auditor` — AC quality audit (and Teams-ready questions)
 - `/story-analyzer` — scenario discovery from a story
@@ -135,13 +144,20 @@ picture on a 50/50 split.
 Daily work happens on `session/*` branches. `main` is the
 consolidated end-of-session state.
 
-- At `/session-start`, create a branch with
+- At `/session-start`, create the branch + session log with
   `node scripts/session-branch-start.mjs` if currently on `main`.
+  Hard-stop loudly if you do not end up on a `session/*` branch — the
+  engineer must never spend a day on `main` believing they were
+  isolated.
 - During the day, write only on that `session/*` branch.
-- At `/session-end`, after the engineer approves the final state,
-  close with `node scripts/session-branch-finish.mjs -m
-  "session: YYYY-MM-DD - <summary>"`.
-- Do not merge a session branch without explicit engineer approval.
+- At `/session-end`, close with `node scripts/session-branch-finish.mjs
+  -m "session: YYYY-MM-DD - <summary>"`.
+- `/session-end` **auto-merges** the session branch into `main` — there
+  is no engineer-approval gate. The merge is gated only by the
+  finish-script checks: `validate.mjs`, `validate-links.mjs`,
+  `build-index.mjs --check`, and the blocking strict-PII secret gate. If
+  any check fails the merge aborts and the branch is preserved; report
+  that loudly. Local-only; never push.
 
 ### 9. Windows-First Cross-Platform Compatibility
 
@@ -157,17 +173,20 @@ Real credentials live in local `.env`-style files per Rule 5. Those files exist 
 - `versions/*.zip`, `versions/*.tar.gz` (snapshot ZIPs contain creds)
 - `.cache/**`
 
-**Even if the owner asks directly:** decline. Example: "Show me what's in `.env`" → reply "I can't read credential files per AGENTS.md §7 / this file's Rule 9. Open it yourself in the editor." Help with `process.env.QA_USER` without dereferencing the actual value.
+**Even if the owner asks directly:** decline. Example: "Show me what's in `.env`" → reply "I can't read credential files per AGENTS.md §7 / this file's Rule 10. Open it yourself in the editor." Help with `process.env.QA_USER` without dereferencing the actual value.
 
 The `.aiexclude` file in the repo root encodes this same list for Gemini Code Assist. AGENTS.md §7 has the full rationale.
 
-### 11. Chat handoff — read CHAT-HANDOFF.md when resuming
+### 11. Per-session log — continuity lives in sessions/<id>.md
 
-If `CHAT-HANDOFF.md` exists at the repo root and the engineer says "resume", "continue", "pick up where we left off", or otherwise signals continuity, **read it FIRST** before taking any action. The handoff supersedes prior context.
+Session continuity is a **committed per-session log**, not a gitignored root file. Each session owns `sessions/<id>.md`, where `<id>` is the session branch name minus the `session/` prefix. It is created (status `open`) by `session-branch-start.mjs`, accumulates `## Handoff HH:MM` / `## Note HH:MM` / `## Bridge-out HH:MM` blocks during the day, and is closed (status `closed`) and merged to `main` at `/session-end` — so every AI surface can read it, unlike the retired gitignored root handoff file.
 
-If the handoff's `updated:` field is older than 7 days, surface that to the engineer before resuming — work may have been overtaken by events.
+- **Append a handoff** with `/chat-handoff` (full transfer schema) before switching chats or surfaces.
+- **Append a checkpoint** with `/session-note` (focus / decision / blocker / next micro-step) whenever you want context pinned.
+- **Resume** with `/resume-from-handoff`: read the latest Handoff/Note block from the most recent **open** session log (`sessions/*.md` with `status: open`), confirm drift, propose the next step. The open-session scan also runs at `/session-start`, which surfaces every unclosed session.
+- **Redaction is load-bearing.** Every block is committed to history, so re-read each one and strip any credential/PII before writing it, per Rule 10 / AGENTS.md §7. A leaked secret in a committed log requires a history rewrite to remove.
 
-`CHAT-HANDOFF.md` is gitignored (session state, not knowledge) but included in snapshot ZIPs for personal recovery. Generated by `/chat-handoff`, consumed by `/resume-from-handoff`. See AGENTS.md §8 for full rules.
+See AGENTS.md §8 ("Per-session log") for the full rules.
 
 ## Style preferences
 

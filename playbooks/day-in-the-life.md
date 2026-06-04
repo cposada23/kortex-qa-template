@@ -4,7 +4,7 @@ type: playbook
 status: active
 language: en
 tags: [playbook, day-in-the-life, end-to-end, narrative]
-updated: 2026-05-21
+updated: 2026-06-04
 ---
 
 # Playbook — Day in the life
@@ -55,8 +55,7 @@ accumulate. The official statuses stay where they always were.
 
 ## 15-minute happy path (read this every morning until it's muscle memory)
 
-Six commands. Twelve actions. Six closing keystrokes. If you do
-nothing else, do these.
+Two ceremonies bookend the day. If you do nothing else, do these.
 
 ```
 9:00   Open <client-slug>-qa.code-workspace in VS Code
@@ -64,7 +63,10 @@ nothing else, do these.
            cat teams/active-team.txt
        (or: node scripts/switch-team.mjs --list)
 9:02   /session-start   in Copilot Chat
-       → reads active team(s), shows in-progress stories, blockers, today's NEXT
+       → if on main, creates the session/* branch AND sessions/<id>.md
+         (status: open) atomically, then VERIFIES you're on session/*
+       → pops any still-open session from a previous day (close or continue)
+       → reads active team(s), in-progress stories, blockers, today's NEXT
 9:05   Skim Teams overnight messages — promote anything urgent into the
        active team's inbox or a story's notes:
            teams/<active>/inbox/INBOX.md   (append a dated bullet)
@@ -81,15 +83,23 @@ nothing else, do these.
            Bug found         → /bug-report-formatter (Jira-ready paste)
 
 [work blocks all day]
+       Whenever context is about to be lost, drop a checkpoint:
+           /session-note    → ## Note HH:MM in sessions/<id>.md
+           /chat-handoff    → ## Handoff HH:MM (switching chat surfaces mid-task)
 
 17:30  /session-end  in Copilot Chat
-       → appends JOURNAL, updates TODO, suggests commit
-17:35  Review the JOURNAL diff. Fix anything off.
-17:40  git add . && git commit -m "session: $(date +%F) — <one-liner>"
-17:45  node scripts/snapshot.mjs
+       → AUTONOMOUS: no questions. Infers STATE/DID/DECISIONS/BLOCKERS/NEXT
+         from today's session log + chat + git diff + TODO, redacts secrets,
+         closes sessions/<id>.md, appends JOURNAL, updates TODO, rebuilds
+         indexes, then runs session-branch-finish (validates incl. the
+         strict-PII gate, commits, merges --no-ff to main, deletes branch).
+       → prints a diffstat + the JOURNAL block + the merge result (no approval).
+17:35  Read the printout. If it ABORTED (validation/secret/conflict), the
+       session/* branch is preserved — fix the cause and re-run /session-end.
+17:40  (optional, on a milestone) node scripts/snapshot.mjs
        → produces versions/kortex-qa-<client>-v<X.Y.Z>-<YYYYMMDD-HHMM>.zip
 17:50  Drag the ZIP into your Teams self-DM (your only backup channel —
-       Git stays local).
+       Git stays local; sessions/*.md ride along inside .git/).
 18:00  Close laptop.
 ```
 
@@ -379,16 +389,36 @@ affected.
 
 ### 17:30 — `/session-end`
 
-Invoke `/session-end`. It asks:
+Invoke `/session-end`. It does **not** ask you anything — the close
+is autonomous. (Along the way it benefits from the `## Note` blocks
+you dropped via `/session-note` during the day and any
+`/chat-handoff` block, all already sitting in today's session log
+`sessions/<id>.md`.)
 
-- "One-line summary of what you got done today?"
-  → "Executed TEAM-1234 (1 bug found), unblocked TEAM-1240, designed 7 test cases for it, audited TEAM-1241, automated 2 cases, handled QA env hiccup."
-- "Anything decided? Anything blocked?"
-  → "Release pushed to 2026-05-23. CART_EMAIL_V2 flag needs ops in QA."
-- "Very next thing for tomorrow?"
-  → "Wait for Daniel's review on TEAM-1240. Then start TEAM-1241 once PO answers the 2 audit follow-ups."
+First it runs the **branch guard**: you're on
+`session/20260521-0900-...`, so it proceeds. (Had you been on
+`main`, it would have hard-stopped: "you are on main; today's work
+was not isolated.")
 
-It appends to `JOURNAL.md`:
+Then, with no further input from you, it:
+
+1. **Infers** STATE / DID / DECISIONS / BLOCKERS / NEXT from the
+   session log's Handoff + Note blocks, the chat you just had,
+   `git diff main...session/20260521-0900-...`, the git log, and
+   `TODO.md`. (It would have inferred, for example: "Executed
+   TEAM-1234 (1 bug), unblocked TEAM-1240, designed 7 TCs, audited
+   TEAM-1241, automated 2 cases, handled a QA env hiccup."
+   Decisions: release moved to 2026-05-23; CART_EMAIL_V2 needs ops
+   in QA. Next: wait on Daniel's review of TEAM-1240, then start
+   TEAM-1241 once the PO answers.)
+2. **Redacts** — re-reads its own draft and strips any
+   credential / PII before writing (the session log is committed,
+   so this is load-bearing).
+3. **Closes the session log** — appends a `## Bridge-out 17:32`
+   block to `sessions/20260521-0900-...md` and flips its
+   frontmatter `status: open → closed`.
+4. **Appends to `JOURNAL.md`** (stamped with the session START
+   date, 2026-05-21):
 
 ```
 ## 2026-05-21 17:32 — productive day across 3 stories + env incident
@@ -405,18 +435,31 @@ BLOCKERS: TEAM-1240 awaiting Daniel's review. TEAM-1241 awaiting PO.
 NEXT: Resume on Daniel's review or PO's reply, whichever arrives first.
 ```
 
-It updates `TODO.md` (close completed items, add new ones), and
-prints a suggested commit message.
+5. **Updates `TODO.md`** (removes done items, moves blocked ones)
+   and **rebuilds indexes** (`node scripts/build-index.mjs`).
+6. **Consolidates the branch** — runs
+   `node scripts/session-branch-finish.mjs -m "session: 2026-05-21 - TEAM-1234 done, TEAM-1240 design-done, env hiccup"`,
+   which validates (frontmatter + links + INDEX drift + the
+   **strict-PII secret gate**), commits the session branch,
+   switches to `main`, merges `--no-ff`, and deletes the branch.
+   **Auto-merge by default** — no approval pause.
 
-### 17:40 — Review, commit, snapshot
+### 17:35 — Read the printout
 
-Review the JOURNAL diff. Everything looks right. Commit:
+`/session-end` prints a diffstat, the JOURNAL block above, and the
+merge result. You read it; you don't approve it.
 
-```
-git add . && git commit -m "session: 2026-05-21 — TEAM-1234 done, TEAM-1240 design-done, env hiccup"
-```
+If it had **ABORTED** — a validation failure, a tripped secret
+gate, or a merge conflict — it would have said so **loudly** and
+**preserved** the `session/20260521-0900-...` branch with `main`
+untouched. The fix is mechanical: clear the flagged cause (remove
+the secret, resolve the conflict, fix the frontmatter) and re-run
+`/session-end`.
 
-Then snapshot:
+### 17:40 — Snapshot (optional, milestone only)
+
+Today closed a story and shipped real work, so it's worth a
+snapshot:
 
 ```
 node scripts/snapshot.mjs
@@ -427,8 +470,10 @@ Output: `versions/kortex-qa-acme-v1.1.0-20260521-1745.zip` (1.4 MB). <!-- pii-ok
 "long-digit-sequence" rule by accident — the literal comment
 suppresses that one line.)
 
-Drag the ZIP into your Teams self-DM. Tomorrow if your laptop dies,
-you can restore from the latest ZIP.
+The per-session logs are git-tracked, so they're already inside the
+`.git/` that the snapshot captures — no separate handoff file to
+remember. Drag the ZIP into your Teams self-DM. Tomorrow if your
+laptop dies, you can restore from the latest ZIP.
 
 ### 18:00 — Done
 
@@ -517,9 +562,12 @@ for a team off-boarding, not just a whole client).
 
 - **Save first.** Any open file, save it. Even an empty draft of a
   test case.
-- **Note the parking spot.** Add a line to the relevant file's
-  `## Notes` section: "2026-05-21 14:32 — paused mid-execution of
-  TC-04, resume by re-opening the date-range filter."
+- **Note the parking spot.** Either add a line to the relevant
+  file's `## Notes` section ("2026-05-21 14:32 — paused
+  mid-execution of TC-04, resume by re-opening the date-range
+  filter"), or drop a `/session-note` checkpoint into today's
+  session log so the parking spot is captured where the
+  autonomous close will read it.
 - **Handle the interruption.**
 - **Resume from the note.** Don't trust memory.
 
@@ -534,12 +582,24 @@ for a team off-boarding, not just a whole client).
 
 ### You forgot to `/session-end` yesterday
 
-- Today's `/session-start` will be slightly off (no fresh NEXT).
-- Improvise: read `git log -1 --stat` to see what was touched.
-  Skim the latest changed files. Manually piece together "what
-  was I doing."
-- At today's EOD, do `/session-end` honestly. The JOURNAL has a gap
-  — that's fine; don't fabricate yesterday's entry.
+This is now self-healing. Yesterday's session log
+(`sessions/<id>.md`) still has `status: open`, and today's
+`/session-start` **detects it** by scanning `sessions/*.md` — it
+surfaces the open session and offers to **close** or **continue**
+it. There is no special "did you forget?" file to hunt for; the
+open log file *is* the signal.
+
+- **Close it:** run `/session-end` against the open session. The
+  autonomous close infers the missing fields from that session's
+  Handoff / Note blocks + `git log`, then consolidates the branch.
+  Start today fresh afterward.
+- **Continue it:** if it's the same thread of work, stay on that
+  `session/*` branch and keep going; tonight's `/session-end`
+  closes it.
+
+Either way nothing is fabricated — the open log holds the last
+block you actually wrote, and the JOURNAL gap (if any) is filled
+honestly when you close.
 
 ### A ceremony runs over and eats a work block
 

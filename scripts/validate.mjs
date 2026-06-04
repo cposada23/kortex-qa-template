@@ -31,6 +31,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const ALLOWED_TYPES = new Set([
   'story', 'test-case', 'bug', 'review', 'ceremony', 'knowledge',
   'playbook', 'reference', 'template', 'index', 'journal', 'inbox',
+  'session', // per-session log under sessions/<session-id>.md (v1.8)
 ]);
 
 const STATUS_BY_TYPE = {
@@ -45,6 +46,7 @@ const STATUS_BY_TYPE = {
   knowledge: ['active', 'draft', 'deprecated'],
   playbook: ['active', 'stub', 'deprecated'],
   reference: ['active', 'pending', 'done', 'archived'],
+  session: ['open', 'closed'],
 };
 
 const VOCAB_BY_FIELD = {
@@ -276,10 +278,24 @@ async function main() {
 
   let files;
   if (target) {
-    const rel = path.isAbsolute(target)
-      ? path.relative(REPO_ROOT, target)
-      : target;
-    files = [rel];
+    const abs = path.isAbsolute(target) ? target : path.join(REPO_ROOT, target);
+    let stat = null;
+    try {
+      stat = await fs.stat(abs);
+    } catch {
+      // Missing target (e.g. `validate.mjs sessions` before any session
+      // file exists) — nothing to validate, treat as clean.
+      process.stdout.write(`· ${target} not found — nothing to validate.\n`);
+      return;
+    }
+    if (stat.isDirectory()) {
+      // Directory target: walk it, but keep paths relative to REPO_ROOT
+      // so messages and exemptions match the whole-repo walk.
+      const rels = await walkMdFiles(abs, REPO_ROOT);
+      files = rels;
+    } else {
+      files = [path.relative(REPO_ROOT, abs)];
+    }
   } else {
     files = await walkMdFiles(REPO_ROOT);
   }
