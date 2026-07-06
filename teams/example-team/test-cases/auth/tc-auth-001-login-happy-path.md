@@ -6,7 +6,7 @@ area: auth
 level: ui
 coverage: positive
 status: active
-automation_status: automated
+automation_status: auto-soon
 automation_path: "../../<automation-repo>/tests/auth/login.spec.ts"
 linked_stories: []
 covers_ac: []
