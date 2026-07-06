@@ -64,7 +64,9 @@ file listed here and follow it literally.
 | Skill | When | Canonical |
 |---|---|---|
 | ac-auditor | Audit acceptance criteria quality across six lenses and draft Teams-ready questions for dev/PO when reviewing a story before test design. | `.agents/skills/ac-auditor/SKILL.md` |
+| automation-bootstrap | Create/connect the client automation repo via kortex-test init, wired to the brain: run after week-one day 2. | `.agents/skills/automation-bootstrap/SKILL.md` |
 | automation-from-test-case | Translate a manual test case into a Playwright skeleton (UI or API) with selector TODOs; use when a test case labeled for automation needs its first .spec.ts draft. | `.agents/skills/automation-from-test-case/SKILL.md` |
+| automation-sync | Pull CTRF results into the brain (TC last_run/last_result, logs, matrix): run after every automated test run. | `.agents/skills/automation-sync/SKILL.md` |
 | bug-report-formatter | Format a free-text defect observation into a Jira-ready bug report file and paste block when the engineer finds a defect during testing. | `.agents/skills/bug-report-formatter/SKILL.md` |
 | chat-handoff | Append a "## Handoff HH:MM" block to the current session file so a fresh chat or another AI surface can resume context without replaying history. | `.agents/skills/chat-handoff/SKILL.md` |
 | question-generator | Generate paste-ready dev/PO questions from arbitrary input such as a design doc, verbal clarification, mockup, or code dump when the material to clarify is not acceptance criteria. | `.agents/skills/question-generator/SKILL.md` |

@@ -9,6 +9,25 @@ updated: 2026-05-21
 
 # Playbook — Automation flow
 
+## Bootstrap — creating the automation repo (v2)
+
+The automation-bootstrap skill creates or connects the client's
+Playwright framework via `kortex-test init`, deriving adapter flags
+from `brain.config.json` (`tms`/`tracker` — filled during week-one
+day 2) and wiring the CTRF loop back into the brain:
+
+1. Precondition: `tms`/`tracker` not `tbd`; `kortex-test` installed.
+2. `kortex-test init --name <client>-automation --datastore sqlite
+   --reporter ctrf-json --out <sibling dir> --yes` + mapped flags.
+3. Post-init: set `automation_repo_path` in `brain.config.json`,
+   record the command in `teams/<slug>/automation/framework.md`,
+   export the credential env vars the adapters need.
+4. From then on: specs titled `[<TC-ID>] ...` produce CTRF at
+   `reports/ctrf/ctrf-report.json`; `node scripts/sync-automation.mjs`
+   (the automation-sync skill) pulls results back into TC
+   `last_run`/`last_result`, execution logs, and the coverage matrix;
+   `node scripts/validate-automation.mjs` blocks drift at commit time.
+
 ## Relationship to `/automation-from-test-case`
 
 The `/automation-from-test-case` Copilot prompt in
