@@ -59,3 +59,11 @@ Dry-run agent completed ALL 9 day-1 steps end-to-end (8 clean commits in the dem
 - **F11/F12/F13 (accepted, cosmetic)**: week-one granted-access records improvised into TODO.md §Watching (fine); `--link-story` leaves a `<one-line scenario summary>` placeholder in the story body (by design — the agent fills it); framework.md format is described in the bootstrap skill, no template needed yet.
 
 Runbook commands for steps 6–8 confirmed by the dry-run are quoted in the report (bootstrap with `--out .. --local`, storageState stub, `npx playwright test <filter>`, `node scripts/sync-automation.mjs`).
+
+## 2026-07-06 — Resumen ejecutivo final (Task 5.4)
+
+- **Tasks:** todas las del plan completadas para este repo (Fases 0-2, 4, 5). Ninguna [BLOCKED]. Deferidas: ninguna brain-side.
+- **Diff:** `git diff --stat main...v2.0` → ~90 files changed (15 skills canónicas + 4 nuevas, 4 scripts nuevos, 2 validators extendidos, AGENTS.md reescrito, wrappers, docs). 30 commits. Tag local `v2.0.0`.
+- **Tests finales:** 10 archivos, todos verdes — migrate 24, resolve-shared 15, session-branch 14, snapshot 34, validate-session 8, sync-agents 25, doctor 13, validate-v2 14, coverage-matrix 9, sync-automation 16, validate-automation 6 (≈178 asserts). Comando: `for t in scripts/tests/*.test.mjs; do node "$t"; done`.
+- **Desviaciones del plan:** frontmatter en EXECUTION-NOTES (validator); `--root` en validators (testability); English-lint excluido (per plan); TC-AUTH-001 example downgraded a auto-soon; automation_path semantics unificadas repo-root-relative; F4 workaround → fix real upstream (kortex-test v0.4.0).
+- **Pendiente de verificación en vivo el lunes:** Copilot live smoke (VS Code del owner — Escenario A); Cursor/Codex/Gemini live; primer TMS real (adapter octane listo si aplica; xray listo; testrail/ado sketch v0.5); week-one con datos reales.
