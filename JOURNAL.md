@@ -324,3 +324,24 @@ DECISIONS:
 BLOCKERS: none.
 
 READINESS: green. Validated with `node scripts/validate.mjs`, `node scripts/validate-links.mjs`, and `node scripts/build-index.mjs --check`.
+
+## 2026-07-06 18:30 — v2.0.0 cross-agent + automation bridge
+
+STATE: Executed the full v2.0 plan (mykortex `docs/superpowers/plans/2026-07-02-qa-brain-v2-kortex-test-v04.md`) end-to-end on branch v2.0.
+
+DID:
+1. **Cross-agent layer.** 15 workflows converted to canonical skills in `.agents/skills/`; `sync-agents.mjs` generates Copilot prompts (with workspace-context preamble), Claude skills, the AGENTS.md skills index (Gemini shim) and mcp.json copies; pre-commit gains drift check (4th) + automation traceability (5th).
+2. **AGENTS.md rewritten** Princeton-style (10.2 KB with 19-row generated index); wrappers: CLAUDE.md `@AGENTS.md` import, GEMINI.md shim, copilot-instructions updated. Narrative depth moved to `playbooks/compliance-policy.md`.
+3. **Schema v2 traceability**: `### AC-n:` stable headings, `covers_ac`, `external_ids`, `last_run`/`last_result`; per-team coverage-matrix.md; validate-links blocks phantom covers_ac; forbidden-phrases gate; freshness warnings.
+4. **brain.config.json + doctor.mjs** (corporate proxy/TLS diagnosis) wired into init.
+5. **New skills**: week-one (reentrant 5-day discovery), sut-map (+ knowledge/sut-map zone), automation-bootstrap, automation-sync (`sync-automation.mjs`: CTRF → TC fields + execution logs + matrix, surgical YAML mutation, 16 tests).
+6. **Demo loop verified** end-to-end in a temp dir (init → kortex-test init → spec `[TC-SEARCH-001]` green → CTRF → sync → matrix row `2026-07-06 passed`). Claude Code live-verified (19 skills + import + hard rules).
+
+DECISIONS:
+- Adapters TMS (Octane/TestRail/ADO) deferred post-E2E per plan — the real TMS is unknown until week one.
+- Example auth TC downgraded automated → auto-soon (honest state; was blocking commits once an automation repo is configured).
+- English-lint heuristic deliberately excluded (false-positive risk).
+
+BLOCKERS: none.
+
+READINESS: green — validate, validate-links, build-index --check, sync-agents --check, full test suite (10 files) all pass.
