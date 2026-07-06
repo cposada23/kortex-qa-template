@@ -143,6 +143,15 @@ items surfaced in the chat or session file.
 Run `node scripts/build-index.mjs` to regenerate the INDEX.md files
 (`sessions/` is intentionally not indexed — that's expected).
 
+### 6b. Offer a SUT-map update (optional — never blocks the close)
+
+If the session explored new SUT areas (a module, flow, or term not
+yet in `knowledge/sut-map/`), add one line to the final report
+offering — not forcing — a sut-map update: "Today touched <area>,
+not yet in the SUT map — run the sut-map skill with this session as
+context if worth capturing." Do NOT run it yourself and do NOT ask
+before merging; the close stays autonomous.
+
 ### 7. Consolidate — auto-merge by default
 
 Run:

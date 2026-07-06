@@ -61,6 +61,10 @@ You'll also need:
 6. Set `ac_audit_status: done` on `story.md` if the audit found
    no critical gaps; leave `pending` if questions need answers
    first.
+7. **Feed the SUT map.** After scaffolding, if the story reveals
+   new SUT modules, flows, or terms not yet in
+   `knowledge/sut-map/`, run the sut-map skill with this story as
+   context.
 
 ## Output
 
