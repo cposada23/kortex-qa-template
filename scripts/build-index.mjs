@@ -20,7 +20,11 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const REPO_ROOT = path.resolve(__dirname, '..');
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+
+// --root <dir> lets tests point the generator at a fixture tree.
+const rootArgIdx = process.argv.indexOf('--root');
+const REPO_ROOT = rootArgIdx !== -1 ? path.resolve(process.argv[rootArgIdx + 1]) : DEFAULT_ROOT;
 
 // v1.1 — team-centric. Zones live inside teams/<slug>/. The walker
 // discovers every team in teams/ (excluding _template-team and dotfiles)
@@ -38,6 +42,7 @@ const GLOBAL_ZONES = ['knowledge'];
 const SKIP_FILENAMES = new Set([
   'INDEX.md', 'README.md', 'AGENTS.md', 'INBOX.md',
   'JOURNAL.md', 'TODO.md',
+  'coverage-matrix.md', // generated artifact — never indexed
 ]);
 
 const SKIP_DIRS = new Set(['.git', 'node_modules', '.cache', 'versions']);
@@ -267,10 +272,155 @@ async function buildTeamsIndex({ checkOnly = false } = {}) {
   return { zone: 'teams', status: 'updated', count: allTeams.length };
 }
 
+// ---------------------------------------------------------------
+// Per-team coverage matrix (v2): one row per (story × AC), built
+// from `### AC-n:` headings in stories and covers_ac on test cases.
+// A MAP of declared links, not proof of requirement coverage.
+// ---------------------------------------------------------------
+const MATRIX_START = '<!-- generated:coverage-matrix -->';
+const MATRIX_END = '<!-- /generated:coverage-matrix -->';
+const AC_HEADING_RE = /^###\s+(AC-\d+):/gm;
+
+async function buildCoverageMatrix(teamSlug, { checkOnly = false } = {}) {
+  const teamDir = path.join(REPO_ROOT, 'teams', teamSlug);
+  const matrixPath = path.join(teamDir, 'coverage-matrix.md');
+  const zoneLabel = `teams/${teamSlug}/coverage-matrix`;
+
+  // Collect stories: id → { acs: [AC-1,...], hasHeadings }
+  const stories = new Map();
+  const storyFiles = await walkMdFiles(path.join(teamDir, 'stories'), teamDir);
+  for (const rel of storyFiles) {
+    if (!rel.split(path.sep).join('/').endsWith('/story.md')) continue;
+    let content;
+    try {
+      content = await fs.readFile(path.join(teamDir, rel), 'utf8');
+    } catch { continue; }
+    const fm = parseFrontmatter(content);
+    const id = fm?.ticket;
+    if (!id) continue;
+    const acs = [];
+    AC_HEADING_RE.lastIndex = 0;
+    let m;
+    while ((m = AC_HEADING_RE.exec(content)) !== null) acs.push(m[1]);
+    stories.set(id, { acs });
+  }
+
+  // Collect TCs: id, covers_ac, linked_stories, automation, last run
+  const tcs = [];
+  const tcFiles = await walkMdFiles(path.join(teamDir, 'test-cases'), teamDir);
+  for (const rel of tcFiles) {
+    let content;
+    try {
+      content = await fs.readFile(path.join(teamDir, rel), 'utf8');
+    } catch { continue; }
+    const fm = parseFrontmatter(content);
+    if (!fm || fm.type !== 'test-case' || !fm.id) continue;
+    tcs.push({
+      id: fm.id,
+      covers: Array.isArray(fm.covers_ac) ? fm.covers_ac : [],
+      linked: Array.isArray(fm.linked_stories) ? fm.linked_stories : [],
+      automation: fm.automation_status || '—',
+      lastRun: fm.last_run || null,
+      lastResult: fm.last_result || null,
+    });
+  }
+
+  // Nothing to map (fresh team) → skip without creating a file.
+  if (stories.size === 0 && tcs.length === 0) {
+    return { zone: zoneLabel, status: 'no-change', count: 0 };
+  }
+
+  const rows = [];
+  const sortedStories = [...stories.keys()].sort();
+  for (const sid of sortedStories) {
+    const { acs } = stories.get(sid);
+    const storyTcs = tcs.filter((t) => t.linked.includes(sid));
+    if (acs.length === 0) {
+      if (storyTcs.length > 0) {
+        rows.push(`| ${sid} | (no structured ACs — excluded from coverage) | ${storyTcs.map((t) => t.id).join(', ')} | — | — |`);
+      } else {
+        rows.push(`| ${sid} | (no structured ACs — excluded from coverage) | — | — | — |`);
+      }
+      continue;
+    }
+    for (const ac of acs) {
+      const covering = storyTcs.filter((t) => t.covers.includes(ac));
+      if (covering.length === 0) {
+        rows.push(`| ${sid} | ${ac} | ⚠ uncovered | — | — |`);
+      } else {
+        const tcList = covering.map((t) => t.id).join(', ');
+        const autos = [...new Set(covering.map((t) => t.automation))].join(', ');
+        const runs = covering
+          .filter((t) => t.lastRun)
+          .map((t) => `${t.lastRun} ${t.lastResult ?? ''}`.trim());
+        rows.push(`| ${sid} | ${ac} | ${tcList} | ${autos} | ${runs.join(', ') || '—'} |`);
+      }
+    }
+    const unmapped = storyTcs.filter((t) => t.covers.length === 0);
+    if (unmapped.length > 0) {
+      rows.push(`| ${sid} | (unmapped) | ${unmapped.map((t) => t.id).join(', ')} | — | — |`);
+    }
+  }
+
+  const table = [
+    '| Story | AC | Test cases | Automation | Last run |',
+    '|---|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+
+  // Deterministic updated: the max `updated:` seen across inputs would
+  // require another pass; the matrix regenerates on every build-index
+  // run, so a static marker date keeps the file drift-free between
+  // content changes.
+  const header = `---
+title: "Coverage matrix — ${teamSlug}"
+type: index
+language: en
+tags: [coverage, matrix, generated]
+updated: 2026-07-06
+---
+
+# Coverage matrix — ${teamSlug}
+
+Coverage MAP (not proof) — reflects declared covers_ac links, not
+verified requirement coverage. Generated by
+\`node scripts/build-index.mjs\` — do not edit between the markers.
+
+${MATRIX_START}
+${MATRIX_END}
+`;
+
+  let existing = '';
+  let existed = true;
+  try {
+    existing = await fs.readFile(matrixPath, 'utf8');
+  } catch {
+    existed = false;
+    existing = header;
+  }
+  const startIdx = existing.indexOf(MATRIX_START);
+  const endIdx = existing.indexOf(MATRIX_END);
+  if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+    return { zone: zoneLabel, status: 'malformed-markers' };
+  }
+  const newContent =
+    existing.slice(0, startIdx + MATRIX_START.length) +
+    '\n' + table + '\n' +
+    existing.slice(endIdx);
+  const needsWrite = !existed || newContent !== existing;
+  if (!needsWrite) return { zone: zoneLabel, status: 'no-change', count: rows.length };
+  if (checkOnly) {
+    return { zone: zoneLabel, status: existed ? 'would-update' : 'would-create', count: rows.length };
+  }
+  await fs.writeFile(matrixPath, newContent);
+  return { zone: zoneLabel, status: 'updated', count: rows.length };
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const checkMode = args.includes('--check');
-  const zoneArg = args.find((a) => !a.startsWith('--'));
+  const rootValIdx = args.indexOf('--root') + 1;
+  const zoneArg = args.find((a, i) => !a.startsWith('--') && !(rootValIdx > 0 && i === rootValIdx));
 
   const teams = await listTeams();
   const allZones = [];
@@ -303,6 +453,12 @@ async function main() {
     } else {
       results.push(await buildIndexForZone(zone, { checkOnly: checkMode }));
     }
+  }
+
+  // Per-team coverage matrix (regenerated alongside the INDEXes).
+  for (const slug of teams) {
+    if (zoneArg && !`teams/${slug}`.startsWith(zoneArg) && !zoneArg.startsWith(`teams/${slug}`)) continue;
+    results.push(await buildCoverageMatrix(slug, { checkOnly: checkMode }));
   }
 
   let hadChanges = false;
