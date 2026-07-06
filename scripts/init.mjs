@@ -140,6 +140,17 @@ async function main() {
     process.stderr.write(`warning: install-hooks.mjs exited ${hookResult.status}. Continuing.\n`);
   }
 
+  // 7. Day-1 preflight — diagnose the machine before the engineer
+  //    hits install pain (proxy/TLS issues are the usual blocker).
+  process.stdout.write(`\n→ Running doctor preflight\n`);
+  const doctorResult = spawnSync('node', ['scripts/doctor.mjs'], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+  });
+  if (doctorResult.status !== 0 && doctorResult.status !== null) {
+    process.stderr.write(`warning: doctor.mjs exited ${doctorResult.status}. Continuing.\n`);
+  }
+
   process.stdout.write('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   process.stdout.write(`  Initialized for client: ${slug}\n`);
   if (firstTeam) process.stdout.write(`  First team: ${firstTeam} (primary active)\n`);
