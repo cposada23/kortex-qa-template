@@ -87,6 +87,33 @@ async function main() {
     process.stdout.write(`· kortex-qa.code-workspace not found (may have been renamed already)\n`);
   }
 
+  // 2b. Write brain.config.json — machine-readable brain state.
+  //     Fresh clients start with everything tbd; the week-one skill
+  //     fills tms/tracker/ci, automation-bootstrap fills the repo path.
+  const configPath = path.join(REPO_ROOT, 'brain.config.json');
+  const today = new Date().toISOString().slice(0, 10);
+  const brainConfig = {
+    client: slug,
+    created: today,
+    week_one_done: false,
+    tms: 'tbd',
+    tracker: 'tbd',
+    ci: 'tbd',
+    automation_repo_path: '',
+    ctrf_report_path: 'reports/ctrf/ctrf-report.json',
+  };
+  if (await fileExists(configPath)) {
+    // Re-init on an existing brain: keep discovered state, restamp client.
+    try {
+      const existing = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      Object.assign(brainConfig, existing, { client: slug });
+    } catch {
+      process.stderr.write('warning: existing brain.config.json unparseable — rewriting fresh.\n');
+    }
+  }
+  await fs.writeFile(configPath, JSON.stringify(brainConfig, null, 2) + '\n');
+  process.stdout.write(`✓ wrote brain.config.json (client: ${slug})\n`);
+
   // 3. Verify VERSION
   const versionPath = path.join(REPO_ROOT, 'VERSION');
   if (!(await fileExists(versionPath))) {
