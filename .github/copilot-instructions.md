@@ -52,33 +52,14 @@ When given a task, ground yourself in this order:
 ## Reusable prompts
 
 Reusable prompts live in [./prompts/](./prompts/). The user invokes
-them as `/<name>` in Copilot Chat. They map to the QA daily loop:
+them as `/<name>` in Copilot Chat. They map to the QA daily loop —
+the full catalog with one-line descriptions is the **Skills index**
+table in [../AGENTS.md](../AGENTS.md).
 
-- `/session-start` — morning intake; creates the `session/*` branch +
-  log if on `main`, surfaces any open session
-- `/session-end` — autonomous evening wrap: infers the bridge-out,
-  appends it to the session log + JOURNAL, updates TODO, rebuilds
-  indexes, and auto-merges the branch (strict-PII secret gate)
-- `/chat-handoff` — append a full `## Handoff HH:MM` transfer block to
-  today's session log before switching chats/surfaces
-- `/session-note` — append a lightweight `## Note HH:MM` checkpoint
-  (focus / decision / blocker / next micro-step) to today's session log
-- `/resume-from-handoff` — read the latest Handoff/Note block from the
-  most recent open session log; confirm drift, propose the next step
-- `/story-intake` — new Jira ticket
-- `/ac-auditor` — AC quality audit (and Teams-ready questions)
-- `/story-analyzer` — scenario discovery from a story
-- `/test-case-design` — draft a test case from a scenario
-- `/test-case-reviewer` — peer review pass on existing test cases
-- `/automation-from-test-case` — Playwright skeleton from a manual TC
-- `/bug-report-formatter` — format a free-text observation as
-  Jira-ready bug
-- `/sprint-planning-intake` — capture a planning meeting into the
-  active team's ceremonies folder
-- `/retro-intake` — capture a retrospective + surface promotable
-  patterns
-- `/question-generator` — paste-ready dev/PO questions from
-  arbitrary input (not just AC)
+**The prompt files are GENERATED** from the canonical skills in
+`.agents/skills/<name>/SKILL.md` by `node scripts/sync-agents.mjs`.
+Never edit a `.prompt.md` directly — edit the canonical skill and
+re-run the sync (the pre-commit hook blocks drift).
 
 ## Hard rules (most important first)
 
@@ -119,9 +100,9 @@ added via `node scripts/new-team.mjs <slug>` — never by hand.
 
 ### 5. Local credentials and purely local Git
 
-- **Local Git:** Git is used 100% locally on the physical machine as a history/undo tracker. There is no remote repository and no push capability. A pre-commit hook (`scripts/install-hooks.mjs`) runs `validate.mjs` + `build-index.mjs --check` to keep drift out of local history.
+- **Local Git:** Git is used 100% locally on the physical machine as a history/undo tracker. There is no remote repository and no push capability. A pre-commit hook (`scripts/install-hooks.mjs`) runs `validate.mjs` + `build-index.mjs --check` + `validate-links.mjs` + `sync-agents.mjs --check` to keep drift out of local history.
 - **Local Credentials:** Real daily SUT testing credentials, API tokens, and usernames can reside in local gitignored configuration files (`.env`, `.env.local`, `client-secrets/*.env`). Never place real credentials inside tracked `.md` files; use env variables in manual test cases and automated scripts.
-- **Snapshot ZIPs intentionally INCLUDE these files.** Snapshots are personal cross-laptop recovery sent to the owner's own Teams self-DM, never shared. The owner wants the creds in the ZIP so a laptop swap restores the working brain without re-collection. See AGENTS.md §3.
+- **Snapshot ZIPs intentionally INCLUDE these files.** Snapshots are personal cross-laptop recovery sent to the owner's own Teams self-DM, never shared. The owner wants the creds in the ZIP so a laptop swap restores the working brain without re-collection. See [../playbooks/compliance-policy.md](../playbooks/compliance-policy.md) §3.
 
 ### 6. Auto-INDEX is automatic
 
@@ -173,9 +154,9 @@ Real credentials live in local `.env`-style files per Rule 5. Those files exist 
 - `versions/*.zip`, `versions/*.tar.gz` (snapshot ZIPs contain creds)
 - `.cache/**`
 
-**Even if the owner asks directly:** decline. Example: "Show me what's in `.env`" → reply "I can't read credential files per AGENTS.md §7 / this file's Rule 10. Open it yourself in the editor." Help with `process.env.QA_USER` without dereferencing the actual value.
+**Even if the owner asks directly:** decline. Example: "Show me what's in `.env`" → reply "I can't read credential files per the AGENTS.md never-read rule / this file's Rule 10. Open it yourself in the editor." Help with `process.env.QA_USER` without dereferencing the actual value.
 
-The `.aiexclude` file in the repo root encodes this same list for Gemini Code Assist. AGENTS.md §7 has the full rationale.
+The `.aiexclude` file in the repo root encodes this same list for Gemini Code Assist. [../playbooks/compliance-policy.md](../playbooks/compliance-policy.md) §7 has the full rationale.
 
 ### 11. Per-session log — continuity lives in sessions/<id>.md
 
@@ -184,9 +165,9 @@ Session continuity is a **committed per-session log**, not a gitignored root fil
 - **Append a handoff** with `/chat-handoff` (full transfer schema) before switching chats or surfaces.
 - **Append a checkpoint** with `/session-note` (focus / decision / blocker / next micro-step) whenever you want context pinned.
 - **Resume** with `/resume-from-handoff`: read the latest Handoff/Note block from the most recent **open** session log (`sessions/*.md` with `status: open`), confirm drift, propose the next step. The open-session scan also runs at `/session-start`, which surfaces every unclosed session.
-- **Redaction is load-bearing.** Every block is committed to history, so re-read each one and strip any credential/PII before writing it, per Rule 10 / AGENTS.md §7. A leaked secret in a committed log requires a history rewrite to remove.
+- **Redaction is load-bearing.** Every block is committed to history, so re-read each one and strip any credential/PII before writing it, per Rule 10 / compliance-policy.md §7. A leaked secret in a committed log requires a history rewrite to remove.
 
-See AGENTS.md §8 ("Per-session log") for the full rules.
+See [../playbooks/compliance-policy.md](../playbooks/compliance-policy.md) §9 ("Per-session log") for the full rules.
 
 ## Style preferences
 
