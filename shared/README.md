@@ -13,6 +13,9 @@ the engineer works with on this client engagement. Compare to
   Passwords are never here.
 - **[filters.md](filters.md)** — recurring test datasets, magic
   strings to find a specific scenario in the SUT's data.
+- **[tool-inventory.md](tool-inventory.md)** — tracker, TMS, CI,
+  how the app runs locally, team chat channel (filled during
+  week-one day 2; mirrors `brain.config.json`).
 - **[deploy.md](deploy.md)** — deploy cadence and ownership across
   envs (the human side, not the CI/CD config).
 

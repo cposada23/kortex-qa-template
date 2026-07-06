@@ -76,8 +76,10 @@ file listed here and follow it literally.
 | sprint-planning-intake | Capture a sprint planning meeting dump into a structured ceremony note and scaffold the QA action items when a new sprint starts. | `.agents/skills/sprint-planning-intake/SKILL.md` |
 | story-analyzer | Suggest test scenarios from a story across happy-path, edge, negative, integration, and regression categories when brainstorming coverage before authoring test cases. | `.agents/skills/story-analyzer/SKILL.md` |
 | story-intake | Scaffold a story folder from a new Jira ticket and run a first-pass AC audit in one go; use when a ticket is assigned or refined into the sprint. | `.agents/skills/story-intake/SKILL.md` |
+| sut-map | Update the SUT map from a story, exploration session, or owner notes; only confirmed facts, each with a source. | `.agents/skills/sut-map/SKILL.md` |
 | test-case-design | Draft a fully-formed test case file from a chosen scenario; use when a scenario (usually from story analysis) is ready to become a schema-compliant test case. | `.agents/skills/test-case-design/SKILL.md` |
 | test-case-reviewer | Peer-review one or more test cases against a five-dimension rubric and draft paste-ready comments when a story's test cases need review before execution. | `.agents/skills/test-case-reviewer/SKILL.md` |
+| week-one | Guide the first 5 days at a new client, filling the brain progressively; reentrant, resumes from real state. | `.agents/skills/week-one/SKILL.md` |
 <!-- skills-index:end -->
 
 ## Hard rules / Boundaries

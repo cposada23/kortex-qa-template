@@ -12,6 +12,9 @@ workflow that isn't working).
 - **[client-bootstrap.md](client-bootstrap.md)** — **start here on
   a new laptop.** Clone → init → first team → first story →
   importing from a previous brain (4 scenarios)
+- **[week-one.md](week-one.md)** — the first 5 days at a new
+  client: access & people → tool inventory → environments & data →
+  SUT map seeding → first real story + exit check
 - **[client-rotation.md](client-rotation.md)** —
   **compliance-critical** off-boarding (one clone = one client;
   rotation = wipe + new clone)
@@ -72,7 +75,8 @@ you want to *do* the workflow.
 | automation-flow.md | `/automation-from-test-case` |
 | session-start.md | `/session-start` (branch + session log creation, pop-last-session) |
 | session-end.md | `/session-end` (autonomous close, auto-merge) |
-| (no matching playbook yet) | `/sprint-planning-intake`, `/retro-intake`, `/question-generator`, `/bug-report-formatter`, `/session-note`, `/chat-handoff`, `/resume-from-handoff` |
+| week-one.md | `/week-one` (reentrant 5-day onboarding at a new client) |
+| (no matching playbook yet) | `/sprint-planning-intake`, `/retro-intake`, `/question-generator`, `/bug-report-formatter`, `/session-note`, `/chat-handoff`, `/resume-from-handoff`, `/sut-map` |
 
 The session-lifecycle prompts now revolve around the **per-session
 log** at `sessions/<id>.md` (keyed by the session branch, committed

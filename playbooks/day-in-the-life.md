@@ -18,6 +18,10 @@ The narrative assumes a single active team. The
 [Cross-team day](#cross-team-day) section at the bottom covers what
 changes when you have two teams active at once.
 
+> **New client?** Days 1–5 at a NEW client follow the `/week-one`
+> skill (see [week-one.md](week-one.md)) — access, tools,
+> environments, SUT map — before this normal daily loop takes over.
+
 > **Any agent works.** The narrative below shows Copilot Chat
 > (`/name`), but every `/name` here is a canonical skill in
 > `.agents/skills/` — invoke the same workflow from Claude Code
