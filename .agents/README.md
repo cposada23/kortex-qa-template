@@ -26,7 +26,41 @@ core.symlinks=true` which isn't safe to assume on a client laptop).
   may write to. Documentation-only today; could be enforced via a
   pre-commit hook in the future (similar to mykortex's
   `validate-agent-permissions.mjs`).
+- **`skills/`** — the canonical skill source (see below).
 - **README.md** — this file.
+
+## `skills/` — canonical skill source
+
+`.agents/skills/<name>/SKILL.md` is the **single source of truth**
+for every workflow skill. The format follows the Agent Skills open
+standard:
+
+```yaml
+---
+name: <skill-name>            # required — must match the folder name
+description: <one sentence>   # required — what it does + when to use it
+copilot_agent: ask            # optional — Copilot chat mode for the prompt
+context_scope: repo           # optional — repo | file (default: repo)
+---
+```
+
+`context_scope: repo` (the default) makes the generated Copilot
+prompt carry a workspace-wide-context preamble; `file` skips it for
+skills that operate on the currently open file only.
+
+**The rule:**
+
+1. Edit the canonical `SKILL.md` under `.agents/skills/<name>/`.
+2. Run `node scripts/sync-agents.mjs` — it regenerates every
+   adapter: `.github/prompts/*.prompt.md` (Copilot),
+   `.claude/skills/*/SKILL.md` (Claude Code), the skills-index table
+   in `AGENTS.md` (discovery shim for Gemini CLI and any agent
+   without SKILL.md support), plus byte-copies of `.mcp.json` into
+   `.vscode/mcp.json` and `.cursor/mcp.json`.
+3. **Never edit the generated files** — they carry a
+   `<!-- ... DO NOT EDIT ... -->` banner, and the pre-commit hook
+   runs `node scripts/sync-agents.mjs --check`, which **blocks the
+   commit on any drift or orphaned adapter**.
 
 ## Adding a new agent
 

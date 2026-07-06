@@ -4,7 +4,7 @@ type: playbook
 status: active
 language: en
 tags: [playbook, day-in-the-life, end-to-end, narrative]
-updated: 2026-06-04
+updated: 2026-07-06
 ---
 
 # Playbook — Day in the life
@@ -17,6 +17,12 @@ you're rusty.
 The narrative assumes a single active team. The
 [Cross-team day](#cross-team-day) section at the bottom covers what
 changes when you have two teams active at once.
+
+> **Any agent works.** The narrative below shows Copilot Chat
+> (`/name`), but every `/name` here is a canonical skill in
+> `.agents/skills/` — invoke the same workflow from Claude Code
+> (skills), or from any other agent via the Skills index table in
+> `AGENTS.md`. Same names, same behavior.
 
 ---
 
@@ -576,9 +582,12 @@ for a team off-boarding, not just a whole client).
 - It happens. Edit the output manually. The prompt is a starting
   point, not gospel.
 - If the same prompt gives bad output twice in a row, refine the
-  prompt file (e.g. `.github/prompts/ac-auditor.prompt.md`) — add
-  a clarification or example. Commit it as
-  "prompt: tighten ac-auditor on <thing>".
+  **canonical skill** (e.g. `.agents/skills/ac-auditor/SKILL.md`) —
+  add a clarification or example — then run
+  `node scripts/sync-agents.mjs` to regenerate the adapters. Never
+  edit `.github/prompts/*.prompt.md` directly (generated; the
+  pre-commit hook blocks drift). Commit it as
+  "skill: tighten ac-auditor on <thing>".
 
 ### You forgot to `/session-end` yesterday
 

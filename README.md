@@ -31,7 +31,8 @@ Inside, you'll find:
   inbox); five global zones (`knowledge/`, `playbooks/`, `scripts/`,
   `templates/`, `.github/`) sit alongside.
 - Pre-wired **Copilot configuration** in `.github/` — 5 scoped
-  instruction files (`applyTo:` globs) + 14 reusable prompts.
+  instruction files (`applyTo:` globs) + 15 skills (+4 coming in
+  v2), generated into `.github/prompts/` from `.agents/skills/`.
 - **Zero-dependency Node.js scripts** for scaffolding (new story,
   test case, bug, team), snapshots, validation, and index building.
 - **A complete playbook set** for the core daily loop, peer review,
@@ -67,13 +68,18 @@ by zone, that Copilot reads via `@workspace` and reusable prompts.
 
 ## Quick start (per client)
 
+> **Node ≥ 20 is required** (Playwright 1.61 dropped Node 18).
+
 ```bash
 # 1. Clone or copy this template to a new folder on the client-issued machine.
 cp -r kortex-qa-template ~/work/kortex-qa-<client-slug>
 cd ~/work/kortex-qa-<client-slug>
 
-# 2. Initialize.
+# 2. Initialize. The doctor preflight runs automatically at the end
+#    (Node/git/zip, agent surfaces, corporate-proxy/TLS network checks).
 node scripts/init.mjs <client-slug>
+# Re-run the preflight anytime:
+node scripts/doctor.mjs
 
 # 3. (Optional) Open the multi-root workspace in VS Code.
 code <client-slug>-qa.code-workspace
@@ -84,9 +90,11 @@ node scripts/switch-team.mjs <primary-team-slug>   # sets the default scaffold t
 
 # 5. Capture your first Jira ticket.
 node scripts/new-story.mjs TEAM-1234 search-filter-empty-input
-# (or invoke /story-intake in Copilot Chat and paste the ticket body)
+# (or invoke the story-intake skill and paste the ticket body)
 
-# 6. Daily — in Copilot Chat:
+# 6. Daily — start with the session-start skill:
+#    Copilot Chat: /session-start · Claude Code: session-start skill
+#    other agents: see "Works with any agent" below
 /session-start
 # ... work ...   (drop /session-note checkpoints whenever context is at risk)
 /session-end
@@ -219,6 +227,28 @@ Chat with `/<name>`:
 
 ---
 
+## Works with any agent
+
+Every workflow is a **canonical skill** in `.agents/skills/<name>/SKILL.md`.
+`node scripts/sync-agents.mjs` generates the per-agent adapters from
+them — **edit the canonical, never the adapter** (adapters carry a
+DO-NOT-EDIT banner; the pre-commit hook blocks drift).
+
+| Agent | Reads | Verified |
+|---|---|---|
+| GitHub Copilot | `.github/prompts/` (generated) + `.github/copilot-instructions.md` | structural ✅ (live pending) |
+| Claude Code | `CLAUDE.md` (imports `AGENTS.md`) + `.claude/skills/` (generated) | structural ✅ (live pending) |
+| Cursor | `AGENTS.md` natively + `.cursor/mcp.json` | structural ✅ (live pending) |
+| Codex | `AGENTS.md` + `.agents/skills/` | structural ✅ (live pending) |
+| Gemini CLI | `GEMINI.md` + the Skills index table inside `AGENTS.md` | structural ✅ (live pending) |
+
+MCP config follows the same pattern: `.mcp.json` is the source;
+`.vscode/mcp.json` and `.cursor/mcp.json` are byte-copies emitted by
+the same script. We deliberately do NOT ship `.cursorrules` — Cursor
+reads `AGENTS.md` natively; zero redundant files.
+
+---
+
 ## Org policy fit
 
 The template assumes the engineer's organization permits:
@@ -227,8 +257,8 @@ The template assumes the engineer's organization permits:
    data policy).
 2. **Local git** on the client-issued machine.
 3. **Local ZIP backups** (`versions/` folder).
-4. **Node.js 18+** installed (Playwright requires it; the scripts
-   are zero-dep ESM modules).
+4. **Node.js 20+** installed (Playwright 1.61 dropped Node 18; the
+   scripts are zero-dep ESM modules).
 
 If any are restricted, adapt:
 
