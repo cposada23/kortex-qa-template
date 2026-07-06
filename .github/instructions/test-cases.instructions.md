@@ -20,6 +20,9 @@ automation_status: auto-soon | auto-eventually | automated | manual-only | not-f
 automation_path: "../../<automation-repo>/tests/<area>/<file>.spec.ts"
 linked_stories: [<TICKET-KEY>, ...]
 review_status: not-reviewed | requested | in-review | changes-requested | approved
+covers_ac: [AC-1, ...]                 # optional — which ACs of the linked stories this TC covers
+external_ids: {}                       # optional — {octane: "1042"} etc.
+# last_run / last_result: written by scripts/sync-automation.mjs, never by hand
 language: en
 tags: [<area>, <coverage>, ...]
 updated: YYYY-MM-DD

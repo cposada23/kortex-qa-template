@@ -10,6 +10,9 @@ automation_status: manual-only
 automation_path: "../../<automation-repo>/tests/{{AREA}}/{{SLUG}}.spec.ts"
 linked_stories: {{LINKED_STORIES}}
 review_status: not-reviewed
+covers_ac: []                       # ACs of the linked story this TC covers, e.g. [AC-1, AC-3]
+external_ids: {}                    # TMS ids, e.g. {octane: "1042"} — keys: xray|octane|testrail|ado|zephyr
+# last_run / last_result are written by scripts/sync-automation.mjs — do not fill by hand
 language: en
 tags: [{{AREA}}]
 updated: {{UPDATED}}

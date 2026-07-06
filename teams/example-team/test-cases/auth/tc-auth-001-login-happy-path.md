@@ -9,6 +9,8 @@ status: active
 automation_status: automated
 automation_path: "../../<automation-repo>/tests/auth/login.spec.ts"
 linked_stories: []
+covers_ac: []
+external_ids: {}
 review_status: approved
 language: en
 tags: [auth, login, happy-path, smoke, example]

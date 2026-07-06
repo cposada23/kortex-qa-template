@@ -51,6 +51,7 @@ const STATUS_BY_TYPE = {
 
 const VOCAB_BY_FIELD = {
   priority: ['low', 'medium', 'high', 'critical'],
+  last_result: ['passed', 'failed', 'skipped'],
   ac_audit_status: ['pending', 'done'],
   review_status: ['not-reviewed', 'requested', 'in-review', 'changes-requested', 'approved'],
   coverage: ['positive', 'negative', 'edge', 'integration', 'regression'],
@@ -59,6 +60,15 @@ const VOCAB_BY_FIELD = {
   severity: ['low', 'medium', 'high', 'critical'],
   environment: ['local', 'dev', 'qa', 'prod-readonly'],
   review_outcome: ['in-progress', 'approved', 'changes-requested', 'rejected'],
+};
+
+// v2 traceability: known TMS keys for external_ids. Unknown keys are
+// tolerated with a warning (new TMSes appear faster than this list).
+const KNOWN_EXTERNAL_ID_KEYS = new Set(['xray', 'octane', 'testrail', 'ado', 'zephyr']);
+
+const BRAIN_CONFIG_VOCAB = {
+  tms: ['xray-cloud', 'octane', 'testrail', 'ado', 'none', 'tbd'],
+  tracker: ['jira', 'ado', 'github', 'none', 'tbd'],
 };
 
 const REQUIRED_BY_TYPE = {
@@ -219,9 +229,10 @@ function scanPII(content) {
 
 function validateFrontmatter(relPath, fm) {
   const errs = [];
+  const warns = [];
   if (!fm) {
     errs.push('no frontmatter found (file must start with --- block)');
-    return errs;
+    return { errs, warns };
   }
   const required = ['title', 'type', 'language', 'tags', 'updated'];
   for (const field of required) {
@@ -256,7 +267,38 @@ function validateFrontmatter(relPath, fm) {
       errs.push(`${field} '${fm[field]}' invalid (allowed: ${allowed.join(', ')})`);
     }
   }
-  return errs;
+
+  // v2 traceability fields
+  if (fm.last_run && !/^\d{4}-\d{2}-\d{2}$/.test(fm.last_run)) {
+    errs.push(`last_run must be YYYY-MM-DD (got: ${fm.last_run})`);
+  }
+  if (fm.covers_ac !== undefined) {
+    const items = Array.isArray(fm.covers_ac)
+      ? fm.covers_ac
+      : (fm.covers_ac === '' ? [] : [fm.covers_ac]);
+    for (const item of items) {
+      if (!/^AC-\d+$/.test(item)) {
+        errs.push(`covers_ac item '${item}' invalid (expected AC-<n>, e.g. AC-1)`);
+      }
+    }
+  }
+  if (typeof fm.external_ids === 'string' && fm.external_ids.trim() !== '' ) {
+    const raw = fm.external_ids.trim();
+    if (raw.startsWith('{') && raw.endsWith('}')) {
+      const inner = raw.slice(1, -1).trim();
+      if (inner) {
+        for (const pair of inner.split(',')) {
+          const key = pair.split(':')[0]?.trim().replace(/^["']|["']$/g, '');
+          if (key && !KNOWN_EXTERNAL_ID_KEYS.has(key)) {
+            warns.push(`external_ids key '${key}' is not a known TMS (${[...KNOWN_EXTERNAL_ID_KEYS].join(', ')}) — tolerated, double-check the spelling`);
+          }
+        }
+      }
+    } else {
+      errs.push(`external_ids must be an inline map like {octane: "1042"} (got: ${raw})`);
+    }
+  }
+  return { errs, warns };
 }
 
 async function validateFile(relPath, baseDir) {
@@ -268,19 +310,56 @@ async function validateFile(relPath, baseDir) {
     return { errs: [`cannot read: ${err.message}`], piiFindings: [] };
   }
   const fm = parseFrontmatter(content);
-  const errs = validateFrontmatter(relPath, fm);
+  const { errs, warns } = validateFrontmatter(relPath, fm);
   const piiFindings = scanPII(content);
-  return { errs, piiFindings };
+  return { errs, warns, piiFindings };
+}
+
+// brain.config.json — machine-readable brain state (§Config in AGENTS.md).
+// Missing file is tolerated (pre-init template state).
+async function validateBrainConfig(rootDir) {
+  const errs = [];
+  const warns = [];
+  const p = path.join(rootDir, 'brain.config.json');
+  let raw;
+  try {
+    raw = await fs.readFile(p, 'utf8');
+  } catch {
+    return { errs, warns, present: false };
+  }
+  let cfg;
+  try {
+    cfg = JSON.parse(raw);
+  } catch (err) {
+    errs.push(`brain.config.json: unparseable JSON (${err.message})`);
+    return { errs, warns, present: true };
+  }
+  for (const [field, allowed] of Object.entries(BRAIN_CONFIG_VOCAB)) {
+    const v = cfg[field];
+    if (v !== undefined && !allowed.includes(v)) {
+      errs.push(`brain.config.json: ${field} '${v}' invalid (allowed: ${allowed.join(', ')})`);
+    }
+  }
+  if (cfg.week_one_done === true) {
+    const tbd = ['tms', 'tracker', 'ci'].filter((k) => cfg[k] === 'tbd');
+    if (tbd.length) {
+      warns.push(`brain.config.json: week_one_done is true but still tbd: ${tbd.join(', ')} — finish the week-one tool inventory`);
+    }
+  }
+  return { errs, warns, present: true };
 }
 
 async function main() {
   const args = process.argv.slice(2);
   const strictPII = args.includes('--strict-pii');
-  const target = args.find((a) => !a.startsWith('--'));
+  const rootIdx = args.indexOf('--root');
+  const rootDir = rootIdx !== -1 ? path.resolve(args[rootIdx + 1]) : REPO_ROOT;
+  const positionals = args.filter((a, i) => !a.startsWith('--') && (rootIdx === -1 || i !== rootIdx + 1));
+  const target = positionals[0];
 
   let files;
   if (target) {
-    const abs = path.isAbsolute(target) ? target : path.join(REPO_ROOT, target);
+    const abs = path.isAbsolute(target) ? target : path.join(rootDir, target);
     let stat = null;
     try {
       stat = await fs.stat(abs);
@@ -293,19 +372,20 @@ async function main() {
     if (stat.isDirectory()) {
       // Directory target: walk it, but keep paths relative to REPO_ROOT
       // so messages and exemptions match the whole-repo walk.
-      const rels = await walkMdFiles(abs, REPO_ROOT);
+      const rels = await walkMdFiles(abs, rootDir);
       files = rels;
     } else {
-      files = [path.relative(REPO_ROOT, abs)];
+      files = [path.relative(rootDir, abs)];
     }
   } else {
-    files = await walkMdFiles(REPO_ROOT);
+    files = await walkMdFiles(rootDir);
   }
 
   let totalErrs = 0;
   let totalPII = 0;
+  let totalWarns = 0;
   for (const rel of files) {
-    const { errs, piiFindings } = await validateFile(rel, REPO_ROOT);
+    const { errs, warns, piiFindings } = await validateFile(rel, rootDir);
     if (errs.length) {
       process.stderr.write(`\n✗ ${rel}\n`);
       for (const e of errs) {
@@ -313,12 +393,33 @@ async function main() {
       }
       totalErrs += errs.length;
     }
+    if (warns.length) {
+      process.stderr.write(`\n⚠ ${rel}\n`);
+      for (const w of warns) {
+        process.stderr.write(`  - ${w}\n`);
+      }
+      totalWarns += warns.length;
+    }
     if (piiFindings.length) {
       process.stderr.write(`\n⚠ ${rel} — possible PII / secrets:\n`);
       for (const f of piiFindings) {
         process.stderr.write(`  - line ${f.line} [${f.pattern}]: ${f.snippet}\n`);
       }
       totalPII += piiFindings.length;
+    }
+  }
+
+  // Whole-repo mode also validates brain.config.json (skipped when a
+  // specific target file/dir was requested — focused validation).
+  if (!target) {
+    const cfg = await validateBrainConfig(rootDir);
+    for (const e of cfg.errs) {
+      process.stderr.write(`\n✗ ${e}\n`);
+      totalErrs++;
+    }
+    for (const w of cfg.warns) {
+      process.stderr.write(`\n⚠ ${w}\n`);
+      totalWarns++;
     }
   }
 
