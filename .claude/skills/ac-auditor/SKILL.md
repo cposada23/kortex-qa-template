@@ -1,10 +1,8 @@
 ---
-agent: ask
+name: ac-auditor
 description: Audit acceptance criteria quality across six lenses and draft Teams-ready questions for dev/PO when reviewing a story before test design.
 ---
 <!-- generated from .agents/skills/ac-auditor/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # AC auditor
 

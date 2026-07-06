@@ -1,10 +1,8 @@
 ---
-agent: ask
+name: story-analyzer
 description: Suggest test scenarios from a story across happy-path, edge, negative, integration, and regression categories when brainstorming coverage before authoring test cases.
 ---
 <!-- generated from .agents/skills/story-analyzer/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Story analyzer
 

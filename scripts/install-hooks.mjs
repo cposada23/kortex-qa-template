@@ -58,6 +58,13 @@ echo "  ✓ INDEX up-to-date"
 node scripts/validate-links.mjs
 echo "  ✓ Links OK"
 
+# 4. Agent adapter drift check (v2.0+)
+#    Blocks if .github/prompts/, .claude/skills/, the AGENTS.md
+#    skills-index, or the mcp.json copies drifted from the canonical
+#    .agents/skills/ sources.
+node scripts/sync-agents.mjs --check
+echo "  ✓ Agent adapters in sync"
+
 echo "✓ pre-commit OK"
 `;
 

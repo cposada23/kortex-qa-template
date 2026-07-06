@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: story-intake
 description: Scaffold a story folder from a new Jira ticket and run a first-pass AC audit in one go; use when a ticket is assigned or refined into the sprint.
 ---
 <!-- generated from .agents/skills/story-intake/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Story intake
 

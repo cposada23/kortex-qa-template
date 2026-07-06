@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: session-note
 description: 'Append a lightweight "## Note HH:MM" checkpoint to the current session file so context survives if the chat dies; use freely throughout the day for quick breadcrumbs.'
 ---
 <!-- generated from .agents/skills/session-note/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Session note
 

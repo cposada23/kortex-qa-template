@@ -1,10 +1,8 @@
 ---
-agent: ask
+name: automation-from-test-case
 description: Translate a manual test case into a Playwright skeleton (UI or API) with selector TODOs; use when a test case labeled for automation needs its first .spec.ts draft.
 ---
 <!-- generated from .agents/skills/automation-from-test-case/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Automation from test case
 

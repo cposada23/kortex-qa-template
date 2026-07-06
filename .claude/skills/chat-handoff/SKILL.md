@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: chat-handoff
 description: 'Append a "## Handoff HH:MM" block to the current session file so a fresh chat or another AI surface can resume context without replaying history.'
 ---
 <!-- generated from .agents/skills/chat-handoff/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Chat handoff
 

@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: session-start
 description: Start or reuse the day's session branch and log file, then read the brain's state and produce a one-screen morning briefing; use at the start of each QA work session.
 ---
 <!-- generated from .agents/skills/session-start/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 <!--
   No tool restrictions declared on purpose — restricting the agent

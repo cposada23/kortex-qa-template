@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: test-case-reviewer
 description: Peer-review one or more test cases against a five-dimension rubric and draft paste-ready comments when a story's test cases need review before execution.
 ---
 <!-- generated from .agents/skills/test-case-reviewer/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Test case reviewer
 

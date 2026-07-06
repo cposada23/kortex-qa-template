@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: test-case-design
 description: Draft a fully-formed test case file from a chosen scenario; use when a scenario (usually from story analysis) is ready to become a schema-compliant test case.
 ---
 <!-- generated from .agents/skills/test-case-design/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Test case design
 

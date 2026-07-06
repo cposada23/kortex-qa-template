@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: retro-intake
 description: Capture a retrospective meeting dump into a structured ceremony note and surface promotable patterns when a sprint retro has just happened.
 ---
 <!-- generated from .agents/skills/retro-intake/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Retro intake
 

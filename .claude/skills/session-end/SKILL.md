@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: session-end
 description: Close the work session autonomously at end of day — infer the Bridge-out from the day's artifacts, append the JOURNAL entry, update TODOs, rebuild indexes, and auto-merge the session branch to main.
 ---
 <!-- generated from .agents/skills/session-end/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 <!--
   No tool restrictions declared on purpose — restricting the agent

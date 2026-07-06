@@ -1,10 +1,8 @@
 ---
-agent: ask
+name: question-generator
 description: Generate paste-ready dev/PO questions from arbitrary input such as a design doc, verbal clarification, mockup, or code dump when the material to clarify is not acceptance criteria.
 ---
 <!-- generated from .agents/skills/question-generator/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Question generator
 

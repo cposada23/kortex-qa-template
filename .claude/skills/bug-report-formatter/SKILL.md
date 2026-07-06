@@ -1,10 +1,8 @@
 ---
-agent: agent
+name: bug-report-formatter
 description: Format a free-text defect observation into a Jira-ready bug report file and paste block when the engineer finds a defect during testing.
 ---
 <!-- generated from .agents/skills/bug-report-formatter/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
-
-> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Bug report formatter
 
