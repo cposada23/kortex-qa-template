@@ -68,7 +68,7 @@ level: ui | api | contract              # primary automation/test surface
 coverage: positive | negative | edge | integration | regression
 status: draft | active | retired         # lifecycle: born draft, ships active, eventually retired
 automation_status: auto-soon | auto-eventually | automated | manual-only | not-feasible
-automation_path: ../../<automation-repo>/tests/...   # descriptive
+automation_path: tests/<area>/<file>.spec.ts   # relative to the automation repo root; validated by validate-automation.mjs
 linked_stories: [TEAM-1234]              # immutable Jira keys, many-to-many
 review_status: not-reviewed | requested | in-review | changes-requested | approved
 covers_ac: [AC-1, AC-3]                  # optional — AC ids of the linked stories this TC covers (validated against ### AC-n: headings)

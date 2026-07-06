@@ -17,7 +17,7 @@ level: ui | api | contract
 coverage: positive | negative | edge | integration | regression
 status: draft | active | retired
 automation_status: auto-soon | auto-eventually | automated | manual-only | not-feasible
-automation_path: "../../<automation-repo>/tests/<area>/<file>.spec.ts"
+automation_path: "tests/<area>/<file>.spec.ts"   # relative to the automation repo root (brain.config.json automation_repo_path)
 linked_stories: [<TICKET-KEY>, ...]
 review_status: not-reviewed | requested | in-review | changes-requested | approved
 covers_ac: [AC-1, ...]                 # optional — which ACs of the linked stories this TC covers

@@ -7,7 +7,7 @@ level: ui
 coverage: positive
 status: draft
 automation_status: manual-only
-automation_path: "../../<automation-repo>/tests/{{AREA}}/{{SLUG}}.spec.ts"
+automation_path: ""              # path RELATIVE to the automation repo root (brain.config.json automation_repo_path), e.g. tests/{{AREA}}/{{SLUG}}.spec.ts — fill when the spec runs green
 linked_stories: {{LINKED_STORIES}}
 review_status: not-reviewed
 covers_ac: []                       # ACs of the linked story this TC covers, e.g. [AC-1, AC-3]
