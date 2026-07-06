@@ -65,6 +65,13 @@ echo "  ✓ Links OK"
 node scripts/sync-agents.mjs --check
 echo "  ✓ Agent adapters in sync"
 
+# 5. TC → spec traceability (v2.0+)
+#    No-op while brain.config.json has no automation repo. Once one
+#    is bootstrapped, blocks on automated TCs whose spec is missing
+#    or does not carry the TC id.
+node scripts/validate-automation.mjs
+echo "  ✓ Automation traceability OK"
+
 echo "✓ pre-commit OK"
 `;
 
