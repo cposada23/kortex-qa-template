@@ -50,8 +50,9 @@ case file that follows the schema in
    empty at design time — it is filled by the
    automation-from-test-case flow with the spec path RELATIVE to
    the automation repo root (e.g. `tests/search/<slug>.spec.ts`),
-   and only flips to `automated` once the spec runs green
-   (validate-automation.mjs enforces both).
+   and only flips to `automated` once the spec runs green in the
+   automation repo — locally at minimum, CI when available
+   (validate-automation.mjs enforces path + id).
 7. Tag conservatively.
 
 ## Output

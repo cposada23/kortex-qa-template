@@ -41,8 +41,10 @@ they do not approve it step by step.
 5. `TODO.md` — to reconcile (remove done, move
    blocked).
 6. `JOURNAL.md` — to append (never edit
-   history; insert before the `<!-- entries below -->` marker, or at
-   the bottom if absent).
+   history; the convention is newest-first: insert the new entry
+   immediately BELOW the `<!-- entries below -->` marker, above any
+   older entries — or at the bottom of the file if the marker is
+   absent).
 7. `teams/<active>/inbox/INBOX.md` for each active team (read
    `teams/active-team.txt`) — note anything added today, but do not
    block the close on triaging it.

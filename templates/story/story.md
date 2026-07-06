@@ -9,7 +9,8 @@ ac_audit_status: pending
 linked_test_cases: []
 linked_bugs: []
 review_status: not-reviewed
-external_ids: {}                    # TMS ids for this story, e.g. {octane: "88001"}
+# external_ids: TMS ids for this story, e.g. {octane: "88001"}
+external_ids: {}
 language: en
 tags: [story]
 updated: {{UPDATED}}

@@ -45,11 +45,21 @@ the CTRF loop works without a TMS adapter.
 ## Compose and run the init
 
 Fixed defaults + flags from the table. Suggest placing the framework
-as a SIBLING of the brain folder:
+as a SIBLING of the brain folder. TWO gotchas, both load-bearing:
+
+- `--out` is the **PARENT directory** in which the project folder is
+  created (the folder itself is named by `--name`). From the brain
+  root, sibling placement is `--out ..` — NOT `--out ../<name>`
+  (that nests `<name>/<name>/`).
+- If kortex-test is installed via `npm link` (any not-from-registry
+  install — today ALL of them), add `--local` so the generated
+  package.json references the local build instead of the npm
+  registry (without it, `pnpm install` in the generated project
+  fails).
 
 ```
 kortex-test init --name <client>-automation --datastore sqlite \
-  --reporter ctrf-json --out ../<client>-automation --yes <flags-from-table>
+  --reporter ctrf-json --out .. --yes --local <flags-from-table>
 ```
 
 NO `--ai` flag by default — the model is editor-driven (the owner's
@@ -75,6 +85,16 @@ agent writes specs); add an AI provider only if the client permits it.
    - notifiers: `TEAMS_WEBHOOK_URL` / `SLACK_WEBHOOK_URL`
 4. Run `node scripts/validate-automation.mjs` — with the repo path now
    set, it starts enforcing TC → spec traceability on every commit.
+5. Known OOTB gap in the generated framework: `tests/ui/` specs
+   require `playwright/.auth/user.json` (storageState) but the auth
+   setup self-skips until configured — the FIRST ui spec dies with
+   ENOENT. Until real auth is wired, stub it from the framework root:
+   `mkdir -p playwright/.auth && echo '{"cookies":[],"origins":[]}' > playwright/.auth/user.json`
+6. Spec layout: the generated framework organizes tests by LEVEL
+   (`tests/ui|api|db|e2e/` — Playwright projects are pinned to those
+   dirs). Specs from the brain's TCs go in `tests/<level>/<area>/`,
+   e.g. `tests/ui/search/filter.spec.ts`. A spec outside those dirs
+   is run by NO project.
 
 ## After bootstrap
 

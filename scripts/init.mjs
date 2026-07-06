@@ -67,11 +67,32 @@ async function main() {
 
   // 1. Write .client-slug
   const clientSlugPath = path.join(REPO_ROOT, '.client-slug');
-  if (await fileExists(clientSlugPath)) {
+  const freshInit = !(await fileExists(clientSlugPath));
+  if (!freshInit) {
     process.stderr.write('warning: .client-slug already exists. Overwriting.\n');
   }
   await fs.writeFile(clientSlugPath, slug + '\n');
   process.stdout.write(`✓ wrote .client-slug (${slug})\n`);
+
+  // 1b. Fresh client → reset JOURNAL.md. The template ships with its own
+  //     development history; a new engagement must not inherit it (the
+  //     session-start briefing reads the last entries and would surface
+  //     template-dev NEXT items as "today's focus"). Only on FRESH init —
+  //     re-running init on an existing brain never wipes client history.
+  if (freshInit) {
+    const journalPath = path.join(REPO_ROOT, 'JOURNAL.md');
+    try {
+      const journal = await fs.readFile(journalPath, 'utf8');
+      const marker = '<!-- entries below -->';
+      const markerIdx = journal.indexOf(marker);
+      if (markerIdx !== -1) {
+        await fs.writeFile(journalPath, journal.slice(0, markerIdx + marker.length) + '\n');
+        process.stdout.write('✓ reset JOURNAL.md for the new engagement (template history removed)\n');
+      }
+    } catch {
+      // No JOURNAL.md — nothing to reset.
+    }
+  }
 
   // 2. Rename workspace file
   const oldWorkspace = path.join(REPO_ROOT, 'kortex-qa.code-workspace');
@@ -165,6 +186,19 @@ async function main() {
   });
   if (hookResult.status !== 0 && hookResult.status !== null) {
     process.stderr.write(`warning: install-hooks.mjs exited ${hookResult.status}. Continuing.\n`);
+  }
+
+  // 6b. Rebuild indexes AFTER team scaffolding/switching so the first
+  //      commit is not blocked by INDEX drift (switch-team changes
+  //      teams/INDEX.md's active-team block).
+  const indexResult = spawnSync('node', ['scripts/build-index.mjs'], {
+    cwd: REPO_ROOT,
+    stdio: 'ignore',
+  });
+  if (indexResult.status !== 0 && indexResult.status !== null) {
+    process.stderr.write(`warning: build-index.mjs exited ${indexResult.status}. Run it manually before committing.\n`);
+  } else {
+    process.stdout.write(`✓ indexes rebuilt\n`);
   }
 
   // 7. Day-1 preflight — diagnose the machine before the engineer

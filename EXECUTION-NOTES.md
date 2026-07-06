@@ -38,3 +38,24 @@ Execution log for the QA Brain v2.0 plan (mykortex: `docs/superpowers/plans/2026
 - Task 5.2 discovery smoke: **Claude Code live-verified** headless (`claude -p` in the brain root): all 19 skills listed from `.claude/skills/`, and the `@AGENTS.md` import + hard rules confirmed (correct refusal citing compliance-policy §7). Copilot/Cursor/Codex/Gemini: structural verification only (paths + formats per docs); live checks pending day 1 on the owner's machine.
 - Task 5.1 friction (found via dry-run cross-check, fixed): `templates/test-case.md`, both example TCs, the instructions files and the test-case-design skill still taught the OLD `automation_path` semantics (`../../<automation-repo>/...`, relative to the TC file). v2 scripts (validate-automation, sync-automation) resolve it under `brain.config.json.automation_repo_path`. All updated to repo-root-relative (`tests/<area>/<file>.spec.ts`), and design-time TCs now leave `automation_path: ""` empty (filled by automation-from-test-case when the spec runs green).
 - Task 5.3: VERSION → 2.0.0; version-history entry; `playbooks/upgrade-v1.8-to-v2.md`; JOURNAL entry. kortex-test: CHANGELOG v0.4.0 + package.json bump (148 unit + 22 smoke green). Tags pending until post dry-run fixes.
+
+## 2026-07-06 — Task 5.1 dry-run (full report + fixes)
+
+Dry-run agent completed ALL 9 day-1 steps end-to-end (8 clean commits in the demo brain, hooks green without --no-verify, session opened+closed+auto-merged). 16 frictions found; fixes applied in this repo:
+
+- **F2 (blocker, fixed)**: automation-bootstrap skill now documents `--local` (required for npm-linked installs — today all of them).
+- **F3 (fixed)**: skill documents `--out` = PARENT dir; sibling placement is `--out ..` from the brain root (literal `--out ../<name>` nests `<name>/<name>/`).
+- **F4 (blocker OOTB, workaround documented; real fix pending in kortex-test)**: generated `tests/ui` specs die with ENOENT on `playwright/.auth/user.json` (auth.setup self-skips but chromium project demands storageState). Bootstrap skill now documents the stub one-liner.
+- **F1 (fixed)**: init.mjs now reruns build-index AFTER team scaffolding/switch — first day-1 commit no longer blocked by INDEX drift.
+- **F5 (fixed)**: template inline `# comments` on covers_ac/external_ids/automation_path moved to standalone comment lines (naive parser treated them as values → 3 schema violations when users kept them).
+- **F6 (fixed)**: story-intake gains explicit "run build-index" step after filling story.md.
+- **F7 (fixed)**: automation-from-test-case now writes the spec into the automation repo when automation_repo_path is configured (chat-only output was a v1 assumption).
+- **F8 (fixed)**: skills document the generated framework's LEVEL-based layout (`tests/ui|api|db|e2e/<area>/`) — specs outside those dirs run in no project.
+- **F9 (fixed)**: session-end JOURNAL instruction corrected to newest-first BELOW the marker.
+- **F10 (fixed)**: init.mjs resets JOURNAL.md (below the marker) on FRESH init only — client brains no longer inherit 38KB of template-dev history; re-init never wipes client history.
+- **F14 (fixed)**: example TCs ship with empty automation_path — no more permanent warnings.
+- **F15 (already fixed)**: VERSION 2.0.0 landed before the report.
+- **F16 (fixed)**: automation_status flip criterion unified ("green in the automation repo — locally at minimum, CI when available").
+- **F11/F12/F13 (accepted, cosmetic)**: week-one granted-access records improvised into TODO.md §Watching (fine); `--link-story` leaves a `<one-line scenario summary>` placeholder in the story body (by design — the agent fills it); framework.md format is described in the bootstrap skill, no template needed yet.
+
+Runbook commands for steps 6–8 confirmed by the dry-run are quoted in the report (bootstrap with `--out .. --local`, storageState stub, `npx playwright test <filter>`, `node scripts/sync-automation.mjs`).

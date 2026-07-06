@@ -74,8 +74,12 @@ Also read:
 ## Output
 
 A single fenced TypeScript code block, formatted as a complete
-`.spec.ts` file the engineer can paste. **Do not write the file
-to disk** — the automation repo is outside this brain.
+`.spec.ts` file. If `brain.config.json.automation_repo_path` is set
+AND you have write access to that repo, WRITE the spec there
+directly (under `tests/<level>/<area>/` — the generated framework
+pins Playwright projects to `tests/ui|api|db|e2e/`; a spec outside
+those dirs is run by no project). Otherwise output the block in
+chat for the engineer to paste — never write into the brain itself.
 
 ```typescript
 // tests/<level>/<area>/<short-slug>.spec.ts
