@@ -69,6 +69,10 @@ by zone, that Copilot reads via `@workspace` and reusable prompts.
 ## Quick start (per client)
 
 > **Node ≥ 20 is required** (Playwright 1.61 dropped Node 18).
+>
+> Full step-by-step (clone → first stories → automation loop, every
+> command verified end-to-end):
+> **[playbooks/day-1-runbook.md](playbooks/day-1-runbook.md)**.
 
 ```bash
 # 1. Clone or copy this template to a new folder on the client-issued machine.

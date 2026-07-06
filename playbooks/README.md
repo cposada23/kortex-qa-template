@@ -9,9 +9,15 @@ workflow that isn't working).
 
 ### Lifecycle (cradle to grave)
 
+- **[day-1-runbook.md](day-1-runbook.md)** — **the copy-paste
+  path for a brand-new client**: clone → init → first commit →
+  open with your agent → week-one → first stories → first TCs →
+  (optional) automation loop → close the day. Every command
+  verified end-to-end 2026-07-06.
 - **[client-bootstrap.md](client-bootstrap.md)** — **start here on
-  a new laptop.** Clone → init → first team → first story →
-  importing from a previous brain (4 scenarios)
+  a new laptop.** Day-0 IT checklist (proxy/VPN/permitted CLIs),
+  clone → init → first team → first story → importing from a
+  previous brain (4 scenarios)
 - **[week-one.md](week-one.md)** — the first 5 days at a new
   client: access & people → tool inventory → environments & data →
   SUT map seeding → first real story + exit check
