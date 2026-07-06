@@ -236,11 +236,11 @@ DO-NOT-EDIT banner; the pre-commit hook blocks drift).
 
 | Agent | Reads | Verified |
 |---|---|---|
-| GitHub Copilot | `.github/prompts/` (generated) + `.github/copilot-instructions.md` | structural ✅ (live pending) |
-| Claude Code | `CLAUDE.md` (imports `AGENTS.md`) + `.claude/skills/` (generated) | structural ✅ (live pending) |
-| Cursor | `AGENTS.md` natively + `.cursor/mcp.json` | structural ✅ (live pending) |
-| Codex | `AGENTS.md` + `.agents/skills/` | structural ✅ (live pending) |
-| Gemini CLI | `GEMINI.md` + the Skills index table inside `AGENTS.md` | structural ✅ (live pending) |
+| GitHub Copilot | `.github/prompts/` (generated) + `.github/copilot-instructions.md` | structural ✅ (live pending day 1) |
+| Claude Code | `CLAUDE.md` (imports `AGENTS.md`) + `.claude/skills/` (generated) | live ✅ 2026-07-06 (19 skills discovered; AGENTS.md import + hard rules confirmed) |
+| Cursor | `AGENTS.md` natively + `.cursor/mcp.json` | structural ✅ (live pending day 1) |
+| Codex | `AGENTS.md` + `.agents/skills/` | structural ✅ (live pending day 1) |
+| Gemini CLI | `GEMINI.md` + the Skills index table inside `AGENTS.md` | structural ✅ (live pending day 1) |
 
 MCP config follows the same pattern: `.mcp.json` is the source;
 `.vscode/mcp.json` and `.cursor/mcp.json` are byte-copies emitted by
