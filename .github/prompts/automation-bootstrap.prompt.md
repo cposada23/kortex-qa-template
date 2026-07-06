@@ -87,10 +87,11 @@ agent writes specs); add an AI provider only if the client permits it.
    - notifiers: `TEAMS_WEBHOOK_URL` / `SLACK_WEBHOOK_URL`
 4. Run `node scripts/validate-automation.mjs` — with the repo path now
    set, it starts enforcing TC → spec traceability on every commit.
-5. Known OOTB gap in the generated framework: `tests/ui/` specs
-   require `playwright/.auth/user.json` (storageState) but the auth
-   setup self-skips until configured — the FIRST ui spec dies with
-   ENOENT. Until real auth is wired, stub it from the framework root:
+5. Frameworks generated with kortex-test ≥ v0.4.0 produce an empty
+   storageState stub automatically (the auth setup writes it before
+   its skip). If the framework was generated with an OLDER build and
+   the first `tests/ui/` spec dies with ENOENT on
+   `playwright/.auth/user.json`, stub it from the framework root:
    `mkdir -p playwright/.auth && echo '{"cookies":[],"origins":[]}' > playwright/.auth/user.json`
 6. Spec layout: the generated framework organizes tests by LEVEL
    (`tests/ui|api|db|e2e/` — Playwright projects are pinned to those
