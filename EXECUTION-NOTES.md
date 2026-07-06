@@ -20,4 +20,10 @@ Execution log for the QA Brain v2.0 plan (mykortex: `docs/superpowers/plans/2026
 ## 2026-07-06 — Fase 1
 
 - Task 1.2 Step 1b verification (Copilot context mechanism): VS Code prompt-files doc (https://code.visualstudio.com/docs/agent-customization/prompt-files, doc dated 2026-07-01, fetched 2026-07-06) lists frontmatter fields `description`, `name`, `argument-hint`, `agent`, `model`, `tools`. **No sanctioned frontmatter field forces workspace-wide context**; `@workspace` is not part of the prompt-file contract. Conclusion: the generated context preamble (for `context_scope: repo` skills) is the only portable mechanism — implemented as planned, nothing additional to adopt.
+## 2026-07-06 — Fase 2
+
+- Task 2.7: the heuristic English-lint check was deliberately EXCLUDED (per plan spec) — too many false positives with SUT names / Spanish strings inside test data. Only the forbidden-phrases gate + automation freshness shipped.
+- Side effect (intended): `teams/example-team/test-cases/auth/tc-auth-001-login-happy-path.md` now emits the "automated but never synced" WARN on every validate run — it demos the freshness check; non-blocking.
+- Validators gained a `--root <dir>` flag (validate.mjs, validate-links.mjs, build-index.mjs, validate-automation.mjs) so tests can target fixture trees — not in the plan text but required by its own test specs.
+
 - Task 1.1 conversion notes (recorded by the conversion pass): three prompts (`session-note`, `chat-handoff`, `resume-from-handoff`) carried HTML comments explaining Copilot frontmatter mechanics — dropped as unconvertible meta-commentary (facts they carried already live in the bodies). `chat-handoff`'s surface list "(Copilot Chat ↔ Claude ↔ Codex)" neutralized to "(e.g., one AI chat ↔ Claude ↔ Codex)". `ac-auditor` had a relative link valid only from `.github/prompts/` — rewritten to repo-root path prose.

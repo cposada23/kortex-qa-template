@@ -162,6 +162,49 @@ async function main() {
       'story without ### AC-n: headings → WARN (legacy tolerated), exit 0');
   }
 
+  // ---- Task 2.7: forbidden phrases + freshness ----
+  {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'kqa-v2-bug-'));
+    const bugDir = path.join(root, 'teams', 'ft', 'bugs');
+    await fs.mkdir(bugDir, { recursive: true });
+    await fs.writeFile(path.join(bugDir, 'BUG-001-x.md'), `---
+title: "BUG-001 — broken thing"
+type: bug
+id: BUG-001
+severity: medium
+status: open
+linked_stories: []
+environment: qa
+language: en
+tags: [bug]
+updated: 2026-07-06
+---
+
+# BUG-001
+
+As an AI language model, I analyzed the defect and found it interesting.
+`);
+    const r = run(VALIDATE, ['--root', root]);
+    assert(r.code === 1 && /as an ai/i.test(r.out) && /BUG-001-x\.md/.test(r.out),
+      'bug file with "As an AI" → forbidden-phrase ERROR with path');
+  }
+  {
+    const p = path.join(tmp, 'tc-fresh1.md');
+    await fs.writeFile(p, makeTc({ extra: 'automation_status: automated\n' })
+      .replace('automation_status: manual-only\n', ''));
+    const r = run(VALIDATE, [p]);
+    assert(r.code === 0 && /never synced|no last_run/i.test(r.out),
+      'automated TC without last_run → WARN "automated but never synced"');
+  }
+  {
+    const p = path.join(tmp, 'tc-fresh2.md');
+    await fs.writeFile(p, makeTc({ extra: 'automation_status: automated\nlast_run: 2026-01-01\nlast_result: passed\n' })
+      .replace('automation_status: manual-only\n', ''));
+    const r = run(VALIDATE, [p]);
+    assert(r.code === 0 && /stale|>30|older than 30/i.test(r.out),
+      'automated TC with last_run >30 days old → freshness WARN');
+  }
+
   // ---- brain.config.json vocab (Task 2.4) ----
   {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'kqa-v2-cfg-'));

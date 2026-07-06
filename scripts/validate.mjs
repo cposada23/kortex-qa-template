@@ -62,6 +62,19 @@ const VOCAB_BY_FIELD = {
   review_outcome: ['in-progress', 'approved', 'changes-requested', 'rejected'],
 };
 
+// External-comms gate (v2): AI scaffolding phrases that must never
+// appear in artifacts pasted to the team (bugs, AC audits). ERROR.
+const FORBIDDEN_PHRASES = [
+  'as an ai',
+  'i cannot',
+  'based on my analysis',
+  "i've analyzed",
+  'certainly!',
+  'great question',
+];
+
+const FRESHNESS_DAYS = 30;
+
 // v2 traceability: known TMS keys for external_ids. Unknown keys are
 // tolerated with a warning (new TMSes appear faster than this list).
 const KNOWN_EXTERNAL_ID_KEYS = new Set(['xray', 'octane', 'testrail', 'ado', 'zephyr']);
@@ -312,6 +325,40 @@ async function validateFile(relPath, baseDir) {
   const fm = parseFrontmatter(content);
   const { errs, warns } = validateFrontmatter(relPath, fm);
   const piiFindings = scanPII(content);
+
+  // External-comms phrase gate: bugs, AC audits, and anything typed
+  // `bug` are pasted to the team verbatim — AI scaffolding language
+  // in them is a hard error.
+  const norm = relPath.split(path.sep).join('/');
+  const externalFacing =
+    fm?.type === 'bug' ||
+    /^teams\/[^/]+\/bugs\/.+\.md$/.test(norm) ||
+    path.basename(norm) === 'ac-audit.md';
+  if (externalFacing) {
+    const lines = content.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const lower = lines[i].toLowerCase();
+      for (const phrase of FORBIDDEN_PHRASES) {
+        if (lower.includes(phrase)) {
+          errs.push(`forbidden phrase "${phrase}" at line ${i + 1} — external-facing artifacts must read as the owner's own voice`);
+        }
+      }
+    }
+  }
+
+  // Automation freshness: an `automated` TC that never synced (or
+  // synced long ago) means the CTRF loop is not actually running.
+  if (fm?.type === 'test-case' && fm.automation_status === 'automated') {
+    if (!fm.last_run) {
+      warns.push('automation_status is automated but never synced (no last_run) — run node scripts/sync-automation.mjs after a test run');
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(fm.last_run)) {
+      const ageMs = Date.now() - new Date(`${fm.last_run}T00:00:00Z`).getTime();
+      if (ageMs > FRESHNESS_DAYS * 24 * 60 * 60 * 1000) {
+        warns.push(`last_run ${fm.last_run} is older than ${FRESHNESS_DAYS} days — automation results are stale`);
+      }
+    }
+  }
+
   return { errs, warns, piiFindings };
 }
 
