@@ -34,6 +34,11 @@ const caseOut = debrandContent('KORTEX-QA docs built on Kortex-Test tooling.', '
 assert(/kortex-test/i.test(caseOut), 'kortex-test survives case variants');
 assert(!/kortex/i.test(caseOut.replace(/kortex-test/gi, '')), 'case-variant brands removed');
 
+// workspace filename must match what init.mjs actually renames to
+const wsOut = debrandContent('open kortex-qa.code-workspace in VS Code', 'acme');
+assert(wsOut.includes('acme-qa.code-workspace'), 'workspace filename maps to init rename target');
+assert(!wsOut.includes('qa-brain.code-workspace'), 'workspace filename not hit by generic brand rule');
+
 assert(debrandContent('nothing to change', 'acme') === 'nothing to change',
   'content without brand is untouched');
 

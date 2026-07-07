@@ -43,6 +43,10 @@ export function debrandContent(content, slug) {
     .replace(/kortex-test/gi, KT)
     // 2. Remove template origin remote
     .replace(/cposada23\/kortex-qa-template/gi, '<template-remote>')
+    // 2b. Workspace filename — must match what init.mjs renames the
+    //     actual file to (<slug>-qa.code-workspace), not the generic
+    //     brand replacement.
+    .replace(/kortex-qa\.code-workspace/gi, `${slug}-qa.code-workspace`)
     // 3. Prose brand (exact casing) → neutral product name
     .replace(/Kortex-QA/g, 'QA Brain')
     // 4. Remaining compound brand, any casing → client slug
@@ -168,7 +172,7 @@ async function main() {
       process.stdout.write(`✓ renamed workspace → ${path.basename(newWorkspace)}\n`);
     }
   } else {
-    process.stdout.write(`· kortex-qa.code-workspace not found (may have been renamed already)\n`);
+    process.stdout.write(`· template workspace file not found (may have been renamed already)\n`);
   }
 
   // 2b. Write brain.config.json — machine-readable brain state.
