@@ -3,7 +3,7 @@
 //
 // Reads VERSION file, parses .snapshotignore for excluded paths,
 // and produces:
-//   versions/kortex-qa-<client>-v<X.Y.Z>-<YYYYMMDD-HHMM>.zip
+//   versions/<client>-qa-brain-v<X.Y.Z>-<YYYYMMDD-HHMM>.zip
 //
 // Strategy:
 //   1. Try `zip` CLI (macOS / Linux ship with it).
@@ -146,7 +146,7 @@ function tryPowerShellZip(zipPath, excludes) {
     $ErrorActionPreference = 'Stop';
     $excludes = @(${excludeArgs});
     $root = (Get-Location).ProviderPath;
-    $stage = Join-Path ([System.IO.Path]::GetTempPath()) ('kortex-qa-snapshot-' + [System.Guid]::NewGuid().ToString());
+    $stage = Join-Path ([System.IO.Path]::GetTempPath()) ('qa-brain-snapshot-' + [System.Guid]::NewGuid().ToString());
     New-Item -ItemType Directory -Path $stage | Out-Null;
 
     function Test-SnapshotExclude([string] $relPath) {
@@ -344,7 +344,7 @@ async function main() {
   const version = await readVersion();
   const clientSlug = await readClientSlug();
   const ts = timestamp();
-  const baseName = `kortex-qa-${clientSlug}-v${version}-${ts}`;
+  const baseName = `${clientSlug}-qa-brain-v${version}-${ts}`;
 
   const versionsDir = path.join(REPO_ROOT, 'versions');
   await fs.mkdir(versionsDir, { recursive: true });

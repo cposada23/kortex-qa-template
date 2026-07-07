@@ -69,6 +69,7 @@ file listed here and follow it literally.
 | automation-sync | Pull CTRF results into the brain (TC last_run/last_result, logs, matrix): run after every automated test run. | `.agents/skills/automation-sync/SKILL.md` |
 | bug-report-formatter | Format a free-text defect observation into a Jira-ready bug report file and paste block when the engineer finds a defect during testing. | `.agents/skills/bug-report-formatter/SKILL.md` |
 | chat-handoff | Append a "## Handoff HH:MM" block to the current session file so a fresh chat or another AI surface can resume context without replaying history. | `.agents/skills/chat-handoff/SKILL.md` |
+| external-consult | Build a sanitized, self-contained prompt to hand a question to an external AI (quota exhausted or second opinion), then de-anonymize and integrate the answer when it comes back. | `.agents/skills/external-consult/SKILL.md` |
 | question-generator | Generate paste-ready dev/PO questions from arbitrary input such as a design doc, verbal clarification, mockup, or code dump when the material to clarify is not acceptance criteria. | `.agents/skills/question-generator/SKILL.md` |
 | resume-from-handoff | Read the latest Handoff or Note block from the most recent open session file and propose the next step when starting a fresh chat that must pick up prior work. | `.agents/skills/resume-from-handoff/SKILL.md` |
 | retro-intake | Capture a retrospective meeting dump into a structured ceremony note and surface promotable patterns when a sprint retro has just happened. | `.agents/skills/retro-intake/SKILL.md` |
@@ -117,6 +118,9 @@ surfaces; `resume-from-handoff` to pick up. Evening: `session-end` —
 autonomous wrap, updates JOURNAL/TODO/indexes, auto-merges via the
 strict-PII gate. Details: `playbooks/session-start.md`,
 `playbooks/session-end.md`, `playbooks/compliance-policy.md` §9.
+Quota exhausted or second opinion needed: `external-consult` skill
+(sanitized relay to another AI surface — only the sanitized prompt
+block leaves; alias-maps and raw session text never do).
 
 ## Config
 

@@ -62,6 +62,11 @@ already filled is skipped, not redone.
    planning/retro slots).
 4. Park unresolved access requests in `TODO.md` with the person
    who owns the approval.
+5. As you learn where things live (boards, repos, CI, docs, access
+   processes), record each one in `teams/<slug>/links.md` — one line
+   per thing. Any internal process someone describes (bug triage,
+   reviews, releases, escalation) becomes a short file under
+   `teams/<slug>/processes/`, with its source.
 
 ## Day 2 — Tool inventory
 

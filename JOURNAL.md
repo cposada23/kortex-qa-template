@@ -27,6 +27,42 @@ NEXT: <what to do next session>
 
 <!-- entries below -->
 
+## 2026-07-07 10:15 — v2.1.0: Claude-primary optimization (quota policy, external-consult, team hub, de-brand)
+
+STATE: Template v2.1.0 ready on `feature/v2.1-claude-optimization`.
+Plan cross-validated with 3 external LLMs before execution (openai
+REFINE 32/50, gemini REFINE 40/50, perplexity KEEP 43/50); the three
+convergent refinements were adopted.
+
+DID:
+- **Model & quota policy** (CLAUDE.md + day-1 runbook). Empirical
+  gate with `claude -p --output-format stream-json`: skill `model:`
+  frontmatter alone is IGNORED; pins only apply with `context: fork`
+  (subagent without chat history — would break session-note /
+  chat-handoff / intakes). Owner decision: no pins, manual `/model`
+  switching. sync-agents still propagates `model:` to Claude
+  adapters (allowlist-validated) for future use.
+- **external-consult skill** (20 total): sanitized relay to an
+  external AI when quota runs out. Alias-mapped outbound prompt;
+  alias-map + raw answer never leave the session file; strict-PII
+  gate runs before the block is handed over; approved-surfaces
+  check; RECEIVE mode re-maps and integrates.
+- **Team knowledge hub**: `teams/<slug>/links.md` + `processes/`
+  in the team template, fed by week-one day 1 step 5.
+- **De-branding on fresh init**: `debrandContent` (case-insensitive,
+  kortex-test protected, workspace-filename rule matches the real
+  rename target) + `debrandTree` over `.md`/`.code-workspace`;
+  snapshot ZIPs now `<client>-qa-brain-v<X.Y.Z>-<ts>`; init.mjs got
+  the isMain import guard. Live clean-clone smoke: init acme →
+  0 brand residue in docs, validators green, snapshot name correct.
+- **Day-1 runbook**: detailed Claude Code first-run walkthrough
+  (login → trust → /status → /model → skills check → daily rhythm
+  table → quota hygiene → troubleshooting).
+
+NEXT: live smoke at the client (Copilot/Cursor/Codex/Gemini per the
+v2.0 test plan Escenario A) + first real week-one with client data.
+
+
 ## 2026-05-26 20:35 — v1.7.0: shared/ refactor + snapshot bugfix + cross-AI portability
 
 STATE: Template v1.7.0 ready. Three independent fixes shipped on

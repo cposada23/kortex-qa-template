@@ -28,6 +28,13 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const INDEX_START = '<!-- skills-index:start -->';
 const INDEX_END = '<!-- skills-index:end -->';
 
+// Model pins for Claude Code adapters. Downgrade-only policy: pin
+// cheap/mechanical skills to a smaller model; analysis skills carry
+// no pin and inherit the session model. Copilot/Gemini adapters
+// ignore this field (no native support). Validation throws at sync
+// time (template dev time, not client runtime) to catch typos early.
+export const ALLOWED_MODELS = new Set(['haiku', 'sonnet', 'opus', 'opusplan']);
+
 // Injected into Copilot prompts for context_scope: repo skills (the
 // default). Counters Copilot's tendency to answer from the currently
 // open file without reading the workspace.
@@ -102,11 +109,17 @@ async function readSkills(root) {
     if (!fields.description) {
       throw new Error(`${path.relative(root, skillPath)}: missing description field`);
     }
+    if (fields.model && !ALLOWED_MODELS.has(fields.model)) {
+      throw new Error(
+        `${path.relative(root, skillPath)}: model '${fields.model}' not one of ${[...ALLOWED_MODELS].join('|')}`
+      );
+    }
     skills.push({
       name: fields.name,
       description: fields.description,
       copilotAgent: fields.copilot_agent === 'ask' ? 'ask' : 'agent',
       contextScope: fields.context_scope === 'file' ? 'file' : 'repo',
+      model: fields.model || null,
       body: normalizeEol(body),
     });
   }
@@ -121,7 +134,8 @@ function renderCopilotPrompt(skill) {
 }
 
 function renderClaudeSkill(skill) {
-  const fm = `---\nname: ${skill.name}\ndescription: ${yamlValue(skill.description)}\n---\n`;
+  const modelLine = skill.model ? `model: ${skill.model}\n` : '';
+  const fm = `---\nname: ${skill.name}\ndescription: ${yamlValue(skill.description)}\n${modelLine}---\n`;
   return `${fm}${banner(skill.name)}\n\n${skill.body.replace(/^\n+/, '')}`;
 }
 

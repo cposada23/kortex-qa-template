@@ -3,7 +3,7 @@ title: "Day-1 runbook — from clone to your first stories"
 type: playbook
 language: en
 tags: [day-1, runbook, onboarding, quickstart]
-updated: 2026-07-06
+updated: 2026-07-07
 status: active
 ---
 
@@ -88,7 +88,140 @@ hook's output names the exact script to run.
 | No agent at all | this runbook + the playbooks are the manual path |
 
 Sanity check: ask the agent "what skills do you have?" — it should
-list 19, including `session-start`, `week-one` and `story-intake`.
+list 20, including `session-start`, `week-one`, `story-intake` and
+`external-consult`.
+
+## Step 4b — Claude Code first-run walkthrough (primary surface)
+
+Claude Code is the primary surface for this brain. This is the
+literal first-time sequence on the client machine — do it once, in
+order, before your first session. Budget ~15 minutes.
+
+### 1. Install & login
+
+```bash
+claude --version        # any 2.x is fine; if missing → install per IT policy
+```
+
+If the CLI is missing and IT allows it: `npm install -g @anthropic-ai/claude-code`
+(or the VS Code extension from the marketplace — same brain, same
+skills). Then, from anywhere:
+
+```bash
+claude                  # first run opens the login flow
+/login                  # if it doesn't prompt by itself
+```
+
+Log in with the **corporate account** (SSO in the browser). If the
+browser can't reach the auth page, it is the proxy — see
+[client-bootstrap.md](client-bootstrap.md) §Corporate Mac checklist
+before fighting anything else.
+
+### 2. Open the brain and accept trust
+
+```bash
+cd <path-to>/acme-brain    # ALWAYS start Claude in the brain ROOT
+claude
+```
+
+First open in a new folder shows a **trust dialog** — accept it (the
+brain is your own repo). Claude then loads `CLAUDE.md` → `AGENTS.md`
+automatically: it now knows the rules, the commands and the skills.
+If you start Claude in a parent or child folder instead, skills are
+NOT discovered — always the brain root.
+
+### 3. Day-1 checks (org restrictions are real)
+
+Type these as chat commands, in order:
+
+```
+/status      → confirms account type + any admin restrictions
+/model       → lists the models the org allows you
+```
+
+Corporate admins can restrict models and effort levels. Whatever the
+list says, that's your menu — do not fight it, adapt the policy in
+`CLAUDE.md` §Model & quota policy to what exists.
+
+### 4. Set the session model
+
+```
+/model sonnet
+```
+
+`sonnet` is the daily default (see the policy in `CLAUDE.md`). Rules
+of thumb:
+
+| Moment | Model |
+|---|---|
+| Rituals, notes, intakes, formatting | `sonnet` (default) |
+| Deep test design / root-cause / tricky analysis | `opus` while it lasts, then back |
+| Heavy design day (planning + execution) | `opusplan` |
+
+Switching is per-session and instant — `/model opus`, do the hard
+thing, `/model sonnet`. There is no automatic tiering: the switch is
+always yours.
+
+### 5. Verify the skills
+
+Ask literally: `what skills do you have?` — expect the 20 from the
+Skills index. Then dry-fire one that costs nothing:
+
+```
+use the session-start skill
+```
+
+It should create the session branch + log and print the morning
+briefing (or tell you one already exists). If skills are not listed:
+you started Claude outside the brain root, or `.claude/skills/` is
+missing (re-run `node scripts/sync-agents.mjs`).
+
+### 6. The daily rhythm (what you actually type)
+
+| When | You type | What happens |
+|---|---|---|
+| Morning | `use the session-start skill` | branch + log + one-screen briefing |
+| A ticket lands | `use story-intake: <paste ticket URL + body>` | story folder + AC audit + dev/PO questions |
+| Before test cases | `use story-analyzer on ACME-101` | scenario list across 5 categories |
+| Per scenario | `use test-case-design for <scenario>` | schema-compliant TC file, linked |
+| Any checkpoint | `use the session-note skill` | breadcrumb into the session log |
+| Switching chat/surface | `use the chat-handoff skill` | handoff block, resumable anywhere |
+| New chat, same day | `use resume-from-handoff` | picks up without replaying history |
+| Evening | `use the session-end skill` | wrap + JOURNAL + auto-merge (PII gate) |
+
+### 7. Quota hygiene (make the subscription last)
+
+- `/clear` between unrelated tasks — old context bills every turn.
+- `/compact` when a long session starts feeling heavy.
+- Don't re-paste big logs or files the chat already saw.
+- Start new chats via `resume-from-handoff`, not by re-explaining.
+- Rate-limit warnings show in `/status` — if the 5-hour window is
+  nearly burned, drop to `sonnet`/`haiku` or plain scripts (every
+  skill has a manual CLI path in this runbook).
+
+### 8. When the quota runs out anyway
+
+```
+use the external-consult skill: <your question>
+```
+
+It builds a **sanitized, self-contained prompt** (client name, people,
+tickets, hosts all anonymized), records the alias-map in the session
+file, and gives you one copy-paste block for whatever external AI you
+are allowed to use. Paste the answer back with
+`use external-consult in RECEIVE mode: <paste>` and it re-maps and
+integrates it. Hard rule: **only the sanitized block leaves — never
+the alias-map, never raw session text.**
+
+### 9. Claude-specific troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Login loops / browser can't reach auth | Corporate proxy — `client-bootstrap.md` §Corporate Mac checklist (root CA, HTTPS_PROXY) |
+| `/model` shows fewer models than expected | Admin restriction — adapt, don't fight; note it in `shared/tool-inventory.md` |
+| Skills not listed | Started outside brain root, or `.claude/skills/` missing → `node scripts/sync-agents.mjs` |
+| "context low" mid-task | `use the chat-handoff skill`, then `/clear`, then `use resume-from-handoff` |
+| Rate-limited mid-day | Finish mechanical steps via the manual CLI commands in this runbook; deep work waits for the window reset |
 
 ## Step 5 — Start your first session
 
