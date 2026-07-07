@@ -63,6 +63,13 @@ async function buildFixture() {
     `---\nname: beta\ndescription: Review the open file for issues.\ncopilot_agent: ask\ncontext_scope: file\n---\n\n${BETA_BODY}`
   );
 
+  // gamma: model pin — must reach the Claude adapter only.
+  await fs.mkdir(path.join(root, '.agents', 'skills', 'gamma'), { recursive: true });
+  await fs.writeFile(
+    path.join(root, '.agents', 'skills', 'gamma', 'SKILL.md'),
+    `---\nname: gamma\ndescription: Append a quick note.\nmodel: haiku\n---\n\n# gamma\n\nAppend the note.\n`
+  );
+
   // AGENTS.md with skills-index markers
   await fs.writeFile(
     path.join(root, 'AGENTS.md'),
@@ -125,6 +132,30 @@ async function main() {
       'AGENTS.md skills-index rows point at canonical paths');
     assert(agentsMd.includes('Intro prose.') && agentsMd.includes('Outro prose.'),
       'AGENTS.md content outside markers untouched');
+
+    // (g) model pin: Claude adapter carries it; Copilot prompt does not
+    const gammaClaude = await fs.readFile(
+      path.join(root, '.claude', 'skills', 'gamma', 'SKILL.md'), 'utf8');
+    assert(gammaClaude.includes('\nmodel: haiku\n'), '(g) claude skill carries model pin');
+    const gammaPrompt = await fs.readFile(
+      path.join(root, '.github', 'prompts', 'gamma.prompt.md'), 'utf8');
+    assert(!gammaPrompt.includes('model:'), '(g) copilot prompt has NO model field');
+    assert(!alphaClaude.includes('model:'), '(g) skill without model pin emits no model line');
+
+    // (g) unknown model value must throw
+    await fs.writeFile(
+      path.join(root, '.agents', 'skills', 'gamma', 'SKILL.md'),
+      `---\nname: gamma\ndescription: Append a quick note.\nmodel: gpt-9\n---\n\n# gamma\n`
+    );
+    let threw = false;
+    try { await syncAgents(root); } catch { threw = true; }
+    assert(threw, '(g) unknown model value throws');
+    // restore valid gamma so later sections stay green
+    await fs.writeFile(
+      path.join(root, '.agents', 'skills', 'gamma', 'SKILL.md'),
+      `---\nname: gamma\ndescription: Append a quick note.\nmodel: haiku\n---\n\n# gamma\n\nAppend the note.\n`
+    );
+    await syncAgents(root);
 
     // .mcp.json absent → skipped without throwing
     assert(res.skipped.some((s) => s.includes('.mcp.json')),
