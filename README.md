@@ -505,6 +505,31 @@ field. Tightened validator checks for type-specific required
 fields and vocabularies. Swept active docs for lingering `library/`
 and stale script/prompt counts.
 
+**v2.1.0** (2026-07-07) — Claude-primary optimization for
+rate-limited corporate subscriptions. (1) **Model & quota policy** in
+`CLAUDE.md` (session default `sonnet`, `opus`/`opusplan` for deep
+analysis only, manual `/model` switching — no automatic pins: gate
+test verified that skill `model:` frontmatter only takes effect with
+`context: fork`, which would strip chat history from skills that need
+it) + `sync-agents.mjs` now propagates an optional `model:` frontmatter
+pin to Claude adapters (validated against an allowlist, throws on
+typos) for future use. (2) New skill **external-consult** (20 skills
+total): sanitized relay to an external AI when quota runs out —
+alias-mapped, self-contained outbound prompt; alias-map + raw answer
+stay in the session file; runs the strict-PII gate before handing the
+block; approved-surfaces check; RECEIVE mode re-maps and integrates
+the answer. (3) **Team knowledge hub**: `teams/<slug>/links.md`
+("where do I find X") + `teams/<slug>/processes/` (bug triage, peer
+review, releases — one short file per process), fed by week-one day 1.
+(4) **De-branding on fresh init**: `init.mjs` rewrites every `.md` /
+`.code-workspace` so a client clone never mentions the template's
+brand or origin (kortex-test framework name deliberately preserved);
+snapshot ZIPs renamed to `<client>-qa-brain-v<X.Y.Z>-<ts>`; verified
+on a live clean-clone (0 residue in docs, validators green).
+(5) Day-1 runbook: detailed **Claude Code first-run walkthrough**
+(login → trust → /status → /model → skills → daily rhythm → quota
+hygiene → troubleshooting). Tests: 12 files (new init-debrand suite).
+
 **v2.0.0** (2026-07-06) — cross-agent portability + traceable
 automation bridge. (1) The 15 workflows became **canonical skills**
 in `.agents/skills/` (Agent Skills open standard); `scripts/sync-agents.mjs`
