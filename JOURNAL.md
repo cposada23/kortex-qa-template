@@ -27,6 +27,23 @@ NEXT: <what to do next session>
 
 <!-- entries below -->
 
+## 2026-07-07 11:05 — v2.2.1: model-per-skill table + API spend-cap guidance
+
+STATE: patch release on main. Owner confirmed the client gives a
+$50/month API spend cap (not a subscription) — verified with live
+sources that this is metered billing with a hard stop.
+
+DID: rewrote CLAUDE.md §Model & quota policy: model selection table
+(haiku executes / sonnet writes / opus thinks), hard lines
+(session-end never below sonnet, client-facing text never haiku,
+model switches at task boundaries only — prompt cache), spend-cap
+habits (/cost tracking, no warm-up turns, ANTHROPIC_API_KEY auth
+gotcha, no personal-account fallback for client work).
+
+NEXT: owner clones v2.2.1 at the client; first real upgrade.mjs run
+happens when the next version ships.
+
+
 ## 2026-07-07 10:40 — v2.2.0: upgrade path (template → initialized brain, zero data loss)
 
 STATE: v2.2.0 on `feature/v2.2-upgrade-path`. Solves the "client

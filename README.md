@@ -505,6 +505,15 @@ field. Tightened validator checks for type-specific required
 fields and vocabularies. Swept active docs for lingering `library/`
 and stale script/prompt counts.
 
+**v2.2.1** (2026-07-07) — model-per-skill table + API spend-cap
+guidance in `CLAUDE.md` §Model & quota policy: haiku/sonnet/opus
+selection criteria ("haiku executes, sonnet writes, opus thinks"),
+hard lines (session-end never below sonnet; client-facing text never
+haiku; switch models at task boundaries — cache), and spend-cap
+habits (`/cost` tracking, no warm-up turns, auth gotcha with stray
+`ANTHROPIC_API_KEY`, never switch to a personal account for client
+work).
+
 **v2.2.0** (2026-07-07) — **upgrade path for initialized brains.**
 New `scripts/upgrade.mjs`: brings a client brain (no git link back to
 the template — day 1 deletes `.git`) up to a newer template version
