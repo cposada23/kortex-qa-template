@@ -505,6 +505,27 @@ field. Tightened validator checks for type-specific required
 fields and vocabularies. Swept active docs for lingering `library/`
 and stale script/prompt counts.
 
+**v2.2.0** (2026-07-07) — **upgrade path for initialized brains.**
+New `scripts/upgrade.mjs`: brings a client brain (no git link back to
+the template — day 1 deletes `.git`) up to a newer template version
+without losing client content. Runs FROM the new template copy
+(`node <new-template>/scripts/upgrade.mjs --brain <path>`), so brains
+cloned before the script existed are upgradeable too. Framework zones
+(scripts/, .agents/, .claude/, .github/, playbooks/, templates/,
+teams/_template-team/, root context docs) are copied/overwritten with
+debrand-on-write; client zones (teams/<real>/, shared/, sessions/,
+knowledge/, JOURNAL, brain.config.json, .env, versions/) are NEVER
+touched; nothing is ever deleted (orphans reported for manual review).
+Per-version data migrations (`migrate-v<A>-to-v<B>.mjs`) are detected
+and chained automatically between the brain and template versions.
+Safety rails: refuses non-brains, same-version, dirty git tree;
+mandatory pre-upgrade snapshot; post-run sync-agents + build-index +
+validate + validate-links; VERSION stamped last. New playbook
+`upgrade-template.md`. Verified on a live v2.1→v2.2 upgrade of an
+initialized brain with client stories (content byte-intact, 0 brand
+residue, all post-checks green, idempotent re-run refused). Tests:
+13 files (new upgrade suite, 29 asserts).
+
 **v2.1.0** (2026-07-07) — Claude-primary optimization for
 rate-limited corporate subscriptions. (1) **Model & quota policy** in
 `CLAUDE.md` (session default `sonnet`, `opus`/`opusplan` for deep
