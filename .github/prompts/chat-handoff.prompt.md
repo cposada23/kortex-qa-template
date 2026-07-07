@@ -1,17 +1,10 @@
 ---
-description: Append a "## Handoff HH:MM" block to today's session file so a fresh chat (or another AI surface) can resume context without replaying history
 agent: agent
+description: 'Append a "## Handoff HH:MM" block to the current session file so a fresh chat or another AI surface can resume context without replaying history.'
 ---
+<!-- generated from .agents/skills/chat-handoff/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
 
-<!--
-  No `tools:` declared on purpose — that field restricts Copilot
-  Agent to only the listed tools, which would block it from deriving
-  the session id (git branch --show-current) and appending to the
-  session file. The handoff is written to TODAY'S session file
-  (sessions/<current-branch-id>.md), NOT a root CHAT-HANDOFF.md —
-  that retired gitignored file is gone.
--->
-
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Chat handoff
 
@@ -22,7 +15,7 @@ You are compacting the current chat session into a single block the engineer (or
 The engineer is about to:
 - Start a new chat because this one is full.
 - Stop for a while mid-task and pick up later.
-- Hand off to themselves in a different surface (Copilot Chat ↔ Claude ↔ Codex).
+- Hand off to themselves in a different AI surface (e.g., one AI chat ↔ Claude ↔ Codex).
 
 ## Input
 

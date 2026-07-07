@@ -4,7 +4,7 @@ type: playbook
 status: active
 language: en
 tags: [playbook, bootstrap, onboarding, client]
-updated: 2026-05-21
+updated: 2026-07-06
 ---
 
 # Playbook — Client bootstrap
@@ -30,9 +30,10 @@ Run through these on the client-issued machine **once**. If any
 fails, see the adaptation table in [../README.md](../README.md)
 §"Org policy fit" before proceeding.
 
-1. **Node.js 18+** — `node --version`. If missing, install via the
-   org-approved package manager (Windows: winget / Chocolatey;
-   macOS: Homebrew; Linux: distro package).
+1. **Node.js 20+** — `node --version` (Playwright 1.61 dropped Node
+   18). If missing, install via the org-approved package manager
+   (Windows: winget / Chocolatey; macOS: Homebrew; Linux: distro
+   package).
 2. **Git** — `git --version`. On Windows, this also installs Git
    Bash (MINGW sh), which the pre-commit hook needs.
 3. **GitHub Copilot enabled** — open VS Code, sign in, confirm the
@@ -46,6 +47,49 @@ fails, see the adaptation table in [../README.md](../README.md)
 If you're on Windows, also pin your PowerShell version:
 `$PSVersionTable.PSVersion`. The template's scripts work on
 Windows PowerShell 5.1 (default) and PowerShell 7+.
+
+## Corporate Mac checklist (day 0)
+
+Corporate machines (managed Macs especially) ship with proxies, MDM
+profiles, and install restrictions that can eat your first day. Work
+through this BEFORE day 1.
+
+**Run the diagnostic first:**
+
+```bash
+node scripts/doctor.mjs
+```
+
+`doctor.mjs` is the day-1 preflight — it checks Node/git/zip, agent
+CLIs on PATH, npm/pnpm, proxy env vars, and probes the network. It
+**classifies TLS-interception (Zscaler/Netskope) vs no-internet
+explicitly**, so you know whether to ask IT for a root CA bundle or
+for network access. It also runs automatically at the end of
+`node scripts/init.mjs`.
+
+**Questions to ask IT before day 1:**
+
+1. Are agent CLIs (Claude Code / Copilot / Cursor / etc.) permitted
+   on client artifacts?
+2. Is there a corporate proxy, and how is it configured for Node and
+   git (`NODE_EXTRA_CA_CERTS` for the corporate root CA,
+   `HTTP_PROXY` / `HTTPS_PROXY`)?
+3. Is VPN needed to reach the tracker (Jira/ADO), the TMS, or the
+   test environments?
+4. Is Playwright browser-install allowed (it downloads browser
+   binaries from the internet)?
+5. Is global `npm link` (or `npm install -g`) allowed?
+
+**Fallback cascade if the network is blocked:**
+
+1. The editor agent + `AGENTS.md`/skills work **offline** inside the
+   repo — the whole markdown brain is local.
+2. No MCP servers and no `npx <pkg>@latest` until the network is
+   fixed — both need registry access.
+3. No Playwright browser-install → automated tests wait for IT.
+
+The brain itself (capture, test cases, story mapping) operates from
+minute 1 regardless — none of it needs the network.
 
 ## Mental model — client vs team
 
@@ -118,7 +162,8 @@ team yet. What it does in one pass:
    `snapshot.mjs` for ZIP naming).
 3. Creates `versions/` and a `VERSION` file if missing.
 4. **Calls `install-hooks.mjs`** — installs the pre-commit hook
-   that runs `validate.mjs` + `build-index.mjs --check` on every
+   that runs `validate.mjs` + `build-index.mjs --check` +
+   `validate-links.mjs` + `sync-agents.mjs --check` on every
    commit.
 
 After Step 3, `teams/` still contains only `example-team/` and

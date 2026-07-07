@@ -1,17 +1,10 @@
 ---
-description: Append a lightweight "## Note HH:MM" checkpoint to today's session file so context is never lost if the chat dies
 agent: agent
+description: 'Append a lightweight "## Note HH:MM" checkpoint to the current session file so context survives if the chat dies; use freely throughout the day for quick breadcrumbs.'
 ---
+<!-- generated from .agents/skills/session-note/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
 
-<!--
-  No `tools:` declared on purpose — that field restricts Copilot
-  Agent to only the listed tools, which would block it from deriving
-  the session id (git branch --show-current) and appending to the
-  session file. The note is written to TODAY'S session file
-  (sessions/<current-branch-id>.md), committed and discoverable by
-  every AI surface.
--->
-
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Session note
 

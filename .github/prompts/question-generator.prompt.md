@@ -1,7 +1,10 @@
 ---
-description: Generate paste-ready dev/PO questions from arbitrary input (design doc, verbal clarification, mockup, code dump) — not just AC
 agent: ask
+description: Generate paste-ready dev/PO questions from arbitrary input such as a design doc, verbal clarification, mockup, or code dump when the material to clarify is not acceptance criteria.
 ---
+<!-- generated from .agents/skills/question-generator/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
+
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Question generator
 
@@ -10,7 +13,7 @@ or PO. **The output is externally-visible** — questions go
 verbatim into Teams or Jira comments. They must read like the
 owner wrote them himself.
 
-Read [the external communication rules](../instructions/external-comms.instructions.md)
+Read [the external communication rules](.github/instructions/external-comms.instructions.md)
 before drafting.
 
 ## When to use this prompt vs `/ac-auditor`

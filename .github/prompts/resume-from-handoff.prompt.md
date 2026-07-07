@@ -1,14 +1,10 @@
 ---
-description: Read the latest Handoff/Note block from the most recent open session file and propose the next step
 agent: agent
+description: Read the latest Handoff or Note block from the most recent open session file and propose the next step when starting a fresh chat that must pick up prior work.
 ---
+<!-- generated from .agents/skills/resume-from-handoff/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
 
-<!--
-  agent: agent (not "ask"). Session files live in sessions/*.md and
-  are committed to git, so the old "ask" gitignored-picker workaround
-  is no longer needed — there is nothing hidden to discover. Plain
-  read_file on the session file works on every surface.
--->
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Resume from handoff
 

@@ -1,7 +1,10 @@
 ---
-description: Capture a sprint planning meeting into a structured ceremony note + scaffold QA action items
 agent: agent
+description: Capture a sprint planning meeting dump into a structured ceremony note and scaffold the QA action items when a new sprint starts.
 ---
+<!-- generated from .agents/skills/sprint-planning-intake/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
+
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Sprint planning intake
 

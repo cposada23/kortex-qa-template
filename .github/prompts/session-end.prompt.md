@@ -1,13 +1,16 @@
 ---
-description: Autonomous end-of-day wrap — infer the session, write Bridge-out + close the session file, append JOURNAL, update TODOs, rebuild indexes, then auto-merge the session branch to main
 agent: agent
+description: Close the work session autonomously at end of day — infer the Bridge-out from the day's artifacts, append the JOURNAL entry, update TODOs, rebuild indexes, and auto-merge the session branch to main.
 ---
+<!-- generated from .agents/skills/session-end/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
+
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 <!--
-  No `tools:` declared on purpose — that field restricts Copilot
-  Agent to only the listed tools, which would block the node scripts
-  this prompt MUST run (build-index, session-branch-finish). Write
-  discipline is enforced socially via "Hard rules" below.
+  No tool restrictions declared on purpose — restricting the agent
+  to a fixed tool list would block the node scripts this prompt MUST
+  run (build-index, session-branch-finish). Write discipline is
+  enforced socially via "Hard rules" below.
 -->
 
 
@@ -38,11 +41,13 @@ they do not approve it step by step.
    left open since the session started.
 4. **`git diff main...<branch>`** and **`git log main..<branch>`** —
    the concrete file-level record of what changed on this branch.
-5. [../../TODO.md](../../TODO.md) — to reconcile (remove done, move
+5. `TODO.md` — to reconcile (remove done, move
    blocked).
-6. [../../JOURNAL.md](../../JOURNAL.md) — to append (never edit
-   history; insert before the `<!-- entries below -->` marker, or at
-   the bottom if absent).
+6. `JOURNAL.md` — to append (never edit
+   history; the convention is newest-first: insert the new entry
+   immediately BELOW the `<!-- entries below -->` marker, above any
+   older entries — or at the bottom of the file if the marker is
+   absent).
 7. `teams/<active>/inbox/INBOX.md` for each active team (read
    `teams/active-team.txt`) — note anything added today, but do not
    block the close on triaging it.
@@ -139,6 +144,15 @@ items surfaced in the chat or session file.
 
 Run `node scripts/build-index.mjs` to regenerate the INDEX.md files
 (`sessions/` is intentionally not indexed — that's expected).
+
+### 6b. Offer a SUT-map update (optional — never blocks the close)
+
+If the session explored new SUT areas (a module, flow, or term not
+yet in `knowledge/sut-map/`), add one line to the final report
+offering — not forcing — a sut-map update: "Today touched <area>,
+not yet in the SUT map — run the sut-map skill with this session as
+context if worth capturing." Do NOT run it yourself and do NOT ask
+before merging; the close stays autonomous.
 
 ### 7. Consolidate — auto-merge by default
 

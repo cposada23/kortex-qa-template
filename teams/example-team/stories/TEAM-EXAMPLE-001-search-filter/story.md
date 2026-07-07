@@ -14,6 +14,7 @@ tags: [story, search, filter, date-range, example]
 updated: 2026-05-20
 linked_bugs: [BUG-001]
 review_status: not-reviewed
+external_ids: {}
 ---
 
 # TEAM-EXAMPLE-001 — Search filter: restrict results by date range
@@ -32,21 +33,34 @@ filter" CTA when active.
 
 ## Acceptance criteria
 
-```
-AC #1: A user can select a start date and an end date.
-AC #2: When both dates are set, the result list shows only
-       reports whose `created_at` falls within the inclusive
-       range [start, end].
-AC #3: When only a start date is set, the upper bound defaults
-       to today.
-AC #4: When only an end date is set, the lower bound defaults to
-       30 days before that end date.
-AC #5: When the filter is active and produces zero results, the
-       result area shows the empty state with a "Clear filter"
-       CTA that resets both dates.
-AC #6: The filter state persists across page refreshes within the
-       same session.
-```
+### AC-1: Select start and end date
+
+A user can select a start date and an end date.
+
+### AC-2: Inclusive range filtering
+
+When both dates are set, the result list shows only reports whose
+`created_at` falls within the inclusive range [start, end].
+
+### AC-3: Open upper bound defaults to today
+
+When only a start date is set, the upper bound defaults to today.
+
+### AC-4: Open lower bound defaults to -30 days
+
+When only an end date is set, the lower bound defaults to 30 days
+before that end date.
+
+### AC-5: Empty state with Clear filter CTA
+
+When the filter is active and produces zero results, the result
+area shows the empty state with a "Clear filter" CTA that resets
+both dates.
+
+### AC-6: Filter persists across refreshes
+
+The filter state persists across page refreshes within the same
+session.
 
 ## Out of scope
 

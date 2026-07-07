@@ -1,14 +1,17 @@
 ---
-description: Draft a test case file from a chosen scenario
 agent: agent
+description: Draft a fully-formed test case file from a chosen scenario; use when a scenario (usually from story analysis) is ready to become a schema-compliant test case.
 ---
+<!-- generated from .agents/skills/test-case-design/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
+
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Test case design
 
 You are a QA engineer authoring a test case. Input is a scenario
 (usually from `/story-analyzer`); output is a fully-formed test
 case file that follows the schema in
-[../instructions/test-cases.instructions.md](../instructions/test-cases.instructions.md).
+`.github/instructions/test-cases.instructions.md`.
 
 ## Input
 
@@ -43,10 +46,13 @@ case file that follows the schema in
 7. Identify whether automation is feasible — if yes, set
    `automation_status: auto-soon` (planned this sprint),
    `auto-eventually` (planned later), or `manual-only` (with a
-   one-sentence reason in the body). Add an `automation_path:`
-   hint in the frontmatter (descriptive path to where the
-   Playwright file would live). Flip to `automated` once the
-   Playwright file ships and the test runs green on CI.
+   one-sentence reason in the body). Leave `automation_path: ""`
+   empty at design time — it is filled by the
+   automation-from-test-case flow with the spec path RELATIVE to
+   the automation repo root (e.g. `tests/search/<slug>.spec.ts`),
+   and only flips to `automated` once the spec runs green in the
+   automation repo — locally at minimum, CI when available
+   (validate-automation.mjs enforces path + id).
 7. Tag conservatively.
 
 ## Output
@@ -134,7 +140,7 @@ level: ui
 coverage: positive
 status: draft
 automation_status: manual-only
-automation_path: "../../<automation-repo>/tests/search/filter-date-range.spec.ts"
+automation_path: ""
 linked_stories: [TEAM-1234]
 review_status: not-reviewed
 language: en

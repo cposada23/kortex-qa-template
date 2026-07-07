@@ -16,5 +16,8 @@ this file is purely a pointer.
 
 **Note for Gemini Code Assist users:** the `.aiexclude` file in the
 repo root blocks Gemini from reading credential files (`.env`,
-`client-secrets/`, snapshot ZIPs, `.cache/`). See AGENTS.md §7 for
-the full policy.
+`client-secrets/`, snapshot ZIPs, `.cache/`). Full policy:
+AGENTS.md §"Hard rules" + `playbooks/compliance-policy.md` §7.
+
+Workflows: read the Skills index in AGENTS.md; load the canonical
+SKILL.md it points to before executing that workflow.

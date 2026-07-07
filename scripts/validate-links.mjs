@@ -23,7 +23,11 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const REPO_ROOT = path.resolve(__dirname, '..');
+const DEFAULT_ROOT = path.resolve(__dirname, '..');
+
+// --root <dir> lets tests point the walker at a fixture tree.
+const rootArgIdx = process.argv.indexOf('--root');
+const REPO_ROOT = rootArgIdx !== -1 ? path.resolve(process.argv[rootArgIdx + 1]) : DEFAULT_ROOT;
 const TEAMS_DIR = path.join(REPO_ROOT, 'teams');
 
 const SKIP_DIRS = new Set(['node_modules', '.git', '.cache', 'versions']);
@@ -126,6 +130,39 @@ async function main() {
 
   const errors = [];
   const warnings = [];
+
+  // v2 traceability: index structured AC headings per story.
+  // Story ids map to the set of `### AC-n:` headings in their body.
+  const AC_HEADING_RE = /^###\s+(AC-\d+):/gm;
+  const storyAcs = new Map(); // story id → Set of AC ids
+  for (const { file, content, id } of parsed) {
+    const norm = file.split(path.sep).join('/');
+    if (!norm.endsWith('/story.md') || !id) continue;
+    const acs = new Set();
+    AC_HEADING_RE.lastIndex = 0;
+    let hm;
+    while ((hm = AC_HEADING_RE.exec(content)) !== null) acs.add(hm[1]);
+    storyAcs.set(id, acs);
+    if (acs.size === 0) {
+      warnings.push(`${path.relative(REPO_ROOT, file)}: story ${id} has no structured AC headings (### AC-n:) — legacy tolerated, but it is EXCLUDED from the coverage matrix`);
+    }
+  }
+
+  // Every covers_ac entry on a TC must exist as a heading in at least
+  // one of its linked stories — otherwise the trazability is fiction.
+  for (const { file, fm } of parsed) {
+    if (!fm || fm.type !== 'test-case') continue;
+    const covers = Array.isArray(fm.covers_ac) ? fm.covers_ac : [];
+    if (covers.length === 0) continue;
+    const rel = path.relative(REPO_ROOT, file);
+    const linked = Array.isArray(fm.linked_stories) ? fm.linked_stories : [];
+    for (const ac of covers) {
+      const found = linked.some((sid) => storyAcs.get(sid)?.has(ac));
+      if (!found) {
+        errors.push(`${rel}: covers_ac ${ac} does not exist as a "### ${ac}:" heading in any linked story (${linked.join(', ') || 'no linked_stories'})`);
+      }
+    }
+  }
 
   // Promote duplicate-ID findings to errors. IDs are the load-bearing
   // identifier for linked_test_cases / linked_bugs / linked_stories —

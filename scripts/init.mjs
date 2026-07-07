@@ -67,11 +67,32 @@ async function main() {
 
   // 1. Write .client-slug
   const clientSlugPath = path.join(REPO_ROOT, '.client-slug');
-  if (await fileExists(clientSlugPath)) {
+  const freshInit = !(await fileExists(clientSlugPath));
+  if (!freshInit) {
     process.stderr.write('warning: .client-slug already exists. Overwriting.\n');
   }
   await fs.writeFile(clientSlugPath, slug + '\n');
   process.stdout.write(`✓ wrote .client-slug (${slug})\n`);
+
+  // 1b. Fresh client → reset JOURNAL.md. The template ships with its own
+  //     development history; a new engagement must not inherit it (the
+  //     session-start briefing reads the last entries and would surface
+  //     template-dev NEXT items as "today's focus"). Only on FRESH init —
+  //     re-running init on an existing brain never wipes client history.
+  if (freshInit) {
+    const journalPath = path.join(REPO_ROOT, 'JOURNAL.md');
+    try {
+      const journal = await fs.readFile(journalPath, 'utf8');
+      const marker = '<!-- entries below -->';
+      const markerIdx = journal.indexOf(marker);
+      if (markerIdx !== -1) {
+        await fs.writeFile(journalPath, journal.slice(0, markerIdx + marker.length) + '\n');
+        process.stdout.write('✓ reset JOURNAL.md for the new engagement (template history removed)\n');
+      }
+    } catch {
+      // No JOURNAL.md — nothing to reset.
+    }
+  }
 
   // 2. Rename workspace file
   const oldWorkspace = path.join(REPO_ROOT, 'kortex-qa.code-workspace');
@@ -86,6 +107,33 @@ async function main() {
   } else {
     process.stdout.write(`· kortex-qa.code-workspace not found (may have been renamed already)\n`);
   }
+
+  // 2b. Write brain.config.json — machine-readable brain state.
+  //     Fresh clients start with everything tbd; the week-one skill
+  //     fills tms/tracker/ci, automation-bootstrap fills the repo path.
+  const configPath = path.join(REPO_ROOT, 'brain.config.json');
+  const today = new Date().toISOString().slice(0, 10);
+  const brainConfig = {
+    client: slug,
+    created: today,
+    week_one_done: false,
+    tms: 'tbd',
+    tracker: 'tbd',
+    ci: 'tbd',
+    automation_repo_path: '',
+    ctrf_report_path: 'reports/ctrf/ctrf-report.json',
+  };
+  if (await fileExists(configPath)) {
+    // Re-init on an existing brain: keep discovered state, restamp client.
+    try {
+      const existing = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      Object.assign(brainConfig, existing, { client: slug });
+    } catch {
+      process.stderr.write('warning: existing brain.config.json unparseable — rewriting fresh.\n');
+    }
+  }
+  await fs.writeFile(configPath, JSON.stringify(brainConfig, null, 2) + '\n');
+  process.stdout.write(`✓ wrote brain.config.json (client: ${slug})\n`);
 
   // 3. Verify VERSION
   const versionPath = path.join(REPO_ROOT, 'VERSION');
@@ -138,6 +186,30 @@ async function main() {
   });
   if (hookResult.status !== 0 && hookResult.status !== null) {
     process.stderr.write(`warning: install-hooks.mjs exited ${hookResult.status}. Continuing.\n`);
+  }
+
+  // 6b. Rebuild indexes AFTER team scaffolding/switching so the first
+  //      commit is not blocked by INDEX drift (switch-team changes
+  //      teams/INDEX.md's active-team block).
+  const indexResult = spawnSync('node', ['scripts/build-index.mjs'], {
+    cwd: REPO_ROOT,
+    stdio: 'ignore',
+  });
+  if (indexResult.status !== 0 && indexResult.status !== null) {
+    process.stderr.write(`warning: build-index.mjs exited ${indexResult.status}. Run it manually before committing.\n`);
+  } else {
+    process.stdout.write(`✓ indexes rebuilt\n`);
+  }
+
+  // 7. Day-1 preflight — diagnose the machine before the engineer
+  //    hits install pain (proxy/TLS issues are the usual blocker).
+  process.stdout.write(`\n→ Running doctor preflight\n`);
+  const doctorResult = spawnSync('node', ['scripts/doctor.mjs'], {
+    cwd: REPO_ROOT,
+    stdio: 'inherit',
+  });
+  if (doctorResult.status !== 0 && doctorResult.status !== null) {
+    process.stderr.write(`warning: doctor.mjs exited ${doctorResult.status}. Continuing.\n`);
   }
 
   process.stdout.write('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

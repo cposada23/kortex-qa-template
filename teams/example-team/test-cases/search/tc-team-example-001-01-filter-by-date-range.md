@@ -7,8 +7,10 @@ level: ui
 coverage: positive
 status: active
 automation_status: manual-only
-automation_path: ../../<automation-repo>/tests/search/filter-by-date-range.spec.ts
+automation_path: ""
 linked_stories: [TEAM-EXAMPLE-001]
+covers_ac: [AC-1, AC-2]
+external_ids: {}
 language: en
 tags: [search, filter, date-range, happy-path, example]
 updated: 2026-05-20

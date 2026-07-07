@@ -1,12 +1,15 @@
 ---
-description: Morning ritual — start (or reuse) the session branch + log file, then surface what's active, blocked, and today's likely focus
 agent: agent
+description: Start or reuse the day's session branch and log file, then read the brain's state and produce a one-screen morning briefing; use at the start of each QA work session.
 ---
+<!-- generated from .agents/skills/session-start/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
+
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 <!--
-  No `tools:` declared on purpose — that field restricts Copilot
-  Agent to only the listed tools. Earlier versions limited this
-  prompt to `['read', 'search/codebase']`, which blocked Copilot
+  No tool restrictions declared on purpose — restricting the agent
+  to a fixed tool list has bitten before. Earlier versions limited
+  this prompt to `['read', 'search/codebase']`, which blocked Copilot
   from running `node scripts/session-branch-start.mjs` even though
   the prompt body explicitly told it to (Copilot would respond with
   "I cannot execute terminal commands with the available tools").
@@ -47,7 +50,7 @@ write this prompt performs.
    ask the engineer whether to finish/discard that branch first. Do
    not create a session branch on top of it.
 
-Use workspace file-reading tools to gather the rest of the context.
+Use file-reading tools to gather the rest of the context.
 Do not ask the engineer to paste file contents. If a file is
 missing, note it briefly and continue with the remaining files.
 
@@ -64,10 +67,10 @@ Read the following, in this order:
    `sessions/*.md` yourself for `status: open`. Surface every open
    session at the top of the summary and offer **close-or-continue**
    (see Output → "Open sessions").
-3. [../../TODO.md](../../TODO.md) — active TODOs.
-4. [../../JOURNAL.md](../../JOURNAL.md) — most recent 1–3 entries
+3. `TODO.md` — active TODOs.
+4. `JOURNAL.md` — most recent 1–3 entries
    (the last entry's `NEXT:` line is today's stated next step).
-5. [../../teams/active-team.txt](../../teams/active-team.txt) —
+5. `teams/active-team.txt` —
    identify the active team(s) (line 1 = primary).
 6. `teams/<active>/stories/INDEX.md` for each active team — the
    story roster scoped to that team.

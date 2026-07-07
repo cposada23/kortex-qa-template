@@ -1,0 +1,10 @@
+{
+  "client": "example",
+  "created": "2026-07-06",
+  "week_one_done": false,
+  "tms": "tbd",
+  "tracker": "tbd",
+  "ci": "tbd",
+  "automation_repo_path": "",
+  "ctrf_report_path": "reports/ctrf/ctrf-report.json"
+}

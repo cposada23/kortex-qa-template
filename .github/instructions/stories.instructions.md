@@ -52,7 +52,14 @@ updated: YYYY-MM-DD
 <one paragraph from the ticket, in the team's voice>
 
 ## Acceptance criteria
-<paste the AC verbatim — auditing happens in ac-audit.md, not here>
+<paste the AC verbatim under stable numbered headings — auditing
+happens in ac-audit.md, not here>
+
+### AC-1: <short title>
+<AC text>
+
+<!-- AC ids are stable: never renumber mid-sprint; retired numbers are
+     not reused. Test cases reference these ids via covers_ac. -->
 
 ## Out of scope
 <what the ticket explicitly excludes, if stated>

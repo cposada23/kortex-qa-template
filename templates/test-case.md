@@ -7,9 +7,17 @@ level: ui
 coverage: positive
 status: draft
 automation_status: manual-only
-automation_path: "../../<automation-repo>/tests/{{AREA}}/{{SLUG}}.spec.ts"
+# automation_path: RELATIVE to the automation repo root (brain.config.json
+# automation_repo_path), e.g. tests/ui/{{AREA}}/{{SLUG}}.spec.ts — filled by
+# automation-from-test-case when the spec runs green
+automation_path: ""
 linked_stories: {{LINKED_STORIES}}
 review_status: not-reviewed
+# covers_ac: ACs of the linked story this TC covers, e.g. [AC-1, AC-3]
+covers_ac: []
+# external_ids: TMS ids, e.g. {octane: "1042"} — keys: xray|octane|testrail|ado|zephyr
+external_ids: {}
+# last_run / last_result are written by scripts/sync-automation.mjs — do not fill by hand
 language: en
 tags: [{{AREA}}]
 updated: {{UPDATED}}

@@ -1,7 +1,10 @@
 ---
-description: Peer-review one or more test cases against a five-dimension rubric and draft paste-ready comments
 agent: agent
+description: Peer-review one or more test cases against a five-dimension rubric and draft paste-ready comments when a story's test cases need review before execution.
 ---
+<!-- generated from .agents/skills/test-case-reviewer/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
+
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # Test case reviewer
 
@@ -15,7 +18,7 @@ the same flow). Your output has two consumers:
    deliver" section verbatim in Jira comments or Teams.
 
 The second consumer means tone matters. Read
-[the external communication rules](../instructions/external-comms.instructions.md)
+[the external communication rules](.github/instructions/external-comms.instructions.md)
 before drafting the comments section.
 
 ## Input
@@ -46,7 +49,7 @@ For each test case, evaluate against five dimensions:
    TC or another story's TC? Could two TCs be merged?
 4. **Automation feasibility** — is this `auto-soon`,
    `auto-eventually`, or `manual-only`? Why? (Per
-   [automation-flow playbook](../../playbooks/automation-flow.md)
+   [automation-flow playbook](playbooks/automation-flow.md)
    §"first question".)
 5. **Schema compliance** — frontmatter fields correct? TC-ID
    assigned per team naming convention? Linked stories present?
@@ -157,7 +160,7 @@ under `## Comments to deliver` — ready to paste.
    First person, peer-tone, ready to paste. Never reference this
    prompt, the review process, or any AI machinery. Use the "I
    noticed…" or "Could we tighten…" phrasing patterns from the
-   [peer-review playbook](../../playbooks/test-case-peer-review.md)
+   [peer-review playbook](playbooks/test-case-peer-review.md)
    §"How to deliver feedback that gets accepted".
 2. If a TC is clean across all five dimensions, say so. Don't
    invent findings to look thorough. A short review of a

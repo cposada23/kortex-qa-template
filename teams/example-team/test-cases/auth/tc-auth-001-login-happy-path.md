@@ -6,9 +6,11 @@ area: auth
 level: ui
 coverage: positive
 status: active
-automation_status: automated
-automation_path: "../../<automation-repo>/tests/auth/login.spec.ts"
+automation_status: auto-soon
+automation_path: ""
 linked_stories: []
+covers_ac: []
+external_ids: {}
 review_status: approved
 language: en
 tags: [auth, login, happy-path, smoke, example]

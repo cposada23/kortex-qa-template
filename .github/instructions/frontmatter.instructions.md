@@ -49,7 +49,15 @@ ac_audit_status: pending | done
 linked_test_cases: [TC-AUTH-001, TC-SEARCH-007]    # canonical IDs (immutable), many-to-many
 linked_bugs: [BUG-001, BUG-007]                    # canonical IDs, many-to-many
 review_status: not-reviewed | requested | in-review | changes-requested | approved
+external_ids: {}                        # optional — TMS ids, e.g. {octane: "88001"}; keys: xray|octane|testrail|ado|zephyr
 ```
+
+Body rule (v2): acceptance criteria use stable numbered headings
+`### AC-1: <title>`, `### AC-2: ...`. AC ids are IMMUTABLE within a
+story — text may change, ids are never renumbered; removed ids are
+retired, new ACs take the next free number. Stories without AC
+headings are legacy-tolerated (WARN) but excluded from the coverage
+matrix.
 
 ### `type: test-case`
 
@@ -60,9 +68,13 @@ level: ui | api | contract              # primary automation/test surface
 coverage: positive | negative | edge | integration | regression
 status: draft | active | retired         # lifecycle: born draft, ships active, eventually retired
 automation_status: auto-soon | auto-eventually | automated | manual-only | not-feasible
-automation_path: ../../<automation-repo>/tests/...   # descriptive
+automation_path: tests/<area>/<file>.spec.ts   # relative to the automation repo root; validated by validate-automation.mjs
 linked_stories: [TEAM-1234]              # immutable Jira keys, many-to-many
 review_status: not-reviewed | requested | in-review | changes-requested | approved
+covers_ac: [AC-1, AC-3]                  # optional — AC ids of the linked stories this TC covers (validated against ### AC-n: headings)
+external_ids: {}                         # optional — TMS ids, e.g. {octane: "1042"}
+last_run: 2026-07-05                     # optional — written by sync-automation.mjs, YYYY-MM-DD
+last_result: passed | failed | skipped   # optional — written by sync-automation.mjs
 ```
 
 ### `type: bug`

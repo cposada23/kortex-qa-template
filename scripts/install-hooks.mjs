@@ -58,6 +58,20 @@ echo "  ✓ INDEX up-to-date"
 node scripts/validate-links.mjs
 echo "  ✓ Links OK"
 
+# 4. Agent adapter drift check (v2.0+)
+#    Blocks if .github/prompts/, .claude/skills/, the AGENTS.md
+#    skills-index, or the mcp.json copies drifted from the canonical
+#    .agents/skills/ sources.
+node scripts/sync-agents.mjs --check
+echo "  ✓ Agent adapters in sync"
+
+# 5. TC → spec traceability (v2.0+)
+#    No-op while brain.config.json has no automation repo. Once one
+#    is bootstrapped, blocks on automated TCs whose spec is missing
+#    or does not carry the TC id.
+node scripts/validate-automation.mjs
+echo "  ✓ Automation traceability OK"
+
 echo "✓ pre-commit OK"
 `;
 

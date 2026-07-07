@@ -1,7 +1,10 @@
 ---
-description: Audit AC quality and draft Teams-ready questions for dev/PO
 agent: ask
+description: Audit acceptance criteria quality across six lenses and draft Teams-ready questions for dev/PO when reviewing a story before test design.
 ---
+<!-- generated from .agents/skills/ac-auditor/SKILL.md — DO NOT EDIT. Run: node scripts/sync-agents.mjs -->
+
+> Context: this workflow needs WORKSPACE-WIDE context. Before acting, read AGENTS.md and every file this workflow references — do not answer from the currently open file alone.
 
 # AC auditor
 
@@ -13,8 +16,9 @@ quality. Your output has two consumers:
 2. **The dev / PO** — they will receive the "Questions for
    dev/PO" section verbatim in Teams or as a Jira comment.
 
-The second consumer means tone matters. Read [the external
-communication rules](../instructions/external-comms.instructions.md)
+The second consumer means tone matters. Read the external
+communication rules in
+`.github/instructions/external-comms.instructions.md`
 before generating the questions section.
 
 ## Input
