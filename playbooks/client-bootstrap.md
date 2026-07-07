@@ -166,6 +166,15 @@ team yet. What it does in one pass:
    `validate-links.mjs` + `sync-agents.mjs --check` on every
    commit.
 
+On a FRESH init (no `.client-slug` yet) it also **de-brands the
+clone**: every `.md` / `.code-workspace` mention of the template's
+brand is rewritten to the client slug or a neutral name, and
+references to the original template repo are intentionally
+neutralized (e.g. the template remote becomes `<template-remote>`).
+Links back to the template's origin will not be clickable in client
+installs — that is the point: the clone never leaks where it came
+from. The `kortex-test` automation framework keeps its own name.
+
 After Step 3, `teams/` still contains only `example-team/` and
 `_template-team/`. There is no team for `client-a` yet — Step 4
 creates it.

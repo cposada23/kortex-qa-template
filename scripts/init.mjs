@@ -19,7 +19,7 @@
 //   node scripts/init.mjs <client-slug> --first-team <team-slug>
 //   node scripts/init.mjs acme-corp --first-team pod-8
 
-import { promises as fs } from 'node:fs';
+import { promises as fs, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +27,57 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..');
+
+// debrandContent — strip template provenance for a client clone.
+// 'kortex-test' is the automation framework's OWN name (separate
+// repo) and is deliberately preserved. Replacement order matters:
+// longest/most specific first, so the bare-brand rules only see
+// what the compound rules left behind.
+// Exported for unit tests in scripts/tests/init-debrand.test.mjs.
+export function debrandContent(content, slug) {
+  // NUL-delimited sentinel — cannot occur in real markdown. Built via
+  // fromCharCode to avoid escape-sequence ambiguity.
+  const KT = String.fromCharCode(0) + 'KT' + String.fromCharCode(0);
+  return content
+    // 1. Protect the tool name (any casing: kortex-test, Kortex-Test)
+    .replace(/kortex-test/gi, KT)
+    // 2. Remove template origin remote
+    .replace(/cposada23\/kortex-qa-template/gi, '<template-remote>')
+    // 3. Prose brand (exact casing) → neutral product name
+    .replace(/Kortex-QA/g, 'QA Brain')
+    // 4. Remaining compound brand, any casing → client slug
+    .replace(/kortex-qa/gi, `${slug}-qa-brain`)
+    // 5. Bare brand
+    .replace(/Kortex/g, 'QA Brain')
+    .replace(/kortex/gi, `${slug}-qa-brain`)
+    // 6. Restore the tool name (normalized lowercase — not a leak)
+    .replaceAll(KT, 'kortex-test');
+}
+
+const DEBRAND_DIR_SKIP = new Set(['.git', 'node_modules', 'versions', '.cache']);
+const DEBRAND_EXTS = new Set(['.md', '.code-workspace']);
+
+async function debrandTree(root, slug) {
+  const changed = [];
+  async function walk(dir) {
+    for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!DEBRAND_DIR_SKIP.has(entry.name)) await walk(p);
+        continue;
+      }
+      if (!DEBRAND_EXTS.has(path.extname(entry.name))) continue;
+      const raw = await fs.readFile(p, 'utf8');
+      const out = debrandContent(raw, slug);
+      if (out !== raw) {
+        await fs.writeFile(p, out);
+        changed.push(path.relative(root, p));
+      }
+    }
+  }
+  await walk(root);
+  return changed;
+}
 
 function usage() {
   process.stderr.write('Usage: node scripts/init.mjs <client-slug> [--first-team <team-slug>]\n');
@@ -91,6 +142,18 @@ async function main() {
       }
     } catch {
       // No JOURNAL.md — nothing to reset.
+    }
+
+    // Fresh client → de-brand every .md / .code-workspace so the
+    // clone never mentions the template's origin. Adapters are
+    // regenerated right after so canonical/adapter stay in sync.
+    const debranded = await debrandTree(REPO_ROOT, slug);
+    process.stdout.write(`✓ de-branded ${debranded.length} file(s)\n`);
+    const syncResult = spawnSync('node', ['scripts/sync-agents.mjs'], {
+      cwd: REPO_ROOT, stdio: 'ignore',
+    });
+    if (syncResult.status !== 0 && syncResult.status !== null) {
+      process.stderr.write('warning: sync-agents.mjs failed after de-brand — run it manually.\n');
     }
   }
 
@@ -223,7 +286,7 @@ async function main() {
   process.stdout.write(`  3. Initialize git for this engagement (if you wiped the template's .git):\n`);
   process.stdout.write(`       git init\n`);
   process.stdout.write(`       node scripts/install-hooks.mjs   # pre-commit hook (idempotent)\n`);
-  process.stdout.write(`       git add . && git commit -m "init: kortex-qa for ${slug} v$(cat VERSION)"\n`);
+  process.stdout.write(`       git add . && git commit -m "init: qa brain for ${slug} v$(cat VERSION)"\n`);
   if (firstTeam) {
     process.stdout.write(`  4. Fill in client-wide details (apply to every team on this client):\n`);
     process.stdout.write(`       shared/environments/local.md  shared/environments/dev.md  shared/environments/qa.md\n`);
@@ -246,7 +309,20 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  process.stderr.write(`init failed: ${err.message}\n`);
-  process.exit(1);
-});
+// Only run main() when invoked as a script — init-debrand.test.mjs
+// imports this module for debrandContent, and the import must be
+// inert (same guard pattern as snapshot.mjs).
+const invokedDirectly = (() => {
+  try {
+    if (!process.argv[1]) return false;
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]);
+  } catch {
+    return false;
+  }
+})();
+if (invokedDirectly) {
+  main().catch((err) => {
+    process.stderr.write(`init failed: ${err.message}\n`);
+    process.exit(1);
+  });
+}

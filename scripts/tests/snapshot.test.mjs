@@ -111,12 +111,12 @@ function listArchive(archivePath) {
 }
 
 async function findArchive(versionsDir) {
-  // Only match the canonical snapshot name pattern (kortex-qa-*).
+  // Only match the canonical snapshot name pattern (<client>-qa-brain-*).
   // The fixture pre-seeds versions/old.zip as a "previous snapshot"
   // to verify the recursion guard; we must not pick that one.
   const items = await fs.readdir(versionsDir);
   for (const it of items) {
-    if (!it.startsWith('kortex-qa-')) continue;
+    if (!it.includes('-qa-brain-')) continue;
     if (it.endsWith('.zip') || it.endsWith('.tar.gz')) {
       return path.join(versionsDir, it);
     }
