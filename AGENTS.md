@@ -117,6 +117,9 @@ surfaces; `resume-from-handoff` to pick up. Evening: `session-end` —
 autonomous wrap, updates JOURNAL/TODO/indexes, auto-merges via the
 strict-PII gate. Details: `playbooks/session-start.md`,
 `playbooks/session-end.md`, `playbooks/compliance-policy.md` §9.
+Quota exhausted or second opinion needed: `external-consult` skill
+(sanitized relay to another AI surface — only the sanitized prompt
+block leaves; alias-maps and raw session text never do).
 
 ## Config
 
