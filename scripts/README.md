@@ -31,6 +31,7 @@ This guarantees portability across macOS / Linux / Windows
 | [validate.mjs](validate.mjs) | Frontmatter + PII integrity check. Run before every commit (also enforced by the pre-commit hook installed by `install-hooks.mjs`). |
 | [validate-links.mjs](validate-links.mjs) | Validate ID-based links (`linked_test_cases`, `linked_bugs`, `linked_stories`) and markdown links under `teams/`. |
 | [import-prior-brain.mjs](import-prior-brain.mjs) | Stage content from a previous markdown brain for review + selective import. |
+| [upgrade.mjs](upgrade.mjs) | Upgrade an initialized brain to this template version — run FROM the new template copy (`--brain <path>`); framework zones copied, client zones never touched, migrations chained, orphans reported. |
 | [migrate-v1.5-to-v1.6.mjs](migrate-v1.5-to-v1.6.mjs) | One-shot migration from the pre-v1.6 story-local/library test case model to single-home test cases. |
 | [migrate-v1.7-to-v1.8.mjs](migrate-v1.7-to-v1.8.mjs) | One-shot migration to the v1.8 per-session log model. |
 

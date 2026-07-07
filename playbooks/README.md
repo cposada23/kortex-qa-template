@@ -24,6 +24,11 @@ workflow that isn't working).
 - **[client-rotation.md](client-rotation.md)** —
   **compliance-critical** off-boarding (one clone = one client;
   rotation = wipe + new clone)
+- **[upgrade-template.md](upgrade-template.md)** — bring an
+  initialized brain up to a newer template version without losing
+  client content (`upgrade.mjs` runs FROM the new template copy;
+  framework zones overwritten, client zones never touched,
+  migrations chained, orphans reported)
 
 ### Daily loop
 

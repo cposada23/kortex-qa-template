@@ -29,6 +29,7 @@ English. State lives in `brain.config.json` (see §Config).
 | `node scripts/snapshot.mjs` | ZIP the brain (creds included) for private backup. |
 | `node scripts/install-hooks.mjs` | Install pre-commit hook (validate+index+links+sync). |
 | `node scripts/import-prior-brain.mjs` | Migrate content from a previous brain clone. |
+| `node <new-template>/scripts/upgrade.mjs --brain .` | Upgrade this brain to a newer template version (client content untouched). |
 
 Run tests: `for t in scripts/tests/*.test.mjs; do node "$t"; done`
 

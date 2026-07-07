@@ -27,6 +27,39 @@ NEXT: <what to do next session>
 
 <!-- entries below -->
 
+## 2026-07-07 10:40 — v2.2.0: upgrade path (template → initialized brain, zero data loss)
+
+STATE: v2.2.0 on `feature/v2.2-upgrade-path`. Solves the "client
+clone has no git link back to the template" problem raised by the
+owner before first client deployment.
+
+DID:
+- `scripts/upgrade.mjs` — general upgrader, written once: runs FROM
+  the new template copy pointing AT the brain; copies framework
+  zones (debrand-on-write with the brain slug), never touches client
+  zones, never deletes (orphan report), chains per-version
+  `migrate-v<A>-to-v<B>.mjs` scripts automatically (runs them from
+  the brain copy so __dirname REPO_ROOT resolution is correct),
+  post-runs sync-agents/build-index/validate/validate-links, stamps
+  VERSION last. Rails: refuses non-brains, same-version, dirty tree;
+  mandatory pre-upgrade snapshot.
+- Decision recorded: general script for framework files (95% of
+  upgrades) + per-version migrations ONLY when the client content
+  schema changes (existing precedent: migrate-v1.5-to-v1.6,
+  migrate-v1.7-to-v1.8).
+- 29-assert TDD suite (dry-run inertness, client-zone immunity,
+  orphan no-delete, migration range selection, debrand-on-copy,
+  same-version refusal).
+- Live smoke: cloned v2.1.0 tag → init acme → real story with client
+  data → upgraded to v2.2 → story byte-intact, brain.config intact,
+  0 brand residue, snapshot auto-taken, idempotent re-run refused.
+- New playbook `upgrade-template.md`; AGENTS.md commands table +
+  scripts/README inventory updated.
+
+NEXT: first real upgrade will happen when v2.3 ships — the v2.1/v2.2
+clones at the client are both upgradeable by design.
+
+
 ## 2026-07-07 10:15 — v2.1.0: Claude-primary optimization (quota policy, external-consult, team hub, de-brand)
 
 STATE: Template v2.1.0 ready on `feature/v2.1-claude-optimization`.
