@@ -5,18 +5,13 @@ Designed primarily for GitHub Copilot, the content is plain
 markdown so any AI agent (Claude, Codex, ChatGPT, etc.) can read
 it. One brain per client engagement.
 
-**Status:** v1.8.0 — team-centric architecture, single-home test
-cases with immutable IDs (validator now errors on duplicates),
-link integrity validator, **autonomous session-end + per-session
-log** (`sessions/<id>.md`, keyed by the session branch, committed
-to history — the gitignored `CHAT-HANDOFF.md` is retired),
-prior-brain import skill, full playbook set, Copilot prompt
-library, pre-commit hook running 3 checks (frontmatter + INDEX
-drift + link integrity) plus a strict-PII secret gate on
-session-finish, AI cred read restrictions, client-bootstrap with 4
-import scenarios. Built and packaged 2026-05-20 → 2026-05-21
-inside the upstream Kortex repo `mykortex`, extracted to its own
-repo for cloning.
+**Status:** v2.3.0 (see `VERSION` — single source of truth; full
+history in the Changelog at the bottom). Team-centric architecture,
+20 canonical skills synced to 5 agent surfaces, zero-dep Node
+scripts with test suite, upgrade path for initialized brains,
+config-driven validation exemptions, cross-agent automation bridge
+(kortex-test). Built 2026-05-20 → present inside the upstream
+Kortex repo `mykortex`, extracted to its own repo for cloning.
 
 ---
 
@@ -504,6 +499,19 @@ so `/automation-from-test-case` no longer depends on an undeclared
 field. Tightened validator checks for type-specific required
 fields and vocabularies. Swept active docs for lingering `library/`
 and stale script/prompt counts.
+
+**v2.3.0** (2026-07-12) — **config-driven validation exemptions.**
+`brain.config.json` gains optional `validation_exempt_dirs`
+(array of directory names): `validate.mjs` skips those dirs during
+the whole-brain walk, so a brain can keep AS-IS imported source
+material (client docs in other languages, pre-schema files) without
+patching `SKIP_DIRS` in the script — patches there die on every
+template upgrade (upgrade.mjs replaces `scripts/`), config survives.
+Non-array/junk values are ignored gracefully. New test:
+`scripts/tests/validate-exempt-dirs.test.mjs` (3 asserts, sandboxed
+repo in tmp). Motivated by the first real client bootstrap (GBG
+brain, imported research docs in Spanish); improvement suggested by
+a Gemini review of that brain and hardened here.
 
 **v2.2.1** (2026-07-07) — model-per-skill table + API spend-cap
 guidance in `CLAUDE.md` §Model & quota policy: haiku/sonnet/opus

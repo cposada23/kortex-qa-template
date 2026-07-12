@@ -129,6 +129,10 @@ block leaves; alias-maps and raw session text never do).
 `week_one_done`, `tms` (`xray-cloud|octane|testrail|ado|none|tbd`),
 `tracker` (`jira|ado|github|none|tbd`), `ci` (free string),
 `automation_repo_path` (`""` = no framework yet), `ctrf_report_path`
-(default `reports/ctrf/ctrf-report.json`). Written by init; updated
-by the `week-one` / `automation-bootstrap` skills; validated by
+(default `reports/ctrf/ctrf-report.json`),
+`validation_exempt_dirs` (optional array of directory NAMES whose
+contents `validate.mjs` skips — for AS-IS imported source material
+such as client docs in other languages; the setting is data so it
+survives template upgrades, v2.3.0). Written by init; updated by the
+`week-one` / `automation-bootstrap` skills; validated by
 `node scripts/validate.mjs`.
